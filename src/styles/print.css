@@ -1,0 +1,167 @@
+/* ============================================================
+   Print Styles — أنماط الطباعة الحكومية
+   UnionSphere Enterprise Platform
+   ============================================================ */
+
+@media print {
+  /* إخفاء عناصر التنقل والأشرطة الجانبية */
+  nav,
+  aside,
+  .sidebar,
+  .no-print,
+  [data-no-print],
+  .print\\:hidden {
+    display: none !important;
+  }
+
+  /* إعدادات الصفحة */
+  @page {
+    size: A4;
+    margin: 15mm 12mm 18mm;
+  }
+
+  @page :first {
+    margin-top: 10mm;
+  }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, 'Arial', sans-serif;
+    direction: rtl;
+    color: #111 !important;
+    background: white !important;
+    font-size: 11pt;
+    line-height: 1.5;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* طباعة الألوان الخلفية بشكل صحيح */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* الجداول */
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tfoot {
+    display: table-footer-group;
+  }
+
+  th {
+    background-color: #1E3A8A !important;
+    color: white !important;
+    padding: 5pt 8pt !important;
+    font-weight: bold;
+    text-align: right;
+    border: 1px solid #1E3A8A !important;
+  }
+
+  td {
+    padding: 4pt 8pt !important;
+    border: 1px solid #e5e7eb !important;
+    text-align: right;
+  }
+
+  tr:nth-child(even) td {
+    background-color: #eff6ff !important;
+  }
+
+  /* الروابط — لا تطبع URL */
+  a[href]::after {
+    content: none !important;
+  }
+
+  /* منع قطع العناصر الرئيسية */
+  h1, h2, h3, h4 {
+    page-break-after: avoid;
+  }
+
+  .print-avoid-break {
+    page-break-inside: avoid;
+  }
+
+  .print-page-break {
+    page-break-before: always;
+  }
+
+  /* بطاقة الكيان */
+  .entity-card {
+    border: 2px solid #1E3A8A !important;
+    border-radius: 8pt;
+    padding: 12pt;
+    page-break-inside: avoid;
+  }
+
+  /* شهادات */
+  .certificate {
+    border: 4pt double #1E3A8A !important;
+    border-radius: 12pt;
+    padding: 20pt;
+    page-break-inside: avoid;
+  }
+
+  /* ترويسة الحكومة */
+  .gov-header {
+    border-bottom: 2pt solid #1E3A8A !important;
+    padding-bottom: 8pt;
+    margin-bottom: 12pt;
+  }
+
+  /* تذييل الحكومة */
+  .gov-footer {
+    border-top: 1pt solid #d1d5db !important;
+    padding-top: 6pt;
+    margin-top: 12pt;
+    font-size: 8pt;
+    color: #6b7280 !important;
+  }
+
+  /* كتلة التوقيع */
+  .signature-block {
+    margin-top: 24pt;
+    page-break-inside: avoid;
+  }
+
+  /* ألوان الحالة */
+  .status-active    { background-color: #dcfce7 !important; color: #166534 !important; }
+  .status-suspended { background-color: #fef9c3 !important; color: #854d0e !important; }
+  .status-inactive  { background-color: #f3f4f6 !important; color: #374151 !important; }
+  .status-dissolved { background-color: #fee2e2 !important; color: #991b1b !important; }
+
+  /* مخفي في الشاشة مرئي في الطباعة */
+  .print-only {
+    display: block !important;
+  }
+
+  /* تقليص أحجام الخطوط للطباعة */
+  .print-sm { font-size: 9pt !important; }
+  .print-xs { font-size: 8pt !important; }
+}
+
+/* أنماط مرئية فقط في الشاشة */
+@media screen {
+  .print-only {
+    display: none !important;
+  }
+
+  /* تحسين مظهر معاينة الطباعة */
+  .print-preview-page {
+    background: white;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+  }
+}
