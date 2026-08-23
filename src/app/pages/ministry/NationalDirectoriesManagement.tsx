@@ -4,11 +4,13 @@
  * المهن (ISCO-08) | الأنشطة الاقتصادية (ISIC-4) | أحجام المنشآت | الأشكال القانونية | أنواع التملك
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Plus, Search, RefreshCw, Edit, Trash2, RotateCcw, Layers, Briefcase, Building2, Scale, Landmark, Save, X } from 'lucide-react';
+import { Plus, Search, RefreshCw, Edit, Trash2, RotateCcw, Layers, Briefcase, Building2, Scale, Landmark, Save, X, Download, ChevronRight, ChevronLeft } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Modal } from '../../components/ui/Modal';
+import { useConfirm } from '../../components/ui/ConfirmDialog';
 import { toast } from 'sonner';
 import { logAudit } from '../../utils/security';
+import { exportReportToExcel } from '../../components/enterprise/PrintExportManager';
 
 interface DirectoryEntry {
     directory_type: string;
@@ -57,6 +59,8 @@ const EMPTY_FORM: FormState = {
     sort_order: 0,
 };
 
+const PAGE_SIZE = 25;
+
 export function NationalDirectoriesManagement() {
     const [activeType, setActiveType] = useState('occupation');
     const [entries, setEntries] = useState<DirectoryEntry[]>([]);
@@ -67,6 +71,8 @@ export function NationalDirectoriesManagement() {
     const [editingKey, setEditingKey] = useState<{ type: string; code: string } | null>(null);
     const [form, setForm] = useState<FormState>(EMPTY_FORM);
     const [saving, setSaving] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const { confirm, dialog: confirmDialog } = useConfirm();
 
     // جلب المدخلات (شاملة غير النشطة للإدارة)
     const loadEntries = useCallback(async () => {
@@ -94,6 +100,9 @@ export function NationalDirectoriesManagement() {
     }, []);
 
     useEffect(() => { loadEntries(); }, [loadEntries]);
+
+    // إعادة ضبط الصفحة عند تغيير الدليل أو البحث
+    useEffect(() => { setCurrentPage(1); }, [activeType, searchTerm]);
 
     const filtered = useMemo(() => {
         return entries.filter(e => {
@@ -172,6 +181,13 @@ export function NationalDirectoriesManagement() {
     };
 
     const handleDeactivate = async (e: DirectoryEntry) => {
+        const ok = await confirm({
+            title: 'تأكيد تعطيل المدخل',
+            message: `هل أنت متأكد من تعطيل المدخل (${e.code} — ${e.name_ar})؟ يمكن استعادةه لاحقاً بإعادة التفعيل.`,
+            confirmLabel: 'نعم، تعطيل',
+            variant: 'danger',
+        });
+        if (!ok) return;
         try {
             const r = await fetch(`/api/national-directories/${e.directory_type}/${encodeURIComponent(e.code)}`, { method: 'DELETE' });
             if (r.ok) {
@@ -204,19 +220,49 @@ export function NationalDirectoriesManagement() {
         }
     };
 
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
     const inactiveCount = (stats[activeType]?.total || 0) - (stats[activeType]?.active || 0);
+
+    const handleExport = () => {
+        if (filtered.length === 0) {
+            toast.warning('لا توجد بيانات للتصدير');
+            return;
+        }
+        exportReportToExcel({
+            title: `دليل_${TYPE_LABELS[activeType]}`,
+            reportType: 'statistics',
+            data: filtered,
+            columns: [
+                { key: 'code', label: 'الرمز / الكود' },
+                { key: 'name_ar', label: 'الاسم العربي' },
+                { key: 'name_en', label: 'الاسم الإنجليزي' },
+                { key: 'parent_code', label: 'الرمز الأب' },
+                { key: 'level', label: 'المستوى الهرمي' },
+                { key: 'sort_order', label: 'الترتيب العرضي' },
+                { key: 'is_active', label: 'الحالة', format: (v: any) => (v === false ? 'معطل' : 'نشط') },
+            ],
+        });
+        toast.success('تم تصدير الدليل إلى Excel بنجاح');
+        logAudit({ action: 'export', resource: 'national_directory', details: { type: activeType, count: filtered.length } });
+    };
 
     return (
         <div className="space-y-6" dir="rtl">
             <PageHeader
                 title="السجلات المعيارية والتراميز والأكواد الوطنية"
                 subtitle="إدارة أدلة التصنيف الوطنية الموحدة: المهن ISCO-08، الأنشطة ISIC-4، أحجام المنشآت، الأشكال القانونية، وأنواع التملك — مع إضافة وتعديل كامل"
-                actions={
-                    <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary-dark transition-all shadow-md shadow-primary/20">
-                        <Plus size={16} /> إضافة مدخل جديد
-                    </button>
-                }
-            />
+                                actions={
+                    <div className="flex items-center gap-2">
+                        <button onClick={handleExport} className="flex items-center gap-2 px-3.5 py-2 border border-border bg-card text-foreground rounded-xl text-sm font-medium hover:bg-muted transition-colors shadow-sm">
+                            <Download size={16} /> Excel
+                        </button>
+                        <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary-dark transition-all shadow-md shadow-primary/20">
+                            <Plus size={16} /> إضافة مدخل جديد
+                        </button>
+                    </div>
+                }            />
 
             {/* بطاقات الإحصاءات */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -291,7 +337,7 @@ export function NationalDirectoriesManagement() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
-                                {filtered.map((e) => (
+                                {paginated.map((e) => (
                                     <tr key={`${e.directory_type}-${e.code}`} className="hover:bg-accent/40 transition-colors">
                                         <td className="px-5 py-3.5 font-mono text-xs font-bold text-primary">{e.code}</td>
                                         <td className="px-5 py-3.5 font-bold text-heading text-sm">{e.name_ar}</td>
@@ -330,9 +376,26 @@ export function NationalDirectoriesManagement() {
                                 ))}
                             </tbody>
                         </table>
+                        {/* شريط الترقيم */}
+                        <div className="px-5 py-3 bg-muted/40 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+                            <span>
+                                عرض {Math.min((currentPage - 1) * PAGE_SIZE + 1, filtered.length)}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} من {filtered.length} مدخل
+                            </span>
+                            <div className="flex items-center gap-1">
+                                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1} className="p-1.5 rounded-lg border border-border bg-card hover:bg-muted disabled:opacity-40 transition-colors">
+                                    <ChevronRight size={15} />
+                                </button>
+                                <span className="px-2 font-bold text-foreground">{currentPage} / {totalPages}</span>
+                                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages} className="p-1.5 rounded-lg border border-border bg-card hover:bg-muted disabled:opacity-40 transition-colors">
+                                    <ChevronLeft size={15} />
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
+
+            {confirmDialog}
 
             {/* نافذة الإضافة/التعديل */}
             {showModal && (
