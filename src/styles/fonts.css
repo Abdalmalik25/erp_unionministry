@@ -1,1 +1,164 @@
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap');
+/**
+ * Fonts CSS - نظام الخطوط الرسمي
+ * منصة قطاع العمل - وزارة الشؤون الاجتماعية والعمل
+ *
+ * ملاحظة: يتم تحميل الخطوط عبر <link> في index.html مع preconnect لتحسين الأداء.
+ * هذا الملف يعرّف متغيرات الخطوط (Tokens) والأنماط النصية الرسمية فقط.
+ */
+
+/* ============================================================
+   1. متغيرات نظام الخطوط (إدارة مركزية)
+   ============================================================ */
+:root {
+  /* عائلة الخطوط */
+  --font-primary: 'Tajawal', 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-latin: 'Inter', 'Tajawal', 'Segoe UI', system-ui, sans-serif;
+  --font-heading: 'Noto Naskh Arabic', 'Tajawal', 'Amiri', 'Georgia', serif;
+  --font-arabic: 'Tajawal', 'Noto Naskh Arabic', 'Amiri', 'Times New Roman', serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Consolas', monospace;
+
+  /* أحجام الخطوط (نظام وحدات مرن) */
+  --text-xs: 0.75rem;   /* 12px */
+  --text-sm: 0.875rem;  /* 14px */
+  --text-base: 1rem;    /* 16px - الحجم الأساسي */
+  --text-lg: 1.125rem;  /* 18px */
+  --text-xl: 1.25rem;   /* 20px */
+  --text-2xl: 1.5rem;   /* 24px */
+  --text-3xl: 1.875rem; /* 30px */
+  --text-4xl: 2.25rem;  /* 36px */
+  --text-5xl: 3rem;     /* 48px */
+  --text-6xl: 3.75rem;  /* 60px */
+  --text-7xl: 4.5rem;   /* 72px */
+
+  /* أوزان الخطوط */
+  --font-thin: 100;
+  --font-extralight: 200;
+  --font-light: 300;
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  --font-extrabold: 800;
+  --font-black: 900;
+
+  /* تباعد الأسطر (Line-height) */
+  --leading-tight: 1.15;
+  --leading-snug: 1.375;
+  --leading-normal: 1.6;
+  --leading-relaxed: 1.75;
+  --leading-loose: 2;
+
+  /* تباعد الأحرف (Letter-spacing) */
+  --tracking-tighter: -0.05em;
+  --tracking-tight: -0.025em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.025em;
+  --tracking-wider: 0.05em;
+  --tracking-widest: 0.1em;
+
+  /* أحجام الأيقونات (رمزية) */
+  --icon-size-sm: 1rem;
+  --icon-size-base: 1.25rem;
+  --icon-size-lg: 1.5rem;
+  --icon-size-xl: 2rem;
+}
+
+/* ============================================================
+   2. النصوص الرسمية في الترويسة والرأس
+   ============================================================ */
+.gov-header-text {
+  font-family: var(--font-heading);
+  font-weight: var(--font-extrabold);
+  font-size: var(--text-2xl);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--color-white);
+}
+
+/* توقيع أو اسم الوزير */
+.minister-signature {
+  font-family: 'Noto Naskh Arabic', 'Tajawal', serif;
+  font-size: var(--text-xl);
+  font-weight: var(--font-medium);
+  color: var(--color-gold);
+  font-style: italic;
+}
+
+/* نص شعار الوزارة */
+.ministry-slogan {
+  font-family: var(--font-arabic);
+  font-size: var(--text-sm);
+  font-weight: var(--font-light);
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-gold-light);
+}
+
+/* البيانات المالية أو الأرقام الرسمية */
+.financial-number {
+  font-family: var(--font-mono);
+  font-weight: var(--font-bold);
+  font-size: var(--text-2xl);
+  color: var(--color-teal);
+  direction: ltr;
+  display: inline-block;
+}
+
+/* زر أو بطاقة تحمل لمسة ذهبية */
+.gold-badge-text {
+  font-family: var(--font-primary);
+  font-weight: var(--font-bold);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--color-gold-dark);
+  background: color-mix(in srgb, var(--color-gold) 15%, transparent);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+}
+
+/* النصوص الرسمية (الاقتباسات والمراجع) */
+blockquote {
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
+  font-weight: var(--font-medium);
+  line-height: var(--leading-relaxed);
+  padding: 1rem 2rem;
+  border-inline: 4px solid var(--color-gold);
+  margin-block: 1.5rem;
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-gold) 6%, transparent);
+  border-radius: 8px;
+}
+
+/* البيانات الإحصائية والأرقام */
+.data-number {
+  font-family: var(--font-mono);
+  font-weight: var(--font-bold);
+  font-size: var(--text-2xl);
+  color: var(--color-primary-bright);
+  letter-spacing: var(--tracking-tight);
+}
+
+/* ضبط تشكيل الحروف العربية */
+.arabic-tashkeel {
+  font-family: var(--font-arabic);
+  font-weight: var(--font-normal);
+}
+
+/* النصوص العربية الطويلة (قصائد، نصوص رسمية) */
+.arabic-poetic {
+  font-family: 'Noto Naskh Arabic', 'Amiri', serif;
+  line-height: var(--leading-loose);
+  font-size: var(--text-lg);
+  text-align: justify;
+  text-justify: kashida;
+}
+
+/* ============================================================
+   3. دعم الخطوط المتغيرة (Variable Fonts) إن وجدت
+   ============================================================ */
+@supports (font-variation-settings: normal) {
+  html {
+    font-family: 'Tajawal', 'Inter var', 'Segoe UI', sans-serif;
+  }
+}

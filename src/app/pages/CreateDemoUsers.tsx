@@ -71,16 +71,16 @@ export function CreateDemoUsers() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4" dir="rtl">
-      <div className="max-w-2xl w-full bg-white rounded-2xl shadow-2xl p-8">
+    <div className="min-h-screen bg-gradient-to-br from-info/10 to-gold/10 flex items-center justify-center p-4" dir="rtl">
+      <div className="max-w-2xl w-full bg-card rounded-2xl shadow-2xl p-8">
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl mx-auto flex items-center justify-center mb-4">
+          <div className="w-20 h-20 bg-gradient-to-br from-primary-bright to-primary-dark rounded-2xl mx-auto flex items-center justify-center mb-4">
             <UserPlus className="text-white" size={40} />
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+          <h1 className="text-3xl font-bold text-heading mb-2">
             إنشاء المستخدمين التجريبيين
           </h1>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             للاختبار والتطوير فقط - يجب حذف هذه الصفحة في الإنتاج
           </p>
         </div>
@@ -90,7 +90,7 @@ export function CreateDemoUsers() {
             <button
               onClick={createUsers}
               disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+              className="w-full bg-gradient-to-r from-primary-bright to-primary-dark text-white py-4 rounded-xl font-bold text-lg hover:from-primary hover:to-primary-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
             >
               {loading ? (
                 <>
@@ -108,51 +108,51 @@ export function CreateDemoUsers() {
             <button
               onClick={initData}
               disabled={loading}
-              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 rounded-xl font-bold text-lg hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-success to-success text-white py-4 rounded-xl font-bold text-lg hover:from-success-dark hover:to-success-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               إضافة البيانات الأولية (نقابات + أعضاء)
             </button>
 
             {error && (
-              <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 flex items-start gap-3">
-                <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
+              <div className="bg-error/10 border-2 border-error/30 rounded-xl p-4 flex items-start gap-3">
+                <AlertCircle className="text-error flex-shrink-0 mt-0.5" size={20} />
                 <div>
-                  <p className="font-semibold text-red-800">حدث خطأ</p>
-                  <p className="text-sm text-red-600 mt-1">{error}</p>
+                  <p className="font-semibold text-error">حدث خطأ</p>
+                  <p className="text-sm text-error mt-1">{error}</p>
                 </div>
               </div>
             )}
 
-            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mt-6">
-              <h3 className="font-bold text-blue-900 mb-3 flex items-center gap-2">
+            <div className="bg-info/10 border-2 border-info/30 rounded-xl p-6 mt-6">
+              <h3 className="font-bold text-info-dark mb-3 flex items-center gap-2">
                 <UserPlus size={18} />
                 المستخدمون التجريبيون
               </h3>
               <div className="space-y-3 text-sm">
-                <div className="bg-white rounded-lg p-3">
-                  <p className="font-semibold text-gray-800">1. مستخدم الوزارة</p>
-                  <p className="text-gray-600 mt-1">البريد: ministry@yemen.gov.ye</p>
-                  <p className="text-gray-600">كلمة المرور: Ministry@2026</p>
-                  <p className="text-xs text-blue-600 mt-1">الوصول: جميع الصلاحيات الإدارية</p>
+                <div className="bg-card rounded-lg p-3">
+                  <p className="font-semibold text-heading">1. مستخدم الوزارة</p>
+                  <p className="text-muted-foreground mt-1">البريد: ministry@yemen.gov.ye</p>
+                  <p className="text-muted-foreground">كلمة المرور: Ministry@2026</p>
+                  <p className="text-xs text-primary-bright mt-1">الوصول: جميع الصلاحيات الإدارية</p>
                 </div>
 
-                <div className="bg-white rounded-lg p-3">
-                  <p className="font-semibold text-gray-800">2. مستخدم النقابة</p>
-                  <p className="text-gray-600 mt-1">البريد: engineers@union.ye</p>
-                  <p className="text-gray-600">كلمة المرور: Engineers@2026</p>
-                  <p className="text-xs text-purple-600 mt-1">الوصول: نقابة المهندسين (YE-2024-001)</p>
+                <div className="bg-card rounded-lg p-3">
+                  <p className="font-semibold text-heading">2. مستخدم النقابة</p>
+                  <p className="text-muted-foreground mt-1">البريد: engineers@union.ye</p>
+                  <p className="text-muted-foreground">كلمة المرور: Engineers@2026</p>
+                  <p className="text-xs text-gold-dark mt-1">الوصول: نقابة المهندسين (YE-2024-001)</p>
                 </div>
               </div>
             </div>
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6 text-center">
-              <CheckCircle className="text-green-600 mx-auto mb-3" size={48} />
-              <h2 className="text-2xl font-bold text-green-800 mb-2">
+            <div className="bg-success/10 border-2 border-success/30 rounded-xl p-6 text-center">
+              <CheckCircle className="text-success-dark mx-auto mb-3" size={48} />
+              <h2 className="text-2xl font-bold text-success-dark mb-2">
                 تم إنشاء المستخدمين بنجاح! ✨
               </h2>
-              <p className="text-green-700">
+              <p className="text-success-dark">
                 يمكنك الآن تسجيل الدخول باستخدام أحد الحسابات التالية
               </p>
             </div>
@@ -161,22 +161,22 @@ export function CreateDemoUsers() {
               {users.map((user, index) => (
                 <div
                   key={index}
-                  className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-5 border-2 border-blue-100"
+                  className="bg-gradient-to-r from-info/10 to-gold/10 rounded-xl p-5 border-2 border-info/20"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <p className="font-bold text-lg text-gray-800 mb-1">{user.name}</p>
-                      <p className="text-sm text-gray-600 mb-2">
+                      <p className="font-bold text-lg text-heading mb-1">{user.name}</p>
+                      <p className="text-sm text-muted-foreground mb-2">
                         <span className="font-semibold">الدور:</span> {user.role}
                       </p>
-                      <div className="bg-white rounded-lg p-3 space-y-1">
+                      <div className="bg-card rounded-lg p-3 space-y-1">
                         <p className="text-sm">
-                          <span className="font-semibold text-gray-700">البريد الإلكتروني:</span>{' '}
-                          <span className="text-blue-600 font-mono">{user.email}</span>
+                          <span className="font-semibold text-foreground">البريد الإلكتروني:</span>{' '}
+                          <span className="text-primary-bright font-mono">{user.email}</span>
                         </p>
                         <p className="text-sm">
-                          <span className="font-semibold text-gray-700">كلمة المرور:</span>{' '}
-                          <span className="text-purple-600 font-mono font-bold">{user.password}</span>
+                          <span className="font-semibold text-foreground">كلمة المرور:</span>{' '}
+                          <span className="text-gold-dark font-mono font-bold">{user.password}</span>
                         </p>
                       </div>
                     </div>
@@ -187,7 +187,7 @@ export function CreateDemoUsers() {
 
             <button
               onClick={() => navigate('/')}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-purple-700 transition-all"
+              className="w-full bg-gradient-to-r from-primary-bright to-primary-dark text-white py-4 rounded-xl font-bold text-lg hover:from-primary hover:to-primary-dark transition-all"
             >
               الانتقال إلى صفحة تسجيل الدخول
             </button>

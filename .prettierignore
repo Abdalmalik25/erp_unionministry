@@ -1,0 +1,9 @@
+dist
+node_modules
+*.min.js
+*.log
+.env.local
+.env.production
+coverage
+.vscode
+.idea

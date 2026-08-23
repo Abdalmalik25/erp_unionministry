@@ -81,6 +81,35 @@ pnpm run backup
 
 ---
 
+## 📚 فهرس وثائق المشروع (Documentation Index)
+
+> قبل أي تطوير، اقرأ الوثيقة المناسبة أولاً.
+
+### 📋 وثائق المتطلبات (Requirements)
+| الوثيقة | الوصف | الحالة |
+|:---|:---|:---:|
+| [`MIGRANT_WORKERS_MODULE_REQUIREMENTS.md`](./MIGRANT_WORKERS_MODULE_REQUIREMENTS.md) | **🆕 وحدة العمالة اليمنية المهاجرة** — متطلبات كاملة: TypeScript types، Supabase schema، API، صلاحيات، خارطة تنفيذ | `📝 Pending` |
+| [`ENTERPRISE_REENGINEERING.md`](./ENTERPRISE_REENGINEERING.md) | إعادة هندسة المنصة — المعمارية الموحدة والكيانات المؤسسية | `✅ Done` |
+| [`ENTERPRISE_ENHANCEMENT_PLAN.md`](./ENTERPRISE_ENHANCEMENT_PLAN.md) | خطة التحسين المؤسسي | `✅ Done` |
+
+### 🚀 وثائق الإنتاج والنشر
+| الوثيقة | الوصف |
+|:---|:---|
+| [`FINAL_PRODUCTION_SYSTEM.md`](./FINAL_PRODUCTION_SYSTEM.md) | النظام الكامل — مرجع المطوّر الشامل |
+| [`DEPLOYMENT.md`](./DEPLOYMENT.md) | دليل النشر على Vercel |
+| [`SECURITY.md`](./SECURITY.md) | معايير الأمان الحكومي |
+| [`PERFORMANCE.md`](./PERFORMANCE.md) | تحسينات الأداء |
+
+### 🔒 وثائق الأمان والبنية
+| الوثيقة | الوصف |
+|:---|:---|
+| [`SECURITY_PRODUCTION.md`](./SECURITY_PRODUCTION.md) | إعدادات أمان الإنتاج |
+| [`DATABASE_MIGRATION_ANALYSIS.md`](./DATABASE_MIGRATION_ANALYSIS.md) | تحليل هجرة قاعدة البيانات |
+| [`DATA_IMPORT_SAFETY.md`](./DATA_IMPORT_SAFETY.md) | معايير أمان استيراد البيانات |
+
+---
+
 **الإصدار:** 2.0.0 Enterprise  
-**تاريخ:** يوليو 2026  
-**الحالة:** ✅ جاهز للعمل الحقيقي 100%
+**تاريخ:** أغسطس 2026  
+**الحالة:** ✅ جاهز للعمل الحقيقي 100%  
+**وحدة العمالة المهاجرة:** 📝 بانتظار التنفيذ

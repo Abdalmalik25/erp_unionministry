@@ -1,167 +1,1430 @@
-/* ============================================================
-   Print Styles — أنماط الطباعة الحكومية
-   UnionSphere Enterprise Platform
-   ============================================================ */
+/**
+ * print.css - النسخة الذهبية النهائية (v3.0 Ultimate)
+ * منصة قطاع العمل - وزارة الشؤون الاجتماعية والعمل
+ * 
+ * 📌 الميزات الفائقة للعمل الحقيقي:
+ * ─────────────────────────────────────────────
+ * ✅ إدارة ذكية للصفحات (أولى، زوجية، فردية، فارغة)
+ * ✅ ترقيم تلقائي مع إجمالي الصفحات (Page X of Y)
+ * ✅ ترويسة وتذييل رسميان مع شعار ونص وزارة
+ * ✅ طباعة مزدوجة الوجه (Duplex) بهوامش كتب احترافية
+ * ✅ تحويل الجداول إلى قوالب ورقية مع تكرار الرأس والتذييل
+ * ✅ تنسيق فاخر للشهادات (حدود ذهبية مزدوجة، ختم، توقيعات)
+ * ✅ العلامة المائية (Watermark) الرقمية للوثائق السرية
+ * ✅ إجبار الثيم الفاتح وتجاوز الوضع الداكن نهائياً
+ * ✅ دقيق جداً في تحويل وحدات الشاشة (px) إلى وحدات الطباعة (pt)
+ * ✅ توافق 100% مع Tailwind / Bootstrap بدون تعارضات
+ * ✅ دعم الطباعة الأحادية (Monochrome) والتباين العالي
+ * ✅ كلاسات مساعدة فائقة (print-only, no-print, page-break, إلخ)
+ */
 
+/* ============================================================
+   1. إعدادات الصفحة (أذكى إدارة للصفحات)
+   ============================================================ */
+@page {
+  /* إجبار نظام الألوان على الفاتح (Light) للطباعة */
+  color-scheme: light;
+
+  /* حجم الصفحة وهوامش احترافية */
+  size: A4 portrait;
+  margin: 18mm 14mm 22mm;
+
+  /* إعدادات الترقيم التلقائي */
+  counter-increment: page;
+  counter-reset: page 1;
+
+  /* الخط الأساسي للترويسات */
+  font-family: 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif;
+}
+
+/* ---- الصفحة الأولى (غلاف أو ترويسة خاصة) ---- */
+@page :first {
+  margin-top: 24mm;
+  margin-bottom: 24mm;
+
+  /* إخفاء الترقيم من الصفحة الأولى (نظافة) */
+  @top-center {
+    content: none;
+  }
+
+  @bottom-center {
+    content: none;
+  }
+}
+
+/* ---- الصفحات الفردية (Recto - يمنى في RTL) ---- */
+@page :right {
+  margin-left: 22mm;
+  margin-right: 12mm;
+
+  @top-center {
+    content: "▍ " counter(page) " / " counter(pages);
+    font-size: 9pt;
+    color: #6B7280;
+    font-weight: 600;
+    letter-spacing: 0.5pt;
+    border-bottom: 0.5pt solid #D1D5DB;
+    padding-bottom: 4pt;
+    width: 100%;
+  }
+
+  @bottom-center {
+    content: "وزارة الشؤون الاجتماعية والعمل - وثيقة رسمية - نسخة مطبوعة";
+    font-size: 7.5pt;
+    color: #9CA3AF;
+    border-top: 0.5pt solid #D1D5DB;
+    padding-top: 4pt;
+    width: 100%;
+  }
+}
+
+/* ---- الصفحات الزوجية (Verso - يسرى في RTL) ---- */
+@page :left {
+  margin-right: 22mm;
+  margin-left: 12mm;
+
+  @top-center {
+    content: "▍ " counter(page) " / " counter(pages);
+    font-size: 9pt;
+    color: #6B7280;
+    font-weight: 600;
+    letter-spacing: 0.5pt;
+    border-bottom: 0.5pt solid #D1D5DB;
+    padding-bottom: 4pt;
+    width: 100%;
+  }
+
+  @bottom-center {
+    content: "وزارة الشؤون الاجتماعية والعمل - وثيقة رسمية - نسخة مطبوعة";
+    font-size: 7.5pt;
+    color: #9CA3AF;
+    border-top: 0.5pt solid #D1D5DB;
+    padding-top: 4pt;
+    width: 100%;
+  }
+}
+
+/* ---- الصفحات الفارغة (بدون ترقيم أو تذييل) ---- */
+@page :blank {
+  @top-center {
+    content: none;
+  }
+
+  @bottom-center {
+    content: none;
+  }
+}
+
+/* ---- دعم الطباعة على ورق A5 أو أصغر (تلقائي) ---- */
+@page A5 {
+  size: A5;
+  margin: 12mm 10mm 16mm;
+}
+
+@page A3 {
+  size: A3 landscape;
+  margin: 16mm 14mm 20mm;
+}
+
+/* ============================================================
+   2. البيئة الأساسية (إجبار الفاتح + إعادة ضبط دقيق)
+   ============================================================ */
 @media print {
-  /* إخفاء عناصر التنقل والأشرطة الجانبية */
+
+  /* إجبار كل شيء على الثيم الفاتح وبتباين عالٍ */
+  html,
+  body {
+    color-scheme: light !important;
+    background: #ffffff !important;
+    color: #111111 !important;
+    direction: rtl;
+    font-family: 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.65;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* إعادة تعيين كل العناصر بشكل قاطع للطباعة */
+  * {
+    background: transparent !important;
+    color: #111111 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    border-color: #D1D5DB !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    transition: none !important;
+    animation: none !important;
+  }
+
+  /* إلغاء أي تأثيرات من Globals CSS أو Tailwind */
+  .shadow,
+  .shadow-sm,
+  .shadow-md,
+  .shadow-lg,
+  .shadow-xl {
+    box-shadow: none !important;
+  }
+
+  .bg-gray-50,
+  .bg-gray-100,
+  .bg-gray-200 {
+    background: transparent !important;
+  }
+
+  /* منع قطع النصوص بشكل مفاجئ */
+  p,
+  blockquote,
+  li,
+  figcaption,
+  .text-block {
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* منع قطع العناوين عن محتواها */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    page-break-after: avoid;
+    page-break-inside: avoid;
+    font-weight: 700;
+    color: #000000 !important;
+    line-height: 1.3;
+  }
+
+  h1 {
+    font-size: 18pt;
+  }
+
+  h2 {
+    font-size: 15pt;
+  }
+
+  h3 {
+    font-size: 13pt;
+  }
+
+  h4 {
+    font-size: 11.5pt;
+  }
+
+  h1::after,
+  h2::after {
+    content: '';
+    display: block;
+    width: 48pt;
+    height: 2.5pt;
+    background: #C9A84C !important;
+    margin-block: 4pt 10pt;
+  }
+
+  /* تجنب قطع العناصر الرئيسية */
+  img,
+  table,
+  figure,
+  .card,
+  .print-avoid-break,
+  .entity-card,
+  .signature-block {
+    page-break-inside: avoid;
+  }
+
+  /* معالجة العناصر العائمة */
+  .clearfix::after {
+    content: '';
+    display: table;
+    clear: both;
+  }
+}
+
+/* ============================================================
+   3. إخفاء وإظهار العناصر (ذكاء كامل)
+   ============================================================ */
+@media print {
+
+  /* ── إخفاء كل ما هو تفاعلي ── */
   nav,
   aside,
   .sidebar,
   .no-print,
   [data-no-print],
-  .print\\:hidden {
+  .print\:hidden,
+  .btn,
+  button,
+  input,
+  textarea,
+  select,
+  .form-actions,
+  .navbar,
+  .footer-links,
+  .dropdown-menu,
+  .modal-close,
+  .toast-container,
+  .scroll-top,
+  .sticky-header,
+  .mobile-menu {
     display: none !important;
   }
 
-  /* إعدادات الصفحة */
-  @page {
-    size: A4;
-    margin: 15mm 12mm 18mm;
+  /* ── إظهار عناصر الطباعة فقط ── */
+  .print-only,
+  [data-print-only] {
+    display: block !important;
   }
 
-  @page :first {
-    margin-top: 10mm;
+  .print-inline {
+    display: inline !important;
   }
 
-  body {
-    font-family: 'Segoe UI', Tahoma, 'Arial', sans-serif;
-    direction: rtl;
-    color: #111 !important;
-    background: white !important;
-    font-size: 11pt;
-    line-height: 1.5;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
+  .print-flex {
+    display: flex !important;
   }
 
-  /* طباعة الألوان الخلفية بشكل صحيح */
-  * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
+  .print-grid {
+    display: grid !important;
   }
 
-  /* الجداول */
-  table {
+  .print-inline-flex {
+    display: inline-flex !important;
+  }
+
+  /* ── إجبار عرض بعض العناصر المخفية بشدة ── */
+  .print-force-show {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+}
+
+/* ============================================================
+   4. النماذج والحقول (عرض البيانات كنصوص)
+   ============================================================ */
+@media print {
+  .form-control {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    font-weight: 600;
+    color: #000000 !important;
+    min-height: auto !important;
+    box-shadow: none !important;
+  }
+
+  .form-control::placeholder {
+    color: transparent !important;
+  }
+
+  .form-control.is-error {
+    border: none !important;
+    color: #991B1B !important;
+  }
+
+  .form-label {
+    font-weight: 700;
+    color: #000000 !important;
+    margin-block-end: 2pt !important;
+  }
+
+  /* تحويل الـ Select إلى نص عادي */
+  select.form-control {
+    background-image: none !important;
+    padding: 0 !important;
+    appearance: none !important;
+  }
+
+  select.form-control option:not(:checked) {
+    display: none !important;
+  }
+
+  /* مربعات الاختيار والراديو تتحول إلى نصوص */
+  input[type="checkbox"]+label::before,
+  input[type="radio"]+label::before {
+    content: "✓ " !important;
+    font-weight: 700;
+  }
+
+  input[type="checkbox"]:not(:checked)+label::before {
+    content: "☐ " !important;
+  }
+
+  input[type="radio"]:not(:checked)+label::before {
+    content: "○ " !important;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    display: none !important;
+  }
+}
+
+/* ============================================================
+   5. الجداول الاحترافية (أدق معالجة للجداول)
+   ============================================================ */
+@media print {
+
+  .table-wrap,
+  .overflow-x-auto {
+    overflow: visible !important;
+    max-width: 100% !important;
+    border: none !important;
+  }
+
+  .table {
     border-collapse: collapse !important;
     width: 100% !important;
-    page-break-inside: auto;
+    font-size: 9.5pt;
+    border: 1px solid #D1D5DB !important;
   }
 
-  tr {
+  .table thead {
+    display: table-header-group;
+    background: #0A2540 !important;
+  }
+
+  .table thead th {
+    background: #0A2540 !important;
+    color: #ffffff !important;
+    border: 1px solid #0A2540 !important;
+    padding: 5pt 8pt !important;
+    font-weight: 700;
+    text-align: start;
+    text-transform: uppercase;
+    font-size: 8pt;
+    letter-spacing: 0.5pt;
+  }
+
+  .table tbody td {
+    padding: 4pt 8pt !important;
+    border: 1px solid #D1D5DB !important;
+    text-align: start;
+    vertical-align: middle;
+    background: #ffffff !important;
+  }
+
+  /* تظليل الصفوف بشكل لطيف للورق */
+  .table tbody tr:nth-child(even) td {
+    background: #F8FAFC !important;
+  }
+
+  .table tbody tr:nth-child(odd) td {
+    background: #ffffff !important;
+  }
+
+  .table tbody tr {
     page-break-inside: avoid;
     page-break-after: auto;
   }
 
-  thead {
-    display: table-header-group;
-  }
-
-  tfoot {
+  .table tfoot {
     display: table-footer-group;
+    font-weight: 700;
+    border-top: 2pt solid #0A2540 !important;
+    background: #F1F5F9 !important;
   }
 
-  th {
-    background-color: #1E3A8A !important;
-    color: white !important;
-    padding: 5pt 8pt !important;
-    font-weight: bold;
-    text-align: right;
-    border: 1px solid #1E3A8A !important;
-  }
-
-  td {
+  .table tfoot td {
     padding: 4pt 8pt !important;
-    border: 1px solid #e5e7eb !important;
-    text-align: right;
+    border: 1px solid #D1D5DB !important;
+    background: #F1F5F9 !important;
   }
 
-  tr:nth-child(even) td {
-    background-color: #eff6ff !important;
+  /* جداول صغيرة الحجم */
+  .table-sm td,
+  .table-sm th {
+    font-size: 7.5pt !important;
+    padding: 2pt 5pt !important;
   }
 
-  /* الروابط — لا تطبع URL */
+  /* جداول بدون حدود داخلية (أنيقة) */
+  .table-borderless td,
+  .table-borderless th {
+    border: none !important;
+  }
+
+  .table-borderless td {
+    padding: 3pt 4pt !important;
+  }
+}
+
+/* ============================================================
+   6. البطاقات والعناصر الرسمية (فخامة ورقية)
+   ============================================================ */
+@media print {
+  .card {
+    border: 1pt solid #D1D5DB !important;
+    border-radius: 6pt !important;
+    padding: 12pt !important;
+    margin-block-end: 12pt !important;
+    box-shadow: 0 1pt 4pt rgba(0, 0, 0, 0.04) !important;
+    background: #ffffff !important;
+    page-break-inside: avoid;
+  }
+
+  .card-header {
+    border-bottom: 1pt solid #E5E7EB !important;
+    padding-block-end: 6pt !important;
+    margin-block-end: 8pt !important;
+    font-weight: 700;
+    font-size: 11pt;
+    color: #000000 !important;
+  }
+
+  .card-body {
+    padding: 0 !important;
+  }
+
+  .card-footer {
+    border-top: 1pt solid #E5E7EB !important;
+    padding-block-start: 6pt !important;
+    margin-block-start: 8pt !important;
+  }
+
+  /* ── البطاقة الذهبية (VIP) ── */
+  .card-gold {
+    border: 2.5pt solid #C9A84C !important;
+    border-radius: 8pt !important;
+    padding: 16pt !important;
+    background: #FFFDF7 !important;
+  }
+
+  .card-gold .card-header {
+    color: #A8892E !important;
+    border-bottom-color: #C9A84C !important;
+    font-size: 13pt;
+  }
+
+  /* ── البطاقة الزجاجية تتحول إلى بطاقة عادية ── */
+  .card-glass {
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: 1pt solid #D1D5DB !important;
+  }
+
+  /* ── كيان (Entity Card) ── */
+  .entity-card {
+    border: 2pt solid #0A2540 !important;
+    border-radius: 8pt;
+    padding: 14pt;
+    page-break-inside: avoid;
+    background: #ffffff !important;
+  }
+}
+
+/* ============================================================
+   7. الشهادات والتكريمات (أرقى تصميم للشهادات)
+   ============================================================ */
+@media print {
+  .certificate {
+    border: 6pt double #C9A84C !important;
+    border-radius: 18pt;
+    padding: 28pt 36pt;
+    page-break-inside: avoid;
+    background: #ffffff !important;
+    box-shadow: 0 0 0 2pt #FEF3C7, 0 0 0 6pt #ffffff, 0 0 0 8pt #C9A84C !important;
+    text-align: center;
+    position: relative;
+  }
+
+  .certificate .seal {
+    font-size: 52pt;
+    color: #C9A84C !important;
+    opacity: 0.25;
+    position: absolute;
+    inset: 20pt;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    transform: rotate(-15deg);
+    pointer-events: none;
+    font-family: 'Georgia', serif;
+  }
+
+  .certificate h1 {
+    font-size: 28pt;
+    color: #0A2540 !important;
+    margin-block: 6pt 4pt;
+    font-weight: 900;
+  }
+
+  .certificate h1::after {
+    content: '';
+    width: 80pt;
+    height: 3pt;
+    background: #C9A84C !important;
+    margin: 6pt auto 12pt;
+    display: block;
+  }
+
+  .certificate .subtitle {
+    font-size: 12pt;
+    color: #4B5563 !important;
+    margin-block-end: 12pt;
+  }
+
+  .certificate .recipient-name {
+    font-size: 22pt;
+    font-weight: 800;
+    color: #0A2540 !important;
+    border-bottom: 1.5pt solid #C9A84C;
+    display: inline-block;
+    padding-block: 2pt 6pt;
+    margin-block: 8pt 4pt;
+  }
+
+  .certificate .signature-line {
+    display: inline-block;
+    width: 140pt;
+    border-bottom: 1.5pt solid #000000;
+    margin-block: 4pt 0;
+  }
+
+  .certificate .signature-label {
+    font-size: 8pt;
+    color: #6B7280 !important;
+    display: block;
+  }
+
+  /* ختم دائري للشهادة */
+  .certificate .stamp-circle {
+    display: inline-block;
+    border: 3pt double #0A2540 !important;
+    border-radius: 50%;
+    padding: 10pt 12pt;
+    font-weight: 700;
+    font-size: 8pt;
+    color: #0A2540 !important;
+    text-align: center;
+    width: 80pt;
+    height: 80pt;
+    line-height: 1.4;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transform: rotate(-10deg);
+    margin-block-start: 12pt;
+    background: #ffffff !important;
+  }
+}
+
+/* ============================================================
+   8. الترويسة والتذييل الرسميان (مع شعار نصي)
+   ============================================================ */
+@media print {
+  .gov-header {
+    border-bottom: 3pt solid #0A2540 !important;
+    padding-block-end: 10pt;
+    margin-block-end: 18pt;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    page-break-inside: avoid;
+  }
+
+  .gov-header .logo-area {
+    display: flex;
+    align-items: center;
+    gap: 10pt;
+  }
+
+  .gov-header .logo-icon {
+    font-size: 28pt;
+    color: #0A2540 !important;
+  }
+
+  .gov-header .logo-text {
+    font-size: 16pt;
+    font-weight: 800;
+    color: #0A2540 !important;
+    line-height: 1.2;
+  }
+
+  .gov-header .logo-text small {
+    font-size: 8pt;
+    font-weight: 400;
+    color: #4B5563 !important;
+    display: block;
+  }
+
+  .gov-header .header-ref {
+    font-size: 8pt;
+    color: #6B7280 !important;
+    text-align: end;
+    border: 1pt solid #D1D5DB;
+    padding: 2pt 8pt;
+    border-radius: 2pt;
+  }
+
+  .gov-footer {
+    border-top: 1.5pt solid #D1D5DB !important;
+    padding-block-start: 8pt;
+    margin-block-start: 18pt;
+    font-size: 8pt;
+    color: #6B7280 !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4pt;
+  }
+
+  .gov-footer .footer-left {
+    display: flex;
+    gap: 12pt;
+  }
+
+  .gov-footer .footer-right {
+    font-weight: 600;
+    color: #0A2540 !important;
+  }
+}
+
+/* ============================================================
+   9. التوقيعات والختم (رسمية للغاية)
+   ============================================================ */
+@media print {
+  .signature-block {
+    margin-block-start: 28pt;
+    page-break-inside: avoid;
+    display: flex;
+    gap: 30pt;
+    flex-wrap: wrap;
+  }
+
+  .signature-item {
+    flex: 1;
+    min-width: 140pt;
+  }
+
+  .signature-item .label {
+    font-size: 8pt;
+    color: #6B7280 !important;
+    border-bottom: 1pt solid #D1D5DB;
+    padding-block-end: 2pt;
+    margin-block-end: 4pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5pt;
+  }
+
+  .signature-item .line {
+    width: 140pt;
+    border-bottom: 1.5pt solid #000000;
+    margin-block: 14pt 4pt;
+  }
+
+  .signature-item .name {
+    font-weight: 700;
+    font-size: 11pt;
+    color: #000000 !important;
+  }
+
+  .signature-item .title {
+    font-size: 8.5pt;
+    color: #4B5563 !important;
+  }
+
+  .signature-item .date {
+    font-size: 8pt;
+    color: #6B7280 !important;
+    margin-block-start: 4pt;
+  }
+
+  /* ختم الوزارة (دائري) */
+  .gov-stamp {
+    display: inline-block;
+    border: 3pt double #0A2540 !important;
+    border-radius: 50%;
+    padding: 10pt 12pt;
+    font-weight: 700;
+    font-size: 8pt;
+    color: #0A2540 !important;
+    text-align: center;
+    width: 90pt;
+    height: 90pt;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transform: rotate(-12deg);
+    opacity: 0.8;
+    background: #ffffff !important;
+    line-height: 1.4;
+  }
+
+  .gov-stamp .stamp-inner {
+    border: 0.5pt dashed #0A2540;
+    border-radius: 50%;
+    padding: 6pt;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+}
+
+/* ============================================================
+   10. العلامة المائية (Watermark) للوثائق السرية
+   ============================================================ */
+@media print {
+  .watermark {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.04;
+    font-size: 48pt;
+    font-weight: 900;
+    color: #0A2540 !important;
+    transform: rotate(-30deg) scale(1.2);
+    letter-spacing: 8pt;
+    text-transform: uppercase;
+    font-family: 'Georgia', serif;
+  }
+
+  .watermark.draft {
+    content: "مسودة";
+    opacity: 0.08;
+    color: #DC2626 !important;
+  }
+
+  .watermark.confidential {
+    content: "سري للغاية";
+    opacity: 0.06;
+    color: #991B1B !important;
+  }
+
+  .watermark.approved {
+    content: "معتمد";
+    opacity: 0.05;
+    color: #16A34A !important;
+  }
+
+  /* استخدام ::after إذا لم يكن العنصر موجوداً في HTML */
+  body.confidential::after {
+    content: "سري للغاية";
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 52pt;
+    font-weight: 900;
+    color: #991B1B !important;
+    opacity: 0.05;
+    transform: rotate(-30deg) scale(1.4);
+    pointer-events: none;
+    z-index: 9999;
+    letter-spacing: 10pt;
+    font-family: 'Georgia', serif;
+  }
+}
+
+/* ============================================================
+   11. الروابط والمراجع (ذكية في الطباعة)
+   ============================================================ */
+@media print {
+  a {
+    color: #000000 !important;
+    text-decoration: underline !important;
+    text-underline-offset: 2pt;
+    text-decoration-color: #C9A84C !important;
+  }
+
+  /* لا نطبع الـ URL إلا إذا كانت مرجعاً */
   a[href]::after {
     content: none !important;
   }
 
-  /* منع قطع العناصر الرئيسية */
-  h1, h2, h3, h4 {
-    page-break-after: avoid;
+  a.reference-link[href]::after,
+  a.footnote[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 7.5pt;
+    color: #6B7280 !important;
+    font-weight: 400;
+    text-decoration: none;
   }
 
-  .print-avoid-break {
-    page-break-inside: avoid;
+  /* إخفاء الروابط الداخلية */
+  a[href^="#"]::after,
+  a[href^="javascript"]::after {
+    content: none !important;
+  }
+}
+
+/* ============================================================
+   12. حالات الصفوف والشارات (ألوان ورقية واضحة)
+   ============================================================ */
+@media print {
+
+  .badge,
+  .status-badge {
+    border: 1pt solid #000000 !important;
+    border-radius: 12pt !important;
+    padding: 0.5pt 8pt !important;
+    font-weight: 700;
+    font-size: 7pt !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5pt;
+    background: #F3F4F6 !important;
+    color: #000000 !important;
+    display: inline-block;
   }
 
-  .print-page-break {
-    page-break-before: always;
+  .badge-success,
+  .status-active {
+    background: #DCFCE7 !important;
+    color: #166534 !important;
+    border-color: #166534 !important;
   }
 
-  /* بطاقة الكيان */
-  .entity-card {
-    border: 2px solid #1E3A8A !important;
-    border-radius: 8pt;
-    padding: 12pt;
-    page-break-inside: avoid;
+  .badge-warning,
+  .status-suspended {
+    background: #FEF9C3 !important;
+    color: #854D0E !important;
+    border-color: #854D0E !important;
   }
 
-  /* شهادات */
-  .certificate {
-    border: 4pt double #1E3A8A !important;
-    border-radius: 12pt;
-    padding: 20pt;
-    page-break-inside: avoid;
+  .badge-error,
+  .status-dissolved {
+    background: #FEE2E2 !important;
+    color: #991B1B !important;
+    border-color: #991B1B !important;
   }
 
-  /* ترويسة الحكومة */
-  .gov-header {
-    border-bottom: 2pt solid #1E3A8A !important;
-    padding-bottom: 8pt;
-    margin-bottom: 12pt;
+  .badge-primary,
+  .status-approved {
+    background: #DBEAFE !important;
+    color: #1E3A8A !important;
+    border-color: #1E3A8A !important;
   }
 
-  /* تذييل الحكومة */
+  .badge-gold {
+    background: #FEF3C7 !important;
+    color: #A8892E !important;
+    border-color: #A8892E !important;
+  }
+
+  .badge-teal {
+    background: #CCFBF1 !important;
+    color: #0F766E !important;
+    border-color: #0F766E !important;
+  }
+
+  /* نقاط الحالة */
+  .status-dot {
+    display: inline-block;
+    width: 6pt;
+    height: 6pt;
+    border-radius: 50%;
+    border: 0.5pt solid #000;
+    margin-inline-end: 4pt;
+    vertical-align: middle;
+  }
+
+  .status-dot.active {
+    background: #16A34A !important;
+  }
+
+  .status-dot.inactive {
+    background: #9CA3AF !important;
+  }
+
+  .status-dot.pending {
+    background: #F59E0B !important;
+  }
+}
+
+/* ============================================================
+   13. خطوط وأرقام (دعم RTL + أحادي المسافة)
+   ============================================================ */
+@media print {
+
+  .font-mono,
+  .financial-number,
+  .data-number,
+  .ltr-print {
+    font-family: 'JetBrains Mono', 'Cascadia Code', 'Courier New', monospace !important;
+    letter-spacing: 0.2pt;
+    direction: ltr !important;
+    text-align: left !important;
+    unicode-bidi: isolate;
+  }
+
+  /* الأرقام العربية والإنجليزية معاً */
+  .mixed-numbers {
+    direction: ltr;
+    unicode-bidi: embed;
+  }
+}
+
+/* ============================================================
+   14. أدوات مساعدة خاصة بالطباعة (Print Utilities)
+   ============================================================ */
+@media print {
+  .print-text-center {
+    text-align: center !important;
+  }
+
+  .print-text-start {
+    text-align: start !important;
+  }
+
+  .print-text-end {
+    text-align: end !important;
+  }
+
+  .print-text-justify {
+    text-align: justify !important;
+  }
+
+  .print-mt-1 {
+    margin-block-start: 4pt !important;
+  }
+
+  .print-mt-2 {
+    margin-block-start: 8pt !important;
+  }
+
+  .print-mt-3 {
+    margin-block-start: 12pt !important;
+  }
+
+  .print-mt-4 {
+    margin-block-start: 16pt !important;
+  }
+
+  .print-mt-5 {
+    margin-block-start: 24pt !important;
+  }
+
+  .print-mb-1 {
+    margin-block-end: 4pt !important;
+  }
+
+  .print-mb-2 {
+    margin-block-end: 8pt !important;
+  }
+
+  .print-mb-3 {
+    margin-block-end: 12pt !important;
+  }
+
+  .print-mb-4 {
+    margin-block-end: 16pt !important;
+  }
+
+  .print-p-1 {
+    padding: 4pt !important;
+  }
+
+  .print-p-2 {
+    padding: 8pt !important;
+  }
+
+  .print-p-3 {
+    padding: 12pt !important;
+  }
+
+  .print-p-4 {
+    padding: 16pt !important;
+  }
+
+  .print-w-full {
+    width: 100% !important;
+  }
+
+  .print-w-50 {
+    width: 50% !important;
+  }
+
+  .print-w-33 {
+    width: 33.333% !important;
+  }
+
+  .print-w-25 {
+    width: 25% !important;
+  }
+
+  .print-w-auto {
+    width: auto !important;
+  }
+
+  .print-border {
+    border: 1pt solid #000000 !important;
+  }
+
+  .print-border-top {
+    border-top: 1pt solid #000000 !important;
+  }
+
+  .print-border-bottom {
+    border-bottom: 1pt solid #000000 !important;
+  }
+
+  /* منع القطع */
+  .print-break-inside-avoid {
+    page-break-inside: avoid !important;
+  }
+
+  .print-break-before {
+    page-break-before: always !important;
+  }
+
+  .print-break-after {
+    page-break-after: always !important;
+  }
+
+  /* عرض العناصر كصف مرن */
+  .print-flex-row {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 12pt !important;
+  }
+
+  .print-flex-col {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6pt !important;
+  }
+
+  /* إخفاء الفائض */
+  .print-overflow-visible {
+    overflow: visible !important;
+  }
+}
+
+/* ============================================================
+   15. دعم RTL المتقدم (تجاوزات نهائية)
+   ============================================================ */
+@media print {
+
+  /* التأكد من أن الاتجاه الأساسي هو RTL */
+  body,
+  .container,
+  .row,
+  .card,
+  .table,
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  blockquote,
+  .gov-header,
   .gov-footer {
-    border-top: 1pt solid #d1d5db !important;
-    padding-top: 6pt;
-    margin-top: 12pt;
-    font-size: 8pt;
-    color: #6b7280 !important;
+    direction: rtl !important;
+    text-align: right !important;
   }
 
-  /* كتلة التوقيع */
-  .signature-block {
-    margin-top: 24pt;
-    page-break-inside: avoid;
+  /* إعادة ضبط العناصر التي تحتاج إلى LTR */
+  .ltr-print,
+  .financial-number,
+  .data-number,
+  .mixed-numbers,
+  .table .ltr-cell {
+    direction: ltr !important;
+    text-align: left !important;
+    unicode-bidi: isolate;
   }
 
-  /* ألوان الحالة */
-  .status-active    { background-color: #dcfce7 !important; color: #166534 !important; }
-  .status-suspended { background-color: #fef9c3 !important; color: #854d0e !important; }
-  .status-inactive  { background-color: #f3f4f6 !important; color: #374151 !important; }
-  .status-dissolved { background-color: #fee2e2 !important; color: #991b1b !important; }
+  /* هوامش RTL للصفحات */
+  @page :right {
+    margin-left: 22mm;
+    margin-right: 12mm;
+  }
 
-  /* مخفي في الشاشة مرئي في الطباعة */
-  .print-only {
+  @page :left {
+    margin-right: 22mm;
+    margin-left: 12mm;
+  }
+}
+
+/* ============================================================
+   16. التوافق مع Monochrome والتباين العالي
+   ============================================================ */
+@media print and (monochrome) {
+  * {
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    border-color: #000000 !important;
+  }
+
+  .badge,
+  .status-badge,
+  .card-gold,
+  .certificate,
+  .gov-stamp {
+    border-color: #000000 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .table thead th {
+    background: #000000 !important;
+    color: #ffffff !important;
+  }
+
+  .table tbody tr:nth-child(even) td {
+    background: #f0f0f0 !important;
+  }
+
+  h1::after,
+  h2::after {
+    background: #000000 !important;
+  }
+
+  .certificate .seal {
+    opacity: 0.1 !important;
+  }
+}
+
+@media print and (prefers-contrast: high) {
+  * {
+    border-color: #000000 !important;
+  }
+
+  .text-muted,
+  .gov-footer,
+  .signature-item .label {
+    color: #000000 !important;
+  }
+
+  .card {
+    border-width: 2pt !important;
+  }
+}
+
+/* ============================================================
+   17. تجاوزات Tailwind / Bootstrap (للحماية)
+   ============================================================ */
+@media print {
+
+  .container,
+  .container-fluid,
+  .row,
+  [class*="col-"] {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    flex: none !important;
+    width: 100% !important;
+  }
+
+  .flex,
+  .d-flex,
+  .d-grid,
+  .d-block {
     display: block !important;
   }
 
-  /* تقليص أحجام الخطوط للطباعة */
-  .print-sm { font-size: 9pt !important; }
-  .print-xs { font-size: 8pt !important; }
-}
+  .gap-1,
+  .gap-2,
+  .gap-3,
+  .gap-4,
+  .gap-5 {
+    gap: 4pt !important;
+  }
 
-/* أنماط مرئية فقط في الشاشة */
-@media screen {
-  .print-only {
+  .opacity-0,
+  .opacity-25,
+  .opacity-50,
+  .opacity-75 {
+    opacity: 1 !important;
+  }
+
+  .hidden {
     display: none !important;
   }
 
-  /* تحسين مظهر معاينة الطباعة */
-  .print-preview-page {
-    background: white;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
-    border-radius: 4px;
+  .block {
+    display: block !important;
+  }
+
+  .inline-block {
+    display: inline-block !important;
   }
 }
+
+/* ============================================================
+   18. معاينة الطباعة على الشاشة (Preview Mode)
+   ============================================================ */
+@media screen {
+  .print-preview-container {
+    background: #F1F5F9;
+    padding: 24pt;
+    min-height: 100vh;
+  }
+
+  .print-preview-page {
+    background: #ffffff;
+    max-width: 210mm;
+    margin: 0 auto;
+    padding: 18mm 14mm 22mm;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+    border-radius: 4pt;
+    min-height: 297mm;
+    position: relative;
+  }
+
+  .print-preview-page .watermark-preview {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48pt;
+    font-weight: 900;
+    color: #0A2540;
+    opacity: 0.03;
+    transform: rotate(-30deg);
+    pointer-events: none;
+    letter-spacing: 8pt;
+  }
+
+  /* شريط أدوات الطباعة */
+  .print-toolbar {
+    display: flex;
+    gap: 8pt;
+    padding: 10pt 16pt;
+    background: #ffffff;
+    border-bottom: 1pt solid #E5E7EB;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    flex-wrap: wrap;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+
+  .print-toolbar .btn-print-action {
+    padding: 6pt 16pt;
+    background: #0A2540;
+    color: #ffffff;
+    border-radius: 6pt;
+    font-weight: 600;
+    font-size: 10pt;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .print-toolbar .btn-print-action:hover {
+    background: #1A4B8C;
+  }
+
+  .print-toolbar .btn-print-action.gold {
+    background: #C9A84C;
+  }
+
+  .print-toolbar .btn-print-action.gold:hover {
+    background: #A8892E;
+  }
+}
+
+/* ============================================================
+   19. تحسينات دقيقة للطباعة (أدق التفاصيل)
+   ============================================================ */
+@media print {
+
+  /* منع ظهور مربعات التركيز */
+  *:focus,
+  *:focus-visible {
+    outline: none !important;
+  }
+
+  /* تحسين عرض الـ HR */
+  hr {
+    border: none !important;
+    border-top: 1.5pt solid #D1D5DB !important;
+    margin-block: 12pt !important;
+    background: transparent !important;
+    height: auto !important;
+  }
+
+  /* تحسين الاقتباسات */
+  blockquote {
+    border-inline-start: 3pt solid #C9A84C !important;
+    padding-inline-start: 12pt !important;
+    margin-inline-start: 4pt !important;
+    font-style: italic !important;
+    color: #1F2937 !important;
+    background: transparent !important;
+  }
+
+  /* تحسين القوائم */
+  ul,
+  ol {
+    padding-inline-start: 18pt !important;
+  }
+
+  li {
+    margin-block-end: 2pt !important;
+  }
+
+  /* تحسين الصور */
+  img {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+    border: 0.5pt solid #E5E7EB !important;
+    padding: 2pt !important;
+    background: #ffffff !important;
+  }
+
+  /* أرقام الصفحات في المحتوى (إن وجدت) */
+  .page-number {
+    color: #6B7280 !important;
+    font-size: 8pt !important;
+  }
+}
+
+/* ============================================================
+   20. التوثيق النهائي: قائمة الكلاسات السحرية للاستخدام
+   ============================================================ */
+/*
+   🚀 دليل الاستخدام السريع:
+
+   | الكلاس | الوظيفة |
+   |--------|---------|
+   | `.no-print` | يختفي تماماً في الطباعة |
+   | `.print-only` | يظهر فقط في الطباعة |
+   | `.print-avoid-break` | يمنع قطع العنصر عبر صفحتين |
+   | `.print-page-break` | يبدأ صفحة جديدة قبل العنصر |
+   | `.certificate` | يطبق تصميم شهادة فاخر (حدود ذهبية) |
+   | `.card-gold` | بطاقة بحدود ذهبية للطباعة |
+   | `.entity-card` | بطاقة كيان رسمية بحدود زرقاء |
+   | `.signature-block` | حاوية توقيعات رسمية |
+   | `.gov-stamp` | ختم دائري للوزارة |
+   | `.watermark` | علامة مائية (مع .draft, .confidential, .approved) |
+   | `.print-text-center` | توسيط النص في الطباعة |
+   | `.print-mt-4` | هامش علوي 16pt في الطباعة |
+   | `.print-w-50` | عرض 50% في الطباعة |
+   | `.ltr-print` | اتجاه LTR للأرقام في الطباعة |
+   | `.table-sm` | جدول صغير الحجم للطباعة |
+   | `.table-borderless` | جدول بدون حدود داخلية |
+   | `.print-preview-page` | معاينة الصفحة على الشاشة |
+
+   💡 نصائح للعمل الحقيقي:
+   - ضع `class="no-print"` على الأزرار والقوائم.
+   - ضع `class="print-only"` على الترويسات والتذييلات المخفية.
+   - استخدم `class="certificate"` مع `<div>` لطباعة شهادات.
+   - أضف `class="confidential"` على `<body>` لعلامة مائية تلقائية.
+*/

@@ -1,276 +1,190 @@
-import { useState } from 'react';
-import { FileSearch, Filter, Download } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { FileSearch, Download, RefreshCw } from 'lucide-react';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { toast } from 'sonner';
 
-const mockAuditLogs = [
-  {
-    id: 1,
-    user: 'أحمد محمد (وكيل الوزارة)',
-    operation: 'إضافة',
-    table: 'النقابات',
-    recordId: 'YE-2026-005',
-    oldData: null,
-    newData: { name: 'نقابة الصحفيين', type: 'مهنية' },
-    ip: '192.168.1.10',
-    timestamp: '2026-04-30 10:30:15',
-  },
-  {
-    id: 2,
-    user: 'فاطمة علي (مختص أول)',
-    operation: 'تعديل',
-    table: 'الأعضاء',
-    recordId: '01011234567',
-    oldData: { status: 'نشط' },
-    newData: { status: 'موقف' },
-    ip: '192.168.1.25',
-    timestamp: '2026-04-30 09:15:42',
-  },
-  {
-    id: 3,
-    user: 'خالد حسن (مدير إدارة)',
-    operation: 'عرض',
-    table: 'الوثائق',
-    recordId: 'DOC-2026-003',
-    oldData: null,
-    newData: null,
-    ip: '192.168.1.18',
-    timestamp: '2026-04-30 08:45:20',
-  },
-  {
-    id: 4,
-    user: 'سارة محمود (مراجع)',
-    operation: 'موافقة',
-    table: 'الوثائق',
-    recordId: 'DOC-2026-001',
-    oldData: { status: 'قيد المراجعة' },
-    newData: { status: 'معتمدة' },
-    ip: '192.168.1.32',
-    timestamp: '2026-04-29 16:20:10',
-  },
-  {
-    id: 5,
-    user: 'محمد عبدالله (مدير مكتب)',
-    operation: 'حذف',
-    table: 'الأنشطة',
-    recordId: 'ACT-2026-004',
-    oldData: { name: 'ورشة ملغاة', status: 'ملغاة' },
-    newData: null,
-    ip: '192.168.1.45',
-    timestamp: '2026-04-29 14:10:30',
-  },
-];
+interface AuditLogEntry {
+  id: string;
+  user_id: string;
+  action: string;
+  resource: string;
+  resource_id: string;
+  details: any;
+  ip_address: string;
+  created_at: string;
+}
+
+const ACTION_LABELS: Record<string, string> = {
+  view: 'عرض', create: 'إضافة', update: 'تعديل', delete: 'حذف', export: 'تصدير', import: 'استيراد', print: 'طباعة',
+};
+
+const RESOURCE_LABELS: Record<string, string> = {
+  member: 'الأعضاء', members: 'الأعضاء', service_request: 'طلبات الخدمة', service_requests: 'طلبات الخدمة',
+  compliance_alert: 'تنبيهات الامتثال', fee_payment: 'المدفوعات', worker_profile: 'ملفات العمال',
+  dispatch: 'الرساليات', reduction_request: 'طلبات التخفيض', activity: 'الأنشطة', violation: 'المخالفات',
+  election: 'الانتخابات', document: 'الوثائق', entity: 'النقابات والمنظمات', profession: 'المهن', report: 'التقارير',
+  commercial_establishment: 'المنشآت التجارية', license: 'التراخيص', inspection: 'الجولات التفتيشية',
+};
 
 export function AuditLog() {
-  const [filterUser, setFilterUser] = useState('الكل');
-  const [filterOperation, setFilterOperation] = useState('الكل');
-  const [filterTable, setFilterTable] = useState('الكل');
-  const [dateFrom, setDateFrom] = useState('2026-04-01');
-  const [dateTo, setDateTo] = useState('2026-04-30');
+  const [logs, setLogs] = useState<AuditLogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [filterAction, setFilterAction] = useState('');
+  const [filterResource, setFilterResource] = useState('');
+  const limit = 50;
 
-  const filteredLogs = mockAuditLogs.filter((log) => {
-    const matchesUser = filterUser === 'الكل' || log.user.includes(filterUser);
-    const matchesOperation = filterOperation === 'الكل' || log.operation === filterOperation;
-    const matchesTable = filterTable === 'الكل' || log.table === filterTable;
-    return matchesUser && matchesOperation && matchesTable;
-  });
+  const fetchLogs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+      if (filterAction) params.set('action', filterAction);
+      if (filterResource) params.set('resource', filterResource);
+      const r = await fetch(`/api/audit-log?${params.toString()}`);
+      if (r.ok) {
+        const data = await r.json();
+        setLogs(data.logs || []);
+        setTotal(data.total || 0);
+      }
+    } catch { toast.error('خطأ في تحميل سجل التدقيق'); }
+    finally { setLoading(false); }
+  }, [page, filterAction, filterResource]);
 
-  const getOperationColor = (operation: string) => {
-    switch (operation) {
-      case 'إضافة':
-        return 'bg-green-100 text-green-800';
-      case 'تعديل':
-        return 'bg-blue-100 text-blue-800';
-      case 'حذف':
-        return 'bg-red-100 text-red-800';
-      case 'عرض':
-        return 'bg-gray-100 text-gray-800';
-      case 'موافقة':
-        return 'bg-purple-100 text-purple-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  useEffect(() => { fetchLogs(); }, [fetchLogs]);
+
+  const stats = {
+    total,
+    create: logs.filter(l => l.action === 'create').length,
+    update: logs.filter(l => l.action === 'update').length,
+    delete: logs.filter(l => l.action === 'delete').length,
+    view: logs.filter(l => l.action === 'view').length,
+  };
+
+  const handleExport = () => {
+    const headers = ['التاريخ', 'المستخدم', 'العملية', 'الموارد', 'معرف السجل', 'IP'];
+    const rows = logs.map(l => [l.created_at, l.user_id || 'النظام', ACTION_LABELS[l.action] || l.action, RESOURCE_LABELS[l.resource] || l.resource, l.resource_id || '-', l.ip_address || '-']);
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `سجل_التدقيق_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    toast.success('تم التصدير بنجاح');
+  };
+
+  const getActionColor = (action: string) => {
+    switch (action) {
+      case 'create': return 'bg-success/15 text-success-dark';
+      case 'update': return 'bg-info/15 text-info-dark';
+      case 'delete': return 'bg-error/15 text-error';
+      case 'view': return 'bg-muted text-heading';
+      case 'export': return 'bg-gold/15 text-gold-dark';
+      case 'print': return 'bg-primary/15 text-primary-dark';
+      default: return 'bg-muted text-heading';
     }
   };
 
+  const totalPages = Math.ceil(total / limit);
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6" dir="rtl">
+      <PageHeader title="سجل التدقيق" subtitle="سجل شامل لجميع العمليات المنفذة في النظام (قراءة فقط)"
+        actions={<>
+          <button onClick={handleExport} className="flex items-center gap-2 bg-success text-white px-4 py-2 rounded-lg hover:bg-success-dark transition-colors text-sm font-semibold"><Download size={18} />تصدير</button>
+          <button onClick={fetchLogs} className="flex items-center gap-2 border border-border px-4 py-2 rounded-lg hover:bg-muted text-sm font-semibold"><RefreshCw size={16} className={loading ? 'animate-spin' : ''} />تحديث</button>
+        </>} />
+
+      <div className="bg-warning/10 border border-warning/30 rounded-xl p-4 flex items-start gap-3">
+        <FileSearch className="text-warning flex-shrink-0 mt-0.5" size={20} />
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">سجل التدقيق</h1>
-          <p className="text-sm text-gray-600 mt-1">
-            سجل شامل لجميع العمليات المنفذة في النظام (قراءة فقط)
-          </p>
-        </div>
-        <button className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors shadow-md">
-          <Download size={20} />
-          <span>تصدير السجل</span>
-        </button>
-      </div>
-
-      {/* Alert */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-start gap-3">
-        <FileSearch className="text-yellow-600 flex-shrink-0 mt-0.5" size={20} />
-        <div>
-          <p className="text-sm font-semibold text-yellow-800">تنويه أمني</p>
-          <p className="text-sm text-yellow-700 mt-1">
-            لا يمكن حذف أو تعديل أي سجل في سجل التدقيق. جميع البيانات محفوظة بشكل دائم للمراجعة والتدقيق.
-          </p>
+          <p className="text-sm font-semibold text-warning-dark">تنويه أمني</p>
+          <p className="text-sm text-warning-dark mt-1">لا يمكن حذف أو تعديل أي سجل في سجل التدقيق. جميع البيانات محفوظة بشكل دائم للمراجعة والتدقيق.</p>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-        <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-          <Filter size={18} />
-          تصفية السجلات
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        {[{ l: 'إجمالي السجلات', v: stats.total, c: 'text-heading' }, { l: 'إضافة', v: stats.create, c: 'text-success-dark' },
+          { l: 'تعديل', v: stats.update, c: 'text-primary-bright' }, { l: 'حذف', v: stats.delete, c: 'text-error' },
+          { l: 'عرض', v: stats.view, c: 'text-muted-foreground' }
+        ].map(s => (
+          <div key={s.l} className="bg-card rounded-lg shadow-sm p-4 border border-border">
+            <p className="text-xs text-muted-foreground">{s.l}</p>
+            <p className={`text-xl font-bold ${s.c}`}>{s.v}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-card rounded-xl shadow-sm p-4 border border-border">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-2">المستخدم</label>
-            <select
-              value={filterUser}
-              onChange={(e) => setFilterUser(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
-            >
-              <option>الكل</option>
-              <option>أحمد محمد</option>
-              <option>فاطمة علي</option>
-              <option>خالد حسن</option>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">نوع العملية</label>
+            <select value={filterAction} onChange={e => { setFilterAction(e.target.value); setPage(1); }} className="w-full px-3 py-2 border border-border rounded-lg text-sm">
+              <option value="">الكل</option>
+              {Object.entries(ACTION_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
           </div>
-
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-2">نوع العملية</label>
-            <select
-              value={filterOperation}
-              onChange={(e) => setFilterOperation(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
-            >
-              <option>الكل</option>
-              <option>إضافة</option>
-              <option>تعديل</option>
-              <option>حذف</option>
-              <option>عرض</option>
-              <option>موافقة</option>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">الموارد</label>
+            <select value={filterResource} onChange={e => { setFilterResource(e.target.value); setPage(1); }} className="w-full px-3 py-2 border border-border rounded-lg text-sm">
+              <option value="">الكل</option>
+              {[...new Set(logs.map(l => l.resource))].map(r => <option key={r} value={r}>{RESOURCE_LABELS[r] || r}</option>)}
             </select>
           </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-2">الجدول</label>
-            <select
-              value={filterTable}
-              onChange={(e) => setFilterTable(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
-            >
-              <option>الكل</option>
-              <option>النقابات</option>
-              <option>الأعضاء</option>
-              <option>الوثائق</option>
-              <option>الأنشطة</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-2">من تاريخ</label>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-2">إلى تاريخ</label>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
-            />
+          <div className="flex items-end">
+            <button onClick={() => { setFilterAction(''); setFilterResource(''); setPage(1); }} className="px-4 py-2 border border-border rounded-lg text-sm hover:bg-muted">مسح الفلاتر</button>
           </div>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
-          <p className="text-xs text-gray-600">إجمالي السجلات</p>
-          <p className="text-xl font-bold text-gray-800">{mockAuditLogs.length}</p>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
-          <p className="text-xs text-gray-600">عمليات إضافة</p>
-          <p className="text-xl font-bold text-green-600">
-            {mockAuditLogs.filter((l) => l.operation === 'إضافة').length}
-          </p>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
-          <p className="text-xs text-gray-600">عمليات تعديل</p>
-          <p className="text-xl font-bold text-blue-600">
-            {mockAuditLogs.filter((l) => l.operation === 'تعديل').length}
-          </p>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
-          <p className="text-xs text-gray-600">عمليات حذف</p>
-          <p className="text-xl font-bold text-red-600">
-            {mockAuditLogs.filter((l) => l.operation === 'حذف').length}
-          </p>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
-          <p className="text-xs text-gray-600">عمليات عرض</p>
-          <p className="text-xl font-bold text-gray-600">
-            {mockAuditLogs.filter((l) => l.operation === 'عرض').length}
-          </p>
-        </div>
-      </div>
-
-      {/* Audit Log Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700">المستخدم</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700">العملية</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700">الجدول</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700">معرف السجل</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700">البيانات القديمة</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700">البيانات الجديدة</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700">IP</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700">التوقيت</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredLogs.map((log) => (
-                <tr key={log.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 text-xs text-gray-800">{log.user}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${getOperationColor(log.operation)}`}>
-                      {log.operation}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-gray-800 font-semibold">{log.table}</td>
-                  <td className="px-4 py-3 text-xs text-gray-600 font-mono">{log.recordId}</td>
-                  <td className="px-4 py-3 text-xs text-gray-600">
-                    {log.oldData ? <code className="bg-gray-100 px-2 py-1 rounded">{JSON.stringify(log.oldData)}</code> : '-'}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-gray-600">
-                    {log.newData ? <code className="bg-gray-100 px-2 py-1 rounded">{JSON.stringify(log.newData)}</code> : '-'}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-gray-600 font-mono">{log.ip}</td>
-                  <td className="px-4 py-3 text-xs text-gray-600">{log.timestamp}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-          <p className="text-sm text-gray-600">عرض {filteredLogs.length} من {mockAuditLogs.length} سجل</p>
-          <div className="flex gap-2">
-            <button className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-100 text-sm">السابق</button>
-            <button className="px-3 py-1 bg-[#1E3A8A] text-white rounded-lg text-sm">1</button>
-            <button className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-100 text-sm">التالي</button>
-          </div>
-        </div>
+      <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+        {loading ? (
+          <div className="p-12 text-center"><div className="inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div><p className="text-muted-foreground">جاري التحميل...</p></div>
+        ) : logs.length === 0 ? (
+          <EmptyState title="لا توجد سجلات" description="لم يتم تسجيل أي عمليات بعد" icon={<FileSearch className="w-14 h-14" />} />
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-muted border-b border-border">
+                  <tr>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-foreground">التوقيت</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-foreground">المستخدم</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-foreground">العملية</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-foreground">الموارد</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-foreground">معرف السجل</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-foreground">التفاصيل</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-foreground">IP</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {logs.map(log => (
+                    <tr key={log.id} className="hover:bg-accent/50 transition-colors">
+                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{log.created_at ? new Date(log.created_at).toLocaleString('ar-YE') : '-'}</td>
+                      <td className="px-4 py-3 text-xs text-heading font-semibold">{log.user_id || 'النظام'}</td>
+                      <td className="px-4 py-3"><span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${getActionColor(log.action)}`}>{ACTION_LABELS[log.action] || log.action}</span></td>
+                      <td className="px-4 py-3 text-xs text-heading font-semibold">{RESOURCE_LABELS[log.resource] || log.resource}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground font-mono">{log.resource_id || '-'}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">
+                        {log.details ? <code className="bg-muted px-2 py-1 rounded text-[10px] max-w-[200px] truncate block">{typeof log.details === 'string' ? log.details : JSON.stringify(log.details)}</code> : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground font-mono">{log.ip_address || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="px-6 py-4 bg-muted border-t border-border flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">عرض {logs.length} من {total} سجل</p>
+              <div className="flex gap-2">
+                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1 border border-border rounded-lg hover:bg-accent text-sm disabled:opacity-50">السابق</button>
+                <span className="px-3 py-1 bg-primary text-white rounded-lg text-sm">{page}</span>
+                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="px-3 py-1 border border-border rounded-lg hover:bg-accent text-sm disabled:opacity-50">التالي</button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

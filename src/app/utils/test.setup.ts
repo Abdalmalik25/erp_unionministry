@@ -2,33 +2,31 @@
  * Test Setup - إعداد بيئة الاختبار
  */
 
-import { expect, afterEach } from 'vitest';
-import { cleanup } from '@testing-library/react';
-import '@testing-library/jest-dom';
+import { afterEach, beforeEach, describe, it, expect } from 'vitest';
 
-// Clean up after each test
-afterEach(() => {
-  cleanup();
-});
+const memoryStore: Record<string, string> = {};
 
-// Mock localStorage
-Object.defineProperty(window, 'localStorage', {
-  value: {
-    getItem: () => null,
-    setItem: () => {},
-    removeItem: () => {},
-    clear: () => {},
-  },
-  writable: true,
-});
+const mockStorage = {
+  getItem: (k: string) => memoryStore[k] || null,
+  setItem: (k: string, v: string) => { memoryStore[k] = String(v); },
+  removeItem: (k: string) => { delete memoryStore[k]; },
+  clear: () => { Object.keys(memoryStore).forEach(k => delete memoryStore[k]); },
+};
 
-// Mock sessionStorage
-Object.defineProperty(window, 'sessionStorage', {
-  value: {
-    getItem: () => null,
-    setItem: () => {},
-    removeItem: () => {},
-    clear: () => {},
-  },
-  writable: true,
-});
+if (typeof globalThis.localStorage === 'undefined') {
+  Object.defineProperty(globalThis, 'localStorage', {
+    value: mockStorage,
+    writable: true,
+  });
+}
+
+if (typeof globalThis.sessionStorage === 'undefined') {
+  Object.defineProperty(globalThis, 'sessionStorage', {
+    value: mockStorage,
+    writable: true,
+  });
+}
+
+if (typeof globalThis.window === 'undefined') {
+  (globalThis as any).window = globalThis;
+}

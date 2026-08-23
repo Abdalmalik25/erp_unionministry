@@ -7,6 +7,7 @@ export interface ValidationRule {
   pattern?: RegExp;
   min?: number;
   max?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   custom?: (value: any) => string | null;
 }
 
@@ -19,11 +20,13 @@ export interface ValidationErrors {
 }
 
 // التحقق من البيانات
-export function validate(data: any, schema: ValidationSchema): ValidationErrors {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function validate(data: Record<string, any>, schema: ValidationSchema): ValidationErrors {
   const errors: ValidationErrors = {};
 
   Object.keys(schema).forEach((field) => {
-    const value = data[field];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const value = (data as any)[field];
     const rules = schema[field];
 
     // Required
@@ -36,19 +39,19 @@ export function validate(data: any, schema: ValidationSchema): ValidationErrors 
     if (!value) return;
 
     // Min Length
-    if (rules.minLength && value.length < rules.minLength) {
+    if (rules.minLength && typeof value === 'string' && value.length < rules.minLength) {
       errors[field] = `الحد الأدنى ${rules.minLength} أحرف`;
       return;
     }
 
     // Max Length
-    if (rules.maxLength && value.length > rules.maxLength) {
+    if (rules.maxLength && typeof value === 'string' && value.length > rules.maxLength) {
       errors[field] = `الحد الأقصى ${rules.maxLength} حرف`;
       return;
     }
 
     // Pattern
-    if (rules.pattern && !rules.pattern.test(value)) {
+    if (rules.pattern && typeof value === 'string' && !rules.pattern.test(value)) {
       errors[field] = 'صيغة غير صحيحة';
       return;
     }
@@ -198,8 +201,10 @@ export const activityValidationSchema: ValidationSchema = {
 };
 
 // تنظيف البيانات قبل الإرسال
-export function sanitizeData(data: any): any {
-  const sanitized: any = {};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function sanitizeData(data: Record<string, any>): Record<string, any> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sanitized: Record<string, any> = {};
 
   Object.keys(data).forEach((key) => {
     const value = data[key];

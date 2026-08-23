@@ -90,14 +90,14 @@ export const VirtualTable = memo(function VirtualTable<T extends Record<string, 
   return (
     <div className={`relative overflow-hidden ${className}`}>
       {/* Header */}
-      <div className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+      <div className="bg-muted border-b border-border sticky top-0 z-10">
         <div className="flex">
           {columns.map((column, index) => (
             <div
               key={index}
-              className={`px-6 py-4 text-right text-xs font-semibold text-gray-700 ${
+              className={`px-6 py-4 text-right text-xs font-semibold text-foreground ${
                 column.width || 'flex-1'
-              } ${column.sortable ? 'cursor-pointer hover:bg-gray-100' : ''}`}
+              } ${column.sortable ? 'cursor-pointer hover:bg-accent' : ''}`}
               onClick={() => column.sortable && handleSort(column.key)}
             >
               <div className="flex items-center justify-between">
@@ -134,7 +134,7 @@ export const VirtualTable = memo(function VirtualTable<T extends Record<string, 
               return (
                 <div
                   key={actualIndex}
-                  className={`flex border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+                  className={`flex border-b border-border hover:bg-accent/50 transition-colors ${
                     onRowClick ? 'cursor-pointer' : ''
                   }`}
                   style={{ height: rowHeight }}
@@ -145,7 +145,7 @@ export const VirtualTable = memo(function VirtualTable<T extends Record<string, 
                     return (
                       <div
                         key={colIndex}
-                        className={`px-6 py-4 text-sm text-gray-800 flex items-center ${
+                        className={`px-6 py-4 text-sm text-heading flex items-center ${
                           column.width || 'flex-1'
                         }`}
                       >
@@ -195,7 +195,7 @@ export const EnhancedTable = memo(function EnhancedTable<T extends Record<string
             value={searchTerm}
             onChange={handleSearchChange}
             placeholder={searchPlaceholder}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
       )}

@@ -68,26 +68,26 @@ export function InstallPWA() {
 
   return (
     <div
-      className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-2xl shadow-2xl p-4 z-50 animate-slideUp"
+      className="fixed bottom-5 left-5 right-5 md:left-auto md:right-5 md:w-96 bg-[#0f1c31] border border-blue-500/30 text-white rounded-2xl shadow-2xl p-5 z-50 animate-slideUp backdrop-blur-xl"
       dir="rtl"
     >
       <button
         onClick={handleDismiss}
-        className="absolute top-2 left-2 p-1 hover:bg-white/20 rounded-lg transition-colors"
+        className="absolute top-3 left-3 p-1 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
         aria-label="إغلاق"
       >
-        <X size={18} />
+        <X size={16} />
       </button>
 
-      <div className="flex items-start gap-3 mb-3">
-        <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
-          <img src="/src/imports/image.png" alt="الشعار" className="w-10 h-10 object-contain" />
+      <div className="flex items-start gap-3.5 mb-3.5">
+        <div className="w-12 h-12 bg-blue-900/50 border border-blue-500/40 rounded-xl flex items-center justify-center flex-shrink-0 text-amber-400 shadow-md">
+          <Download size={22} />
         </div>
 
         <div className="flex-1">
-          <h3 className="font-bold text-lg mb-1">ثبّت التطبيق</h3>
-          <p className="text-sm text-blue-100 leading-relaxed">
-            للحصول على تجربة أفضل وأسرع، ثبّت التطبيق على جهازك
+          <h3 className="font-bold text-sm text-white mb-0.5">تثبيت المنظومة كتطبيق مستقل</h3>
+          <p className="text-xs text-slate-300 leading-relaxed">
+            للحصول على أداء فائق وسرعة مضاعفة وتشغيل محلي مباشر على جهازك.
           </p>
         </div>
       </div>
@@ -95,33 +95,24 @@ export function InstallPWA() {
       <div className="flex gap-2">
         <button
           onClick={handleInstall}
-          className="flex-1 bg-white text-blue-600 px-4 py-2.5 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+          className="flex-1 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-4 py-2.5 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-900/40 cursor-pointer"
         >
-          <Download size={18} />
-          <span>تثبيت الآن</span>
+          <Download size={15} />
+          <span>تثبيت التطبيق الآن</span>
         </button>
 
         <button
           onClick={handleDismiss}
-          className="px-4 py-2.5 rounded-lg font-semibold hover:bg-white/20 transition-colors"
+          className="px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
         >
           لاحقاً
         </button>
       </div>
 
-      <div className="mt-3 pt-3 border-t border-white/20">
-        <div className="flex items-center gap-2 text-xs text-blue-100">
-          <Check size={14} />
-          <span>يعمل دون اتصال</span>
-        </div>
-        <div className="flex items-center gap-2 text-xs text-blue-100 mt-1">
-          <Check size={14} />
-          <span>وصول سريع من الشاشة الرئيسية</span>
-        </div>
-        <div className="flex items-center gap-2 text-xs text-blue-100 mt-1">
-          <Check size={14} />
-          <span>إشعارات فورية</span>
-        </div>
+      <div className="mt-3.5 pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+        <span className="flex items-center gap-1"><Check size={13} className="text-emerald-400" /> يعمل محلياً</span>
+        <span className="flex items-center gap-1"><Check size={13} className="text-emerald-400" /> بدون إطار متصفح</span>
+        <span className="flex items-center gap-1"><Check size={13} className="text-emerald-400" /> أداء أقصى</span>
       </div>
     </div>
   );
@@ -146,7 +137,7 @@ export function InstallButton() {
 
   if (isInstalled) {
     return (
-      <div className="flex items-center gap-2 text-green-600 bg-green-50 px-4 py-2 rounded-lg">
+      <div className="flex items-center gap-2 text-success-dark bg-success/10 px-4 py-2 rounded-lg">
         <Check size={18} />
         <span className="text-sm font-medium">التطبيق مثبت</span>
       </div>
@@ -156,7 +147,7 @@ export function InstallButton() {
   return (
     <button
       onClick={handleInstall}
-      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+      className="flex items-center gap-2 px-4 py-2 bg-primary-bright text-white rounded-lg hover:bg-primary-dark transition-colors"
     >
       <Download size={18} />
       <span className="text-sm font-medium">تثبيت التطبيق</span>

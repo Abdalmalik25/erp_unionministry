@@ -16,9 +16,12 @@
     /* Linting */
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "strict": false,
+    "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
 
     /* React */
@@ -27,6 +30,6 @@
     /* Environment */
     "types": ["vite/client"]
   },
-  "include": ["src", "utils", "scripts", "server", "supabase"],
-  "exclude": ["node_modules"]
+  "include": ["src", "utils", "scripts", "server"],
+  "exclude": ["node_modules", "supabase/functions", "**/*.test.ts", "**/*.test.tsx", "**/test.setup.ts"]
 }

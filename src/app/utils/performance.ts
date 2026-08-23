@@ -3,7 +3,7 @@
  * تحسينات ذكية للأداء والتفاعل
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 // ============================================
 // Debouncing - تأخير تنفيذ الدالة
@@ -12,7 +12,7 @@ export function debounce<T extends (...args: any[]) => any>(
   func: T,
   delay: number = 300
 ): (...args: Parameters<T>) => void {
-  let timeoutId: NodeJS.Timeout;
+  let timeoutId: ReturnType<typeof setTimeout>;
 
   return function (...args: Parameters<T>) {
     clearTimeout(timeoutId);
@@ -100,6 +100,7 @@ export function useLocalStorageCache<T>(options: CacheOptions) {
 
       return value;
     } catch {
+      // localStorage read failed, return null
       return null;
     }
   }, [key, ttl]);
@@ -247,7 +248,7 @@ export class RequestBatcher<T, R> {
     resolve: (value: R) => void;
     reject: (error: any) => void;
   }> = [];
-  private timeoutId: NodeJS.Timeout | null = null;
+  private timeoutId: ReturnType<typeof setTimeout> | null = null;
   private batchDelay: number;
   private batchFn: (items: T[]) => Promise<R[]>;
 
@@ -336,11 +337,13 @@ export function useIdleCallback(callback: () => void, deps: any[] = []) {
 
     return () => {
       if (typeof handle === 'number') {
-        if (requestIdleCallback) {
+        if (typeof cancelIdleCallback === 'function') {
           cancelIdleCallback(handle);
         } else {
           clearTimeout(handle);
         }
+      } else {
+        clearTimeout(handle as any);
       }
     };
   }, deps);

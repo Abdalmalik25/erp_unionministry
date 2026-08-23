@@ -33,24 +33,24 @@ const VARIANT_CONFIG: Record<ConfirmVariant, {
 }> = {
   danger: {
     icon: Trash2,
-    iconBg: 'bg-red-100',
-    iconColor: 'text-red-600',
-    btnClass: 'bg-red-600 hover:bg-red-700 text-white',
-    borderColor: 'border-red-500',
+    iconBg: 'bg-error/15',
+    iconColor: 'text-error',
+    btnClass: 'bg-error hover:bg-error-dark text-white',
+    borderColor: 'border-error',
   },
   warning: {
     icon: AlertTriangle,
-    iconBg: 'bg-orange-100',
-    iconColor: 'text-orange-600',
-    btnClass: 'bg-orange-600 hover:bg-orange-700 text-white',
-    borderColor: 'border-orange-500',
+    iconBg: 'bg-warning/15',
+    iconColor: 'text-warning-dark',
+    btnClass: 'bg-warning hover:bg-warning-dark text-white',
+    borderColor: 'border-warning',
   },
   info: {
     icon: Info,
-    iconBg: 'bg-blue-100',
-    iconColor: 'text-blue-600',
-    btnClass: 'bg-[#1E3A8A] hover:bg-blue-800 text-white',
-    borderColor: 'border-blue-500',
+    iconBg: 'bg-info/15',
+    iconColor: 'text-info',
+    btnClass: 'bg-primary hover:bg-primary-dark text-white',
+    borderColor: 'border-info',
   },
 };
 
@@ -102,7 +102,7 @@ export function ConfirmDialog({
 
   return (
     <div className="fixed inset-0 bg-black/50 z-[9998] flex items-center justify-center p-4" dir="rtl" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
-      <div className={`bg-white rounded-2xl shadow-2xl max-w-md w-full border-t-4 ${config.borderColor}`}>
+      <div className={`bg-card rounded-2xl shadow-2xl max-w-md w-full border-t-4 ${config.borderColor}`}>
         <div className="p-6">
           {/* رأس */}
           <div className="flex items-start gap-4 mb-4">
@@ -110,18 +110,18 @@ export function ConfirmDialog({
               <Icon className={`w-6 h-6 ${config.iconColor}`} />
             </div>
             <div className="flex-1">
-              <h3 id="confirm-title" className="text-lg font-bold text-gray-800 mb-1">{title}</h3>
-              <p className="text-sm text-gray-600 leading-relaxed">{message}</p>
+              <h3 id="confirm-title" className="text-lg font-bold text-heading mb-1">{title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{message}</p>
             </div>
-            <button onClick={onCancel} className="p-1 text-gray-400 hover:text-gray-600 rounded">
+            <button onClick={onCancel} className="p-1 text-muted-foreground hover:text-foreground rounded">
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* حقل التأكيد بالكتابة */}
           {requireTyping && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
-              <p className="text-xs text-red-700 mb-2">
+            <div className="mb-4 p-3 bg-error/10 border border-error/30 rounded-xl">
+              <p className="text-xs text-error mb-2">
                 اكتب <strong className="font-mono">{requireTyping}</strong> للتأكيد:
               </p>
               <input
@@ -129,7 +129,7 @@ export function ConfirmDialog({
                 value={typedValue}
                 onChange={e => setTypedValue(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && canConfirm && handleConfirm()}
-                className="w-full px-3 py-2 border border-red-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-error/40 rounded-lg text-sm focus:ring-2 focus:ring-error focus:border-transparent"
                 placeholder={requireTyping}
                 autoFocus
               />
@@ -142,7 +142,7 @@ export function ConfirmDialog({
               ref={cancelRef}
               onClick={onCancel}
               disabled={loading}
-              className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="flex-1 px-4 py-2.5 border border-border text-foreground rounded-xl font-semibold hover:bg-accent/50 transition-colors disabled:opacity-50"
             >
               {cancelLabel}
             </button>

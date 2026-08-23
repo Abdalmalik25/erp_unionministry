@@ -6,11 +6,11 @@ const API_BASE = apiBase || import.meta.env.VITE_API_BASE || '/api';
 
 interface ApiOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
-  body?: any;
+  body?: Record<string, unknown>;
   requireAuth?: boolean;
 }
 
-export function useApi<T = any>() {
+export function useApi<T = Record<string, unknown>>() {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +26,10 @@ export function useApi<T = any>() {
         'Content-Type': 'application/json',
       };
 
-      if (requireAuth && publicAnonKey) {
+      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      } else if (requireAuth && publicAnonKey) {
         headers['Authorization'] = `Bearer ${publicAnonKey}`;
       }
 
@@ -78,15 +81,19 @@ export function useUnions() {
   const api = useApi();
 
   const getAll = useCallback(() => {
-    return api.execute('/unions');
+    return api.execute('/entities');
   }, [api]);
 
-  const create = useCallback((unionData: any) => {
-    return api.execute('/unions', { method: 'POST', body: unionData });
+  const create = useCallback((unionData: Record<string, unknown>) => {
+    return api.execute('/entities', { method: 'POST', body: unionData });
   }, [api]);
 
-  const update = useCallback((id: string, unionData: any) => {
-    return api.execute(`/unions/${id}`, { method: 'PUT', body: unionData });
+  const update = useCallback((id: string, unionData: Record<string, unknown>) => {
+    return api.execute(`/entities/${id}`, { method: 'PUT', body: unionData });
+  }, [api]);
+
+  const remove = useCallback((id: string) => {
+    return api.execute(`/entities/${id}`, { method: 'DELETE' });
   }, [api]);
 
   return {
@@ -94,6 +101,7 @@ export function useUnions() {
     getAll,
     create,
     update,
+    remove,
   };
 }
 
@@ -104,7 +112,7 @@ export function useMembers() {
     return api.execute('/members');
   }, [api]);
 
-  const create = useCallback((memberData: any) => {
+  const create = useCallback((memberData: Record<string, unknown>) => {
     return api.execute('/members', { method: 'POST', body: memberData });
   }, [api]);
 
@@ -122,14 +130,24 @@ export function useActivities() {
     return api.execute('/activities');
   }, [api]);
 
-  const create = useCallback((activityData: any) => {
+  const create = useCallback((activityData: Record<string, unknown>) => {
     return api.execute('/activities', { method: 'POST', body: activityData });
+  }, [api]);
+
+  const update = useCallback((id: string, activityData: Record<string, unknown>) => {
+    return api.execute(`/activities/${id}`, { method: 'PUT', body: activityData });
+  }, [api]);
+
+  const remove = useCallback((id: string) => {
+    return api.execute(`/activities/${id}`, { method: 'DELETE' });
   }, [api]);
 
   return {
     ...api,
     getAll,
     create,
+    update,
+    remove,
   };
 }
 
@@ -140,7 +158,7 @@ export function useServiceRequests() {
     return api.execute('/service-requests');
   }, [api]);
 
-  const create = useCallback((requestData: any) => {
+  const create = useCallback((requestData: Record<string, unknown>) => {
     return api.execute('/service-requests', { method: 'POST', body: requestData });
   }, [api]);
 

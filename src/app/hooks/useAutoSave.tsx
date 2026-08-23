@@ -166,8 +166,8 @@ export function AutoSaveIndicator({
 }: AutoSaveState) {
   if (error) {
     return (
-      <div className="flex items-center gap-2 text-xs text-red-600">
-        <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+      <div className="flex items-center gap-2 text-xs text-error">
+        <span className="w-2 h-2 bg-error rounded-full"></span>
         <span>فشل الحفظ التلقائي</span>
       </div>
     );
@@ -175,8 +175,8 @@ export function AutoSaveIndicator({
 
   if (isSaving) {
     return (
-      <div className="flex items-center gap-2 text-xs text-blue-600">
-        <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+      <div className="flex items-center gap-2 text-xs text-info">
+        <span className="w-2 h-2 bg-info rounded-full animate-pulse"></span>
         <span>جاري الحفظ...</span>
       </div>
     );
@@ -184,8 +184,8 @@ export function AutoSaveIndicator({
 
   if (hasChanges) {
     return (
-      <div className="flex items-center gap-2 text-xs text-orange-600">
-        <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+      <div className="flex items-center gap-2 text-xs text-warning-dark">
+        <span className="w-2 h-2 bg-warning rounded-full"></span>
         <span>تغييرات غير محفوظة</span>
       </div>
     );
@@ -194,8 +194,8 @@ export function AutoSaveIndicator({
   if (lastSaved) {
     const timeAgo = getTimeAgo(lastSaved);
     return (
-      <div className="flex items-center gap-2 text-xs text-green-600">
-        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+      <div className="flex items-center gap-2 text-xs text-success-dark">
+        <span className="w-2 h-2 bg-success rounded-full"></span>
         <span>تم الحفظ {timeAgo}</span>
       </div>
     );

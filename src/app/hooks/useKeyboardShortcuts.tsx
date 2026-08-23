@@ -3,7 +3,7 @@
  * للتنقل السريع والعمليات المتكررة
  */
 
-import { useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
 
 interface ShortcutConfig {
@@ -120,32 +120,32 @@ export function useGlobalShortcuts() {
 export function KeyboardShortcutsHelper({ shortcuts }: { shortcuts: ShortcutConfig[] }) {
   return (
     <div className="space-y-4" dir="rtl">
-      <h3 className="text-lg font-bold text-gray-800 mb-4">اختصارات لوحة المفاتيح</h3>
+      <h3 className="text-lg font-bold text-heading mb-4">اختصارات لوحة المفاتيح</h3>
 
       <div className="space-y-2">
         {shortcuts.map((shortcut, index) => (
           <div
             key={index}
-            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+            className="flex items-center justify-between p-3 bg-muted rounded-lg hover:bg-accent transition-colors"
           >
-            <span className="text-sm text-gray-700">{shortcut.description}</span>
+            <span className="text-sm text-foreground">{shortcut.description}</span>
             <div className="flex items-center gap-1">
               {shortcut.ctrl && (
-                <kbd className="px-2 py-1 bg-white border border-gray-300 rounded text-xs font-semibold text-gray-700">
+                <kbd className="px-2 py-1 bg-card border border-border rounded text-xs font-semibold text-foreground">
                   Ctrl
                 </kbd>
               )}
               {shortcut.alt && (
-                <kbd className="px-2 py-1 bg-white border border-gray-300 rounded text-xs font-semibold text-gray-700">
+                <kbd className="px-2 py-1 bg-card border border-border rounded text-xs font-semibold text-foreground">
                   Alt
                 </kbd>
               )}
               {shortcut.shift && (
-                <kbd className="px-2 py-1 bg-white border border-gray-300 rounded text-xs font-semibold text-gray-700">
+                <kbd className="px-2 py-1 bg-card border border-border rounded text-xs font-semibold text-foreground">
                   Shift
                 </kbd>
               )}
-              <kbd className="px-2 py-1 bg-white border border-gray-300 rounded text-xs font-semibold text-gray-700">
+              <kbd className="px-2 py-1 bg-card border border-border rounded text-xs font-semibold text-foreground">
                 {shortcut.key.toUpperCase()}
               </kbd>
             </div>
@@ -153,9 +153,9 @@ export function KeyboardShortcutsHelper({ shortcuts }: { shortcuts: ShortcutConf
         ))}
       </div>
 
-      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-sm text-blue-800">
-          💡 نصيحة: استخدم <kbd className="px-1.5 py-0.5 bg-white border border-blue-300 rounded text-xs">Shift</kbd> + <kbd className="px-1.5 py-0.5 bg-white border border-blue-300 rounded text-xs">?</kbd> لعرض هذه القائمة في أي وقت
+      <div className="mt-4 p-3 bg-info/10 border border-info/30 rounded-lg">
+        <p className="text-sm text-info-dark">
+          💡 نصيحة: استخدم <kbd className="px-1.5 py-0.5 bg-card border border-border rounded text-xs">Shift</kbd> + <kbd className="px-1.5 py-0.5 bg-card border border-border rounded text-xs">?</kbd> لعرض هذه القائمة في أي وقت
         </p>
       </div>
     </div>

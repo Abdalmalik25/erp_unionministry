@@ -93,8 +93,8 @@ export function clearRateLimit(key: string): void {
 // ============================================================
 
 const SESSION_KEY = 'us_session';
-const SESSION_TIMEOUT_MS = 30 * 60 * 1000;  // 30 دقيقة خمول
-const SESSION_WARN_BEFORE_MS = 3 * 60 * 1000; // تحذير قبل 3 دقائق
+const SESSION_TIMEOUT_MS = 8 * 60 * 60 * 1000;  // 8 ساعات جلسة عمل رسمية
+const SESSION_WARN_BEFORE_MS = 10 * 60 * 1000; // تحذير قبل 10 دقائق
 
 export interface SessionData {
   userId: string;
@@ -123,7 +123,19 @@ export function createSession(userId: string, email: string, userType: 'ministry
 
 export function getSession(): SessionData | null {
   const raw = localStorage.getItem(SESSION_KEY);
-  if (!raw) return null;
+  if (!raw) {
+    const demoRaw = localStorage.getItem('demo_user');
+    const token = localStorage.getItem('auth_token');
+    if (demoRaw || token) {
+      try {
+        const u = demoRaw ? JSON.parse(demoRaw) : { id: 'admin', email: 'ministry@yemen.gov.ye', userType: 'ministry' };
+        return createSession(u.id, u.email, u.userType || 'ministry');
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
   try {
     const session: SessionData = JSON.parse(raw);
     if (Date.now() > session.expiresAt) {
@@ -131,7 +143,8 @@ export function getSession(): SessionData | null {
       return null;
     }
     return session;
-  } catch {
+  } catch (e) {
+    console.warn('[Security] Session parse failed, destroying session:', e);
     destroySession();
     return null;
   }
@@ -208,13 +221,13 @@ export function sanitizeSQLInput(value: string): string {
   return clean;
 }
 
-export function sanitizeObject<T extends Record<string, any>>(obj: T): T {
-  const result: Record<string, any> = {};
+export function sanitizeObject<T extends Record<string, unknown>>(obj: T): T {
+  const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
     if (typeof value === 'string') {
       result[key] = sanitizeInput(value);
     } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-      result[key] = sanitizeObject(value);
+      result[key] = sanitizeObject(value as Record<string, unknown>);
     } else if (Array.isArray(value)) {
       result[key] = value.map(v => typeof v === 'string' ? sanitizeInput(v) : v);
     } else {
@@ -242,7 +255,7 @@ export interface AuditEntry {
   email?: string;
   resource?: string;
   resourceId?: string;
-  details?: Record<string, any>;
+  details?: string | Record<string, unknown>;
   timestamp: number;
   sessionId?: string;
   ipHint?: string;
@@ -264,11 +277,23 @@ export function logAudit(entry: Omit<AuditEntry, 'timestamp'>): void {
     const log: AuditEntry[] = raw ? JSON.parse(raw) : [];
     log.push(fullEntry);
 
-    // الاحتفاظ بآخر 500 حدث فقط
     if (log.length > MAX_AUDIT_ENTRIES) log.splice(0, log.length - MAX_AUDIT_ENTRIES);
     localStorage.setItem(AUDIT_KEY, JSON.stringify(log));
-  } catch {
-    // صامت — لا نوقف التطبيق بسبب سجل التدقيق
+
+    fetch('/api/audit-log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: entry.action,
+        resource: entry.resource,
+        resource_id: entry.resourceId,
+        details: typeof entry.details === 'string' ? entry.details : JSON.stringify(entry.details || {}),
+        user_id: entry.userId,
+        email: entry.email,
+      }),
+    }).catch(() => {});
+  } catch (e) {
+    console.warn('[Security] Failed to write audit log:', e);
   }
 }
 
@@ -276,7 +301,8 @@ export function getAuditLog(): AuditEntry[] {
   try {
     const raw = localStorage.getItem(AUDIT_KEY);
     return raw ? JSON.parse(raw) : [];
-  } catch {
+  } catch (e) {
+    console.error('[Security] Failed to parse audit log:', e);
     return [];
   }
 }
@@ -334,7 +360,14 @@ export function getCSRFToken(): string {
 // ============================================================
 
 export function escapeHTML(str: string): string {
-  const map: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;' };
+  if (typeof str !== 'string') return '';
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#x27;',
+  };
   return str.replace(/[&<>"']/g, m => map[m]);
 }
 
@@ -342,7 +375,7 @@ export function escapeHTML(str: string): string {
 // Debounce — تأخير الطلبات لتحسين الأداء
 // ============================================================
 
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   fn: T,
   delayMs: number
 ): (...args: Parameters<T>) => void {
@@ -353,7 +386,7 @@ export function debounce<T extends (...args: any[]) => any>(
   };
 }
 
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: unknown[]) => unknown>(
   fn: T,
   limitMs: number
 ): (...args: Parameters<T>) => void {

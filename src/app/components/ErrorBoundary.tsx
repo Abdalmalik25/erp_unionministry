@@ -1,112 +1,62 @@
 /**
- * Error Boundary - معالجة الأخطاء الذكية
- * التقاط الأخطاء ومعالجتها بشكل احترافي
+ * Global Error Boundary - حدود الأخطاء العامة
+ * Catches and handles all React errors gracefully
  */
 
-import { Component, ErrorInfo, ReactNode, ReactElement } from 'react';
-import { AlertTriangle, RefreshCw, Home, Bug } from 'lucide-react';
-import { Button } from './ui/Button';
+import { Component, ReactNode } from 'react';
+import { AlertCircle, RefreshCw, Home } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
-  onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
 interface State {
   hasError: boolean;
   error: Error | null;
-  errorInfo: ErrorInfo | null;
-  errorCount: number;
+  errorInfo: any;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = {
-      hasError: false,
-      error: null,
-      errorInfo: null,
-      errorCount: 0,
-    };
+    this.state = { hasError: false, error: null, errorInfo: null };
   }
 
-  static getDerivedStateFromError(error: Error): Partial<State> {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // تسجيل الخطأ
-    console.error('Error Boundary caught an error:', error, errorInfo);
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error('[ErrorBoundary] Caught error:', error, errorInfo);
+    this.setState({ errorInfo });
 
-    // حفظ الخطأ في localStorage للتحليل
-    this.logError(error, errorInfo);
-
-    // استدعاء callback من الأب
-    if (this.props.onError) {
-      this.props.onError(error, errorInfo);
-    }
-
-    this.setState((prevState) => ({
-      error,
-      errorInfo,
-      errorCount: prevState.errorCount + 1,
-    }));
-
-    // إرسال إلى خدمة تتبع الأخطاء (مثل Sentry)
-    // this.reportToErrorTracking(error, errorInfo);
-  }
-
-  logError(error: Error, errorInfo: ErrorInfo) {
+    // تسجيل الخطأ في السجل
     try {
-      const errorLog = {
-        message: error.message,
+      const logs = JSON.parse(localStorage.getItem('error_logs') || '[]');
+      logs.push({
+        error: error.message,
         stack: error.stack,
         componentStack: errorInfo.componentStack,
-        timestamp: new Date().toISOString(),
+        timestamp: Date.now(),
         userAgent: navigator.userAgent,
         url: window.location.href,
-      };
-
-      const errors = JSON.parse(localStorage.getItem('errorLogs') || '[]');
-      errors.push(errorLog);
-
+      });
       // الاحتفاظ بآخر 50 خطأ فقط
-      localStorage.setItem('errorLogs', JSON.stringify(errors.slice(-50)));
+      if (logs.length > 50) logs.splice(0, logs.length - 50);
+      localStorage.setItem('error_logs', JSON.stringify(logs));
     } catch (e) {
-      console.error('Failed to log error:', e);
+      console.error('[ErrorBoundary] Failed to save error log:', e);
     }
   }
 
   handleReset = () => {
-    this.setState({
-      hasError: false,
-      error: null,
-      errorInfo: null,
-    });
+    this.setState({ hasError: false, error: null, errorInfo: null });
+    window.location.href = '/';
   };
 
   handleReload = () => {
     window.location.reload();
-  };
-
-  handleGoHome = () => {
-    window.location.href = '/';
-  };
-
-  reportBug = () => {
-    const { error, errorInfo } = this.state;
-    const bugReport = {
-      error: error?.message,
-      stack: error?.stack,
-      componentStack: errorInfo?.componentStack,
-      url: window.location.href,
-      timestamp: new Date().toISOString(),
-    };
-
-    // نسخ إلى الحافظة
-    navigator.clipboard.writeText(JSON.stringify(bugReport, null, 2));
-    alert('تم نسخ تفاصيل الخطأ. الرجاء إرساله إلى فريق الدعم.');
   };
 
   render() {
@@ -115,77 +65,46 @@ export class ErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
 
-      const { error, errorInfo, errorCount } = this.state;
-      const isDevelopment = import.meta.env.DEV;
-
       return (
-        <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4" dir="rtl">
-          <div className="max-w-2xl w-full bg-white rounded-2xl shadow-2xl p-8 border border-red-100">
-            {/* Header */}
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-16 h-16 bg-red-100 rounded-xl flex items-center justify-center">
-                <AlertTriangle size={32} className="text-red-600" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-800">عذراً! حدث خطأ غير متوقع</h1>
-                <p className="text-gray-600 mt-1">نعمل على حل المشكلة في أقرب وقت</p>
+        <div className="min-h-screen bg-muted flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-card rounded-xl shadow-lg p-6 text-center">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 bg-error/15 rounded-full">
+                <AlertCircle className="h-8 w-8 text-error" />
               </div>
             </div>
-
-            {/* Error Message */}
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-              <p className="text-sm font-semibold text-red-800 mb-2">رسالة الخطأ:</p>
-              <p className="text-sm text-red-700 font-mono">{error?.message || 'خطأ غير معروف'}</p>
-              {errorCount > 1 && (
-                <p className="text-xs text-red-600 mt-2">تكرر الخطأ {errorCount} مرات</p>
-              )}
+            <h1 className="text-xl font-bold text-heading mb-2">
+              حدث خطأ غير متوقع
+            </h1>
+            <p className="text-muted-foreground mb-4">
+              نعتذر، حدث خطأ في التطبيق. يمكنك إعادة المحاولة أو العودة للصفحة الرئيسية.
+            </p>
+            <div className="flex gap-2 justify-center">
+              <button
+                onClick={this.handleReload}
+                className="flex items-center gap-2 px-4 py-2 bg-primary-bright text-white rounded-lg hover:bg-primary-dark transition-colors"
+              >
+                <RefreshCw className="h-4 w-4" />
+                إعادة التحميل
+              </button>
+              <button
+                onClick={this.handleReset}
+                className="flex items-center gap-2 px-4 py-2 border border-border text-foreground rounded-lg hover:bg-accent/50 transition-colors"
+              >
+                <Home className="h-4 w-4" />
+                الصفحة الرئيسية
+              </button>
             </div>
-
-            {/* Development Info */}
-            {isDevelopment && errorInfo && (
-              <details className="mb-6">
-                <summary className="cursor-pointer text-sm font-semibold text-gray-700 hover:text-gray-900 mb-2">
-                  تفاصيل تقنية (للمطورين)
+            {this.state.error && (
+              <details className="mt-4 text-left">
+<summary className="text-sm text-muted-foreground cursor-pointer">
+                    تفاصيل الخطأ (للمطورين)
                 </summary>
-                <div className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-auto max-h-60 text-xs font-mono">
-                  <div className="mb-4">
-                    <p className="text-yellow-400 font-bold mb-1">Stack Trace:</p>
-                    <pre className="whitespace-pre-wrap">{error?.stack}</pre>
-                  </div>
-                  <div>
-                    <p className="text-yellow-400 font-bold mb-1">Component Stack:</p>
-                    <pre className="whitespace-pre-wrap">{errorInfo.componentStack}</pre>
-                  </div>
-                </div>
+                <pre className="mt-2 text-xs bg-muted p-2 rounded overflow-auto max-h-32">
+                  {this.state.error.message}
+                </pre>
               </details>
             )}
-
-            {/* Actions */}
-            <div className="flex flex-wrap gap-3">
-              <Button onClick={this.handleReset} variant="primary" icon={<RefreshCw size={18} />}>
-                حاول مرة أخرى
-              </Button>
-
-              <Button onClick={this.handleReload} variant="secondary" icon={<RefreshCw size={18} />}>
-                إعادة تحميل الصفحة
-              </Button>
-
-              <Button onClick={this.handleGoHome} variant="secondary" icon={<Home size={18} />}>
-                الصفحة الرئيسية
-              </Button>
-
-              <Button onClick={this.reportBug} variant="ghost" icon={<Bug size={18} />}>
-                إبلاغ عن الخطأ
-              </Button>
-            </div>
-
-            {/* Help Text */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <p className="text-sm text-gray-600">
-                إذا استمرت المشكلة، يرجى التواصل مع فريق الدعم الفني
-              </p>
-              <p className="text-sm text-gray-500 mt-1">📧 support@unionsphere.gov.ye</p>
-            </div>
           </div>
         </div>
       );
@@ -193,20 +112,4 @@ export class ErrorBoundary extends Component<Props, State> {
 
     return this.props.children;
   }
-}
-
-// Error Boundary خفيف للمكونات الصغيرة
-export function ErrorFallback({ error, resetError }: { error: Error; resetError: () => void }) {
-  return (
-    <div className="p-6 bg-red-50 border border-red-200 rounded-lg" dir="rtl">
-      <div className="flex items-center gap-3 mb-4">
-        <AlertTriangle className="text-red-600" size={24} />
-        <h3 className="font-bold text-red-800">حدث خطأ في هذا القسم</h3>
-      </div>
-      <p className="text-sm text-red-700 mb-4">{error.message}</p>
-      <Button onClick={resetError} variant="danger" size="sm" icon={<RefreshCw size={16} />}>
-        إعادة المحاولة
-      </Button>
-    </div>
-  );
 }

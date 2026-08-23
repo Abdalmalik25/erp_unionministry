@@ -309,6 +309,7 @@ export interface OrganizationalEntity {
   metadata?: Record<string, any>;
   deletedAt?: Date;
   deletedBy?: string;
+  custom_data?: Record<string, any>;
 }
 
 // ===============================
@@ -364,14 +365,36 @@ export interface EntityRelationship {
   createdAt: Date;
 }
 
-export interface DynamicField {
-  fieldId: string;
-  entityId: string;
-  fieldName: string;
-  fieldValue: any;
-  fieldType: 'text' | 'number' | 'date' | 'boolean' | 'json' | 'array';
-  createdAt: Date;
-  updatedAt: Date;
+// New Hybrid Typed Extensibility model: metadata registry (NOT EAV value store).
+export interface CustomFieldDefinition {
+  id?: string;
+  entity_type: string;
+  field_key: string;
+  label: string;
+  data_type:
+    | 'text' | 'textarea' | 'integer' | 'decimal' | 'boolean' | 'date'
+    | 'datetime' | 'time' | 'select' | 'multiselect' | 'reference'
+    | 'currency' | 'percentage' | 'email' | 'phone' | 'url' | 'file';
+  description?: string;
+  required?: boolean;
+  default_value?: any;
+  options?: any[];
+  validation_rules?: Record<string, any>;
+  reference_entity?: string;
+  visible_in_form?: boolean;
+  visible_in_list?: boolean;
+  searchable?: boolean;
+  filterable?: boolean;
+  sortable?: boolean;
+  reportable?: boolean;
+  printable?: boolean;
+  importable?: boolean;
+  exportable?: boolean;
+  scope?: 'global' | 'entity';
+  active?: boolean;
+  display_order?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // ===============================

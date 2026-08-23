@@ -1,6 +1,6 @@
 import { ReactNode, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { Button } from './Button';
+import {} from './Button';
 
 interface ModalProps {
   isOpen: boolean;
@@ -46,17 +46,17 @@ export function Modal({
       onClick={onClose}
     >
       <div
-        className={`bg-white rounded-2xl shadow-2xl ${sizeClasses[size]} w-full max-h-[90vh] overflow-hidden animate-slideUp`}
+        className={`bg-card rounded-2xl shadow-2xl ${sizeClasses[size]} w-full max-h-[90vh] overflow-hidden animate-slideUp`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50">
-          <h2 className="text-xl font-bold text-gray-800">{title}</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-gradient-to-r from-primary/10 to-primary/5">
+          <h2 className="text-xl font-bold text-heading">{title}</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-white/50 rounded-lg transition-colors"
           >
-            <X size={20} className="text-gray-600" />
+            <X size={20} className="text-muted-foreground" />
           </button>
         </div>
 
@@ -67,7 +67,7 @@ export function Modal({
 
         {/* Footer */}
         {footer && (
-          <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-end gap-3">
+          <div className="px-6 py-4 border-t border-border bg-muted flex items-center justify-end gap-3">
             {footer}
           </div>
         )}

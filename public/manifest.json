@@ -1,81 +1,48 @@
 {
-  "name": "UnionSphere - نظام إدارة المنظمات النقابية",
-  "short_name": "UnionSphere",
-  "description": "نظام إدارة المنظمات النقابية المتكامل - الجمهورية اليمنية",
+  "name": "الجمهورية اليمنية — وزارة الشؤون الاجتماعية والعمل",
+  "short_name": "قطاع العمل",
+  "description": "المنظومة الإلكترونية الموحدة لحوكمة سوق العمل والمنشآت — قطاع العمل",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#3B82F6",
-  "orientation": "portrait-primary",
+  "background_color": "#09111e",
+  "theme_color": "#0f1c31",
+  "orientation": "any",
   "dir": "rtl",
   "lang": "ar",
   "scope": "/",
   "icons": [
     {
-      "src": "/src/imports/image.png",
+      "src": "/favicon.svg",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "/src/imports/image.png",
+      "src": "/favicon.svg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ],
   "categories": ["government", "productivity", "business"],
-  "screenshots": [
-    {
-      "src": "/screenshots/desktop.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide"
-    },
-    {
-      "src": "/screenshots/mobile.png",
-      "sizes": "750x1334",
-      "type": "image/png",
-      "form_factor": "narrow"
-    }
-  ],
   "shortcuts": [
     {
-      "name": "لوحة التحكم",
+      "name": "لوحة القيادة المركزية",
       "short_name": "الرئيسية",
-      "description": "الانتقال إلى لوحة التحكم",
-      "url": "/ministry",
-      "icons": [{ "src": "/src/imports/image.png", "sizes": "96x96" }]
+      "description": "الانتقال إلى لوحة التحكم والرقابة",
+      "url": "/ministry"
     },
     {
-      "name": "النقابات",
-      "short_name": "النقابات",
-      "description": "إدارة النقابات",
-      "url": "/ministry/unions",
-      "icons": [{ "src": "/src/imports/image.png", "sizes": "96x96" }]
+      "name": "سجل المنشآت التجارية",
+      "short_name": "المنشآت",
+      "description": "استعراض سجل 5,152 منشأة تجارية",
+      "url": "/ministry/commercial"
     },
     {
-      "name": "الأعضاء",
-      "short_name": "الأعضاء",
-      "description": "إدارة الأعضاء",
-      "url": "/ministry/members",
-      "icons": [{ "src": "/src/imports/image.png", "sizes": "96x96" }]
+      "name": "استوديو توصيف المهن",
+      "short_name": "المهن",
+      "description": "إدارة 3,607 مهنة معيارية ISCO-08",
+      "url": "/ministry/professions"
     }
-  ],
-  "share_target": {
-    "action": "/share",
-    "method": "POST",
-    "enctype": "multipart/form-data",
-    "params": {
-      "title": "title",
-      "text": "text",
-      "url": "url",
-      "files": [
-        {
-          "name": "file",
-          "accept": ["application/pdf", ".xlsx", ".csv"]
-        }
-      ]
-    }
-  }
+  ]
 }

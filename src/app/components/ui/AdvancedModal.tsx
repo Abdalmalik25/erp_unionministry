@@ -36,11 +36,11 @@ export function AdvancedModal({
   };
 
   const typeConfig = {
-    default: { bg: 'bg-gray-50', icon: null, iconColor: '' },
-    success: { bg: 'bg-green-50', icon: CheckCircle, iconColor: 'text-green-600' },
-    warning: { bg: 'bg-orange-50', icon: AlertTriangle, iconColor: 'text-orange-600' },
-    error: { bg: 'bg-red-50', icon: AlertCircle, iconColor: 'text-red-600' },
-    info: { bg: 'bg-blue-50', icon: Info, iconColor: 'text-blue-600' },
+    default: { bg: 'bg-muted', icon: null, iconColor: '' },
+    success: { bg: 'bg-success/10', icon: CheckCircle, iconColor: 'text-success-dark' },
+    warning: { bg: 'bg-warning/10', icon: AlertTriangle, iconColor: 'text-warning-dark' },
+    error: { bg: 'bg-error/10', icon: AlertCircle, iconColor: 'text-error' },
+    info: { bg: 'bg-info/10', icon: Info, iconColor: 'text-info' },
   };
 
   const config = typeConfig[type];
@@ -59,20 +59,20 @@ export function AdvancedModal({
       dir="rtl"
     >
       <div
-        className={`bg-white rounded-2xl shadow-2xl max-h-[90vh] w-full ${sizeClasses[size]} flex flex-col animate-in fade-in zoom-in duration-200`}
+        className={`bg-card rounded-2xl shadow-2xl max-h-[90vh] w-full ${sizeClasses[size]} flex flex-col animate-in fade-in zoom-in duration-200`}
       >
         {/* Header */}
         <div className={`flex items-center justify-between p-6 border-b ${config.bg} rounded-t-2xl`}>
           <div className="flex items-center gap-3">
             {Icon && <Icon size={24} className={config.iconColor} />}
-            <h2 className="text-xl font-bold text-gray-800">{title}</h2>
+            <h2 className="text-xl font-bold text-heading">{title}</h2>
           </div>
           {showCloseButton && (
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+              className="p-2 hover:bg-accent rounded-lg transition-colors"
             >
-              <X size={20} className="text-gray-600" />
+              <X size={20} className="text-muted-foreground" />
             </button>
           )}
         </div>
@@ -82,7 +82,7 @@ export function AdvancedModal({
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 p-6 border-t bg-gray-50 rounded-b-2xl">
+          <div className="flex items-center justify-end gap-3 p-6 border-t bg-muted rounded-b-2xl">
             {footer}
           </div>
         )}
@@ -139,7 +139,7 @@ export function ConfirmDialog({
         </>
       }
     >
-      <p className="text-gray-700 leading-relaxed">{message}</p>
+      <p className="text-foreground leading-relaxed">{message}</p>
     </AdvancedModal>
   );
 }

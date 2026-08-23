@@ -53,15 +53,11 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
       if (!newWorker) return;
 
       newWorker.addEventListener('statechange', () => {
-        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-          toast.info('يتوفر تحديث جديد. أعد تحميل الصفحة للحصول عليه.', {
-            duration: 10000,
-            action: {
-              label: 'تحديث الآن',
-              onClick: () => window.location.reload(),
-            },
-          });
-        }
+           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+             toast.info('يتوفر تحديث جديد. أعد تحميل الصفحة للحصول عليه.', {
+               duration: 10000,
+           });
+           }
       });
     });
 
@@ -277,7 +273,7 @@ export async function requestBackgroundSync(tag: string): Promise<void> {
 /**
  * مساعدات
  */
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
+function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
 
@@ -288,7 +284,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
     outputArray[i] = rawData.charCodeAt(i);
   }
 
-  return outputArray;
+  return outputArray.buffer;
 }
 
 async function sendSubscriptionToServer(subscription: PushSubscription): Promise<void> {

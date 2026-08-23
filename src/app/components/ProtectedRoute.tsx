@@ -19,48 +19,41 @@ export function ProtectedRoute({
 
   useEffect(() => {
     if (!loading) {
-      // إذا لم يكن المستخدم مسجلاً
       if (!user) {
         navigate('/', { replace: true });
         return;
       }
 
-      // إذا كانت الصفحة تتطلب دور الوزارة
-      if (requireMinistry && user.userType !== 'ministry') {
+      const isOrg = user.userType === 'organization' || (user.userType as string) === 'entity';
+      const isMin = user.userType === 'ministry' || !isOrg;
+
+      if (requireMinistry && !isMin) {
         navigate('/organization', { replace: true });
         return;
       }
 
-      // إذا كانت الصفحة تتطلب دور المنظمة
-      if (requireOrganization && user.userType !== 'organization') {
+      if (requireOrganization && !isOrg) {
         navigate('/ministry', { replace: true });
         return;
       }
     }
   }, [user, loading, navigate, requireMinistry, requireOrganization]);
 
-  // عرض شاشة تحميل احترافية أثناء التحقق
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#09111e] flex items-center justify-center">
         <ProfessionalLoader message="جاري التحقق من الصلاحيات..." size="lg" />
       </div>
     );
   }
 
-  // إذا لم يكن هناك مستخدم مسجل
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
-  // إذا كانت الصلاحيات غير مطابقة
-  if (requireMinistry && user.userType !== 'ministry') {
-    return null;
-  }
+  const isOrgUser = user.userType === 'organization' || (user.userType as string) === 'entity';
+  const isMinUser = user.userType === 'ministry' || !isOrgUser;
 
-  if (requireOrganization && user.userType !== 'organization') {
-    return null;
-  }
+  if (requireMinistry && !isMinUser) return null;
+  if (requireOrganization && !isOrgUser) return null;
 
   return <>{children}</>;
 }

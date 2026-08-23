@@ -1,508 +1,653 @@
-import { useState, useMemo } from 'react';
-import {
-  BarChart3, Download, FileText, FileSpreadsheet,
-  Printer, Calendar, Filter, RefreshCw, Shield,
-  TrendingUp, Users, Building2, AlertTriangle,
-} from 'lucide-react';
-import {
-  BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-} from 'recharts';
-import {
-  PrintPreviewModal,
-  exportReportToExcel,
-  exportReportToPDF,
-  UNION_REPORT_COLUMNS,
-  MEMBER_REPORT_COLUMNS,
-  ACTIVITY_REPORT_COLUMNS,
-  VIOLATION_REPORT_COLUMNS,
-  type PrintExportOptions,
-  type ReportType,
-} from '../../components/enterprise/PrintExportManager';
-
-// ============================================================
-// بيانات تجريبية
-// ============================================================
-
-const DEMO_UNIONS = [
-  { registrationNumber: 'YE-2024-001', nameAr: 'نقابة المهندسين اليمنية', entityType: 'federation', classification: 'professional', governorate: 'صنعاء', status: 'active', complianceStatus: 'compliant', riskLevel: 'low', memberCount: 1245, licenseStatus: 'valid', nextRenewalDate: '2027-01-15', annualBudget: 1500000, revenue: 1200000, expenses: 980000 },
-  { registrationNumber: 'YE-2024-002', nameAr: 'نقابة عمال البناء', entityType: 'union', classification: 'labor', governorate: 'عدن', status: 'active', complianceStatus: 'compliant', riskLevel: 'low', memberCount: 2340, licenseStatus: 'valid', nextRenewalDate: '2026-09-20', annualBudget: 800000, revenue: 750000, expenses: 700000 },
-  { registrationNumber: 'YE-2024-003', nameAr: 'نقابة الأطباء اليمنيين', entityType: 'federation', classification: 'professional', governorate: 'صنعاء', status: 'active', complianceStatus: 'compliant', riskLevel: 'low', memberCount: 3200, licenseStatus: 'valid', nextRenewalDate: '2027-06-10', annualBudget: 2500000, revenue: 2300000, expenses: 1800000 },
-  { registrationNumber: 'YE-2024-004', nameAr: 'نقابة المعلمين', entityType: 'union', classification: 'professional', governorate: 'حضرموت', status: 'suspended', complianceStatus: 'non_compliant', riskLevel: 'high', memberCount: 5600, licenseStatus: 'expired', nextRenewalDate: '2025-09-01', annualBudget: 600000, revenue: 400000, expenses: 550000 },
-  { registrationNumber: 'YE-2024-005', nameAr: 'اتحاد التجار اليمنيين', entityType: 'federation', classification: 'employers', governorate: 'تعز', status: 'active', complianceStatus: 'warned', riskLevel: 'medium', memberCount: 890, licenseStatus: 'pending_renewal', nextRenewalDate: '2026-07-05', annualBudget: 950000, revenue: 880000, expenses: 760000 },
-  { registrationNumber: 'YE-2024-006', nameAr: 'نقابة الصحفيين', entityType: 'union', classification: 'professional', governorate: 'صنعاء', status: 'active', complianceStatus: 'compliant', riskLevel: 'low', memberCount: 420, licenseStatus: 'valid', nextRenewalDate: '2027-03-22', annualBudget: 400000, revenue: 380000, expenses: 310000 },
-  { registrationNumber: 'YE-2024-007', nameAr: 'نقابة عمال النسيج', entityType: 'union', classification: 'labor', governorate: 'عدن', status: 'inactive', complianceStatus: 'non_compliant', riskLevel: 'critical', memberCount: 180, licenseStatus: 'revoked', nextRenewalDate: '2025-01-01', annualBudget: 120000, revenue: 60000, expenses: 150000 },
-  { registrationNumber: 'YE-2024-008', nameAr: 'نقابة المحامين', entityType: 'federation', classification: 'professional', governorate: 'صنعاء', status: 'active', complianceStatus: 'compliant', riskLevel: 'low', memberCount: 760, licenseStatus: 'valid', nextRenewalDate: '2028-02-14', annualBudget: 1100000, revenue: 1050000, expenses: 870000 },
-];
-
-const DEMO_MEMBERS = [
-  { nationalId: '1234567890', fullName: 'أحمد محمد الحداد', gender: 'male', profession: 'مهندس مدني', governorate: 'صنعاء', joinDate: '2020-03-15', status: 'active', phone: '711234567', memberNumber: 'M-001' },
-  { nationalId: '0987654321', fullName: 'فاطمة علي الزهراء', gender: 'female', profession: 'طبيبة أسنان', governorate: 'عدن', joinDate: '2019-07-01', status: 'active', phone: '733456789', memberNumber: 'M-002' },
-  { nationalId: '1122334455', fullName: 'خالد أحمد الشرجبي', gender: 'male', profession: 'محامٍ', governorate: 'تعز', joinDate: '2021-01-10', status: 'active', phone: '777890123', memberNumber: 'M-003' },
-  { nationalId: '5544332211', fullName: 'مريم حسن البلحاف', gender: 'female', profession: 'معلمة', governorate: 'حضرموت', joinDate: '2018-09-05', status: 'inactive', phone: '712345678', memberNumber: 'M-004' },
-  { nationalId: '9988776655', fullName: 'عمر عبدالله القحطاني', gender: 'male', profession: 'مهندس كهربائي', governorate: 'صنعاء', joinDate: '2022-04-20', status: 'active', phone: '736789012', memberNumber: 'M-005' },
-];
-
-const DEMO_ACTIVITIES = [
-  { activityNumber: 'ACT-2026-001', activityName: 'ورشة التدريب على السلامة المهنية', activityType: 'workshop', startDate: '2026-03-10', location: 'قاعة المؤتمرات - صنعاء', actualParticipants: 45, status: 'completed', budget: 150000, actualCost: 138000 },
-  { activityNumber: 'ACT-2026-002', activityName: 'مؤتمر اتحادات العمال السنوي', activityType: 'conference', startDate: '2026-04-15', location: 'فندق موفنبيك - عدن', actualParticipants: 120, status: 'completed', budget: 500000, actualCost: 480000 },
-  { activityNumber: 'ACT-2026-003', activityName: 'انتخابات مجلس إدارة النقابة', activityType: 'election', startDate: '2026-05-20', location: 'مقر النقابة', actualParticipants: 89, status: 'ongoing', budget: 80000, actualCost: 65000 },
-  { activityNumber: 'ACT-2026-004', activityName: 'دورة تطوير المهارات القيادية', activityType: 'training', startDate: '2026-06-05', location: 'مركز التدريب - تعز', actualParticipants: 32, status: 'planned', budget: 200000, actualCost: 0 },
-];
-
-const DEMO_VIOLATIONS = [
-  { violationNumber: 'VIO-2026-001', violationType: 'عدم تقديم التقرير السنوي', severity: 'major', detectedDate: '2026-02-10', status: 'open', penaltyAmount: 50000 },
-  { violationNumber: 'VIO-2026-002', violationType: 'مخالفة لوائح الانتخابات', severity: 'critical', detectedDate: '2026-01-20', status: 'under_review', penaltyAmount: 150000 },
-  { violationNumber: 'VIO-2026-003', violationType: 'تأخر في تجديد الترخيص', severity: 'moderate', detectedDate: '2026-03-05', status: 'resolved', penaltyAmount: 20000 },
-  { violationNumber: 'VIO-2026-004', violationType: 'عدم الإفصاح عن البيانات المالية', severity: 'major', detectedDate: '2026-04-12', status: 'open', penaltyAmount: 80000 },
-];
-
-// ============================================================
-// إحصائيات للمخططات
-// ============================================================
-
-const GOV_DISTRIBUTION = [
-  { name: 'صنعاء', value: 38 },
-  { name: 'عدن', value: 22 },
-  { name: 'تعز', value: 16 },
-  { name: 'حضرموت', value: 13 },
-  { name: 'أخرى', value: 11 },
-];
-
-const TYPE_DISTRIBUTION = [
-  { name: 'مهنية', value: 42 },
-  { name: 'عمالية', value: 31 },
-  { name: 'أصحاب أعمال', value: 16 },
-  { name: 'اجتماعية', value: 11 },
-];
-
-const MONTHLY_DATA = [
-  { month: 'يناير', unions: 4, members: 120 },
-  { month: 'فبراير', unions: 2, members: 85 },
-  { month: 'مارس', unions: 6, members: 210 },
-  { month: 'أبريل', unions: 3, members: 150 },
-  { month: 'مايو', unions: 5, members: 190 },
-  { month: 'يونيو', unions: 7, members: 260 },
-];
-
-const COLORS = ['#1E3A8A', '#2563EB', '#3B82F6', '#60A5FA', '#93C5FD'];
-
-// ============================================================
-// أنواع التقارير المتاحة
-// ============================================================
-
-const REPORT_TEMPLATES = [
-  { id: 'unions', label: 'تقرير النقابات', icon: Building2, color: 'bg-blue-50 border-blue-200 text-blue-800', reportType: 'members_list' as ReportType, data: DEMO_UNIONS, columns: UNION_REPORT_COLUMNS },
-  { id: 'members', label: 'تقرير الأعضاء', icon: Users, color: 'bg-green-50 border-green-200 text-green-800', reportType: 'members_list' as ReportType, data: DEMO_MEMBERS, columns: MEMBER_REPORT_COLUMNS },
-  { id: 'activities', label: 'تقرير الأنشطة', icon: Calendar, color: 'bg-purple-50 border-purple-200 text-purple-800', reportType: 'members_list' as ReportType, data: DEMO_ACTIVITIES, columns: ACTIVITY_REPORT_COLUMNS },
-  { id: 'violations', label: 'تقرير المخالفات', icon: AlertTriangle, color: 'bg-red-50 border-red-200 text-red-800', reportType: 'members_list' as ReportType, data: DEMO_VIOLATIONS, columns: VIOLATION_REPORT_COLUMNS },
-  { id: 'compliance', label: 'تقرير الامتثال', icon: Shield, color: 'bg-yellow-50 border-yellow-200 text-yellow-800', reportType: 'compliance' as ReportType, data: DEMO_UNIONS, columns: UNION_REPORT_COLUMNS },
-  { id: 'financial', label: 'التقرير المالي', icon: TrendingUp, color: 'bg-emerald-50 border-emerald-200 text-emerald-800', reportType: 'financial_summary' as ReportType, data: DEMO_UNIONS, columns: UNION_REPORT_COLUMNS },
-];
-
-// ============================================================
-// المكوّن الرئيسي
-// ============================================================
-
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { BarChart3, Download, FileText, FileSpreadsheet, Printer, RefreshCw, Shield, TrendingUp, Users, Building2, AlertTriangle, Scale, Briefcase, ClipboardCheck, Award, Globe, Calculator, } from 'lucide-react';
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { toast } from 'sonner';
+import { logAudit } from '../../utils/security';
+import { exportReportToExcel, exportReportToPDF } from '../../components/enterprise/PrintExportManager';
+import type { ReportColumn } from '../../components/enterprise/PrintExportManager';
+import { DomainAnalyticalPanel } from '../../components/reports/DomainAnalyticalPanel';
+import { translateStatus } from '../../components/ui/designSystem';
+const COLORS = ['#1E3A8A', '#2563EB', '#3B82F6', '#D97706', '#0D9488', '#7C3AED', '#DC2626', '#059669'];
+const MAP: Record<string, string> = {
+    commercial: 'سجل المنشآت والشركات التجارية',
+    unions: 'سجل النقابات والاتحادات العمالية',
+    disputes: 'المنازعات العمالية والتسويات (م 128)',
+    expatriates: 'تراخيص العمالة الوافدة (غير اليمنية)',
+    members: 'سجل الكوادر العمالية والنقابية',
+    professions: 'استوديو توصيف المهن (ISCO-08)',
+    violations: 'محاضر المخالفات والإجراءات',
+    inspections: 'محاضر التفتيش والسلامة OSH',
+    compliance: 'مصفوفات الامتثال المؤسسي',
+    dispatches: 'إرساليات وتوجيه العمالة',
+    financial: 'سداد الرسوم والتحصيل المالي',
+    alerts: 'تنبيهات الامتثال والإنذارات',
+    risk_assessments: 'تقييم المخاطر التنبؤي AI',
+    legal_references: 'الموسوعة القانونية وقانون العمل',
+    training: 'سجلات التدريب والتأهيل',
+    licenses: 'تراخيص مزاولة الأنشطة والمهن',
+    evaluations: 'شهادات الكفاءة المهنية',
+    documents: 'مستندات النقابات والمنظمات',
+};
+type ReportType = keyof typeof MAP;
 export function ReportsManagement() {
-  const [reportType, setReportType] = useState('unions');
-  const [dateFrom, setDateFrom] = useState('2026-01-01');
-  const [dateTo, setDateTo] = useState('2026-06-30');
-  const [printOptions, setPrintOptions] = useState<PrintExportOptions | null>(null);
-  const [activeTab, setActiveTab] = useState<'builder' | 'charts'>('builder');
-  const [govFilter, setGovFilter] = useState('الكل');
-  const [statusFilter, setStatusFilter] = useState('الكل');
+    const [reportType, setReportType] = useState<ReportType>('commercial');
+    const [dateFrom, setDateFrom] = useState('2026-01-01');
+    const [dateTo, setDateTo] = useState('2026-12-31');
+    const [govFilter, setGovFilter] = useState('all');
+    const [loading, setLoading] = useState(true);
+    const [commercialEsts, setCommercialEsts] = useState<any[]>([]);
+    const [entities, setEntities] = useState<any[]>([]);
+    const [disputes, setDisputes] = useState<any[]>([]);
+    const [expatriateLicenses, setExpatriateLicenses] = useState<any[]>([]);
+    const [members, setMembers] = useState<any[]>([]);
+    const [professions, setProfessions] = useState<any[]>([]);
+    const [violations, setViolations] = useState<any[]>([]);
+    const [inspections, setInspections] = useState<any[]>([]);
+    const [complianceMatrices, setComplianceMatrices] = useState<any[]>([]);
+    const [dispatches, setDispatches] = useState<any[]>([]);
+    const [payments, setPayments] = useState<any[]>([]);
+    const [alerts, setAlerts] = useState<any[]>([]);
+    const [riskAssessments, setRiskAssessments] = useState<any[]>([]);
+    const [legalRefs, setLegalRefs] = useState<any[]>([]);
+    const [trainingRecords, setTrainingRecords] = useState<any[]>([]);
+    const [licenses, setLicenses] = useState<any[]>([]);
+    const [evalCerts, setEvalCerts] = useState<any[]>([]);
+    const [documents, setDocuments] = useState<any[]>([]);
+    const fetchAll = useCallback(async () => {
+        setLoading(true);
+        try {
+            const [coR, enR, disR, expR, meR, prR, viR, insR, cmR, diR, paR, alR, raR, lrR, trR, liR, ecR, docR] = await Promise.all([
+                fetch('/api/commercial?limit=100'),
+                fetch('/api/entities?limit=100'),
+                fetch('/api/labor-disputes?limit=100'),
+                fetch('/api/expatriate-licenses?limit=100'),
+                fetch('/api/members?limit=100'),
+                fetch('/api/professions?limit=100'),
+                fetch('/api/violations?limit=100'),
+                fetch('/api/inspections?limit=100'),
+                fetch('/api/compliance-matrices?limit=100'),
+                fetch('/api/dispatches?limit=100'),
+                fetch('/api/fee-payments?limit=100'),
+                fetch('/api/compliance-alerts?limit=100'),
+                fetch('/api/risk-assessments?limit=100'),
+                fetch('/api/legal-references?limit=100'),
+                fetch('/api/training-records?limit=100'),
+                fetch('/api/licenses?limit=100'),
+                fetch('/api/evaluation-certificates?limit=100'),
+                fetch('/api/documents?limit=200'),
+            ]);
+            const extract = (d: any) => d?.data || [];
+            if (coR.ok)
+                setCommercialEsts(extract(await coR.json()));
+            if (enR.ok)
+                setEntities(extract(await enR.json()));
+            if (disR.ok)
+                setDisputes(extract(await disR.json()));
+            if (expR.ok)
+                setExpatriateLicenses(extract(await expR.json()));
+            if (meR.ok)
+                setMembers(extract(await meR.json()));
+            if (prR.ok)
+                setProfessions(extract(await prR.json()));
+            if (viR.ok)
+                setViolations(extract(await viR.json()));
+            if (insR.ok)
+                setInspections(extract(await insR.json()));
+            if (cmR.ok)
+                setComplianceMatrices(extract(await cmR.json()));
+            if (diR.ok)
+                setDispatches(extract(await diR.json()));
+            if (paR.ok)
+                setPayments(extract(await paR.json()));
+            if (alR.ok) {
+                const d = await alR.json();
+                setAlerts(d.data || d.alerts || []);
+            }
+            if (raR.ok)
+                setRiskAssessments(extract(await raR.json()));
+            if (lrR.ok) {
+                const d = await lrR.json();
+                setLegalRefs([...(d.legal_references || []), ...(d.law_articles || []), ...(d.ilo_conventions || []), ...(d.international_standards || [])]);
+            }
+            if (trR.ok)
+                setTrainingRecords(extract(await trR.json()));
+            if (liR.ok)
+                setLicenses(extract(await liR.json()));
+            if (ecR.ok)
+                setEvalCerts(extract(await ecR.json()));
+            if (docR.ok)
+                setDocuments(extract(await docR.json()));
+            logAudit({ action: 'view', resource: 'reports' });
+        }
+        catch {
+            toast.error('خطأ في تحميل البيانات');
+        }
+        finally {
+            setLoading(false);
+        }
+    }, []);
+    useEffect(() => { fetchAll(); }, [fetchAll]);
+    const filteredEntities = useMemo(() => {
+        return entities.filter(e => {
+            if (govFilter !== 'all' && e.governorate !== govFilter)
+                return false;
+            return true;
+        });
+    }, [entities, govFilter]);
+    const summaryStats = useMemo(() => ({
+        totalEntities: entities.length, activeEntities: entities.filter(e => e.status === 'active').length,
+        totalMembers: members.length, totalProfessions: professions.length,
+        totalViolations: violations.length, totalInspections: inspections.length,
+        totalDispatches: dispatches.length, totalPayments: payments.reduce((s, p) => s + (Number(p.amount) || 0), 0),
+        activeAlerts: alerts.length, totalRisk: riskAssessments.length,
+        totalLegal: legalRefs.length, totalTraining: trainingRecords.length,
+        totalLicenses: licenses.length, totalEval: evalCerts.length,
+        compliant: complianceMatrices.filter(m => m.compliance_status === 'compliant').length,
+    }), [entities, members, professions, violations, inspections, dispatches, payments, alerts, riskAssessments, legalRefs, trainingRecords, licenses, evalCerts, complianceMatrices]);
+    const govDistribution = useMemo(() => {
+        const map: Record<string, number> = {};
+        entities.forEach(e => { const g = e.governorate || 'غير محدد'; map[g] = (map[g] || 0) + 1; });
+        return Object.entries(map).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value).slice(0, 8);
+    }, [entities]);
+    const typeDistribution = useMemo(() => {
+        const map: Record<string, number> = {};
+        entities.forEach(e => { const t = e.entity_type || 'غير محدد'; map[t] = (map[t] || 0) + 1; });
+        return Object.entries(map).map(([name, value]) => ({ name, value }));
+    }, [entities]);
+    const genderData = useMemo(() => {
+        const male = members.filter(m => m.gender === 'male' || m.gender === 'ذكر').length;
+        const female = members.filter(m => m.gender === 'female' || m.gender === 'أنثى').length;
+        return [{ name: 'ذكور', value: male || 0 }, { name: 'إناث', value: female || 0 }];
+    }, [members]);
+    const getReportData = (): {
+        data: any[];
+        columns: ReportColumn[];
+        filename: string;
+    } => {
+        switch (reportType) {
+            case 'commercial':
+                return {
+                    data: commercialEsts, filename: 'سجل المنشآت والشركات التجارية',
+                    columns: [
+                        { key: 'name_ar', label: 'اسم المنشأة', width: 28 },
+                        { key: 'unified_code', label: 'الرمز الموحد', width: 14 },
+                        { key: 'commercial_register_number', label: 'السجل التجاري', width: 14 },
+                        { key: 'governorate', label: 'المحافظة', width: 12 },
+                        { key: 'sector', label: 'القطاع', width: 14 },
+                        { key: 'size', label: 'الحجم', width: 10 },
+                        { key: 'employees_count', label: 'العمالة', width: 10 },
+                        { key: 'compliance_status', label: 'الامتثال', width: 12 },
+                        { key: 'registration_date', label: 'التسجيل', width: 12 },
+                        { key: 'risk_level', label: 'المخاطرة', width: 10 },
+                        { key: 'status', label: 'الحالة', width: 10 },
+                    ],
+                };
+            case 'unions':
+                return {
+                    data: filteredEntities, filename: 'سجل النقابات والاتحادات',
+                    columns: [
+                        { key: 'name_ar', label: 'اسم المنظمة النقابية', width: 30 },
+                        { key: 'entity_type', label: 'المستوى', width: 12 },
+                        { key: 'unified_code', label: 'الرمز المؤسسي', width: 12 },
+                        { key: 'governorate', label: 'المحافظة', width: 12 },
+                        { key: 'sector', label: 'القطاع', width: 12 },
+                        { key: 'member_count', label: 'المنتسبون', width: 12 },
+                        { key: 'compliance_status', label: 'الامتثال', width: 12 },
+                        { key: 'registrationNumber', label: 'رقم التسجيل', width: 14 },
+                        { key: 'status', label: 'الحالة', width: 10 },
+                    ],
+                };
+            case 'disputes':
+                return {
+                    data: disputes, filename: 'المنازعات العمالية والصلح',
+                    columns: [
+                        { key: 'dispute_number', label: 'رقم النزاع', width: 14 },
+                        { key: 'enterprise_name', label: 'المنشأة الطرف', width: 24 },
+                        { key: 'worker_name', label: 'العامل الشاكي', width: 20 },
+                        { key: 'dispute_type', label: 'موضوع النزاع', width: 18 },
+                        { key: 'claim_amount', label: 'المطالبة المالية', width: 14, format: v => v ? `${Number(v).toLocaleString('ar-YE')} ر.ي` : '—' },
+                        { key: 'status', label: 'موقف التسوية', width: 14 },
+                        { key: 'created_at', label: 'تاريخ القيد', width: 14 },
+                    ],
+                };
+            case 'expatriates':
+                return {
+                    data: expatriateLicenses, filename: 'تراخيص العمالة الوافدة',
+                    columns: [
+                        { key: 'license_number', label: 'رقم الترخيص', width: 14 },
+                        { key: 'worker_name_ar', label: 'اسم العامل الوافد', width: 22 },
+                        { key: 'nationality', label: 'الجنسية', width: 14 },
+                        { key: 'occupation_name_ar', label: 'المهنة المرخصة', width: 20 },
+                        { key: 'enterprise_name', label: 'جهة العمل', width: 24 },
+                        { key: 'status', label: 'حالة الترخيص', width: 12 },
+                        { key: 'expiry_date', label: 'تاريخ الانتهاء', width: 14 },
+                    ],
+                };
+            case 'members':
+                return {
+                    data: members, filename: 'سجل العمال والنقابيين',
+                    columns: [
+                        { key: 'full_name', label: 'الاسم الكامل', width: 25 },
+                        { key: 'national_id', label: 'الرقم الوطني', width: 14 },
+                        { key: 'gender', label: 'الجنس', width: 8, format: v => v === 'male' ? 'ذكر' : v === 'female' ? 'أنثى' : v || '—' },
+                        { key: 'profession', label: 'المهنة', width: 18 },
+                        { key: 'qualification', label: 'المؤهل العلمي', width: 14 },
+                        { key: 'governorate', label: 'المحافظة', width: 12 },
+                        { key: 'membership_type', label: 'نوع العضوية', width: 14 },
+                        { key: 'payment_status', label: 'الاشتراك', width: 12 },
+                        { key: 'status', label: 'الحالة', width: 10 },
+                    ],
+                };
+            case 'professions':
+                return {
+                    data: professions.slice(0, 200), filename: 'المهن والوظائف القياسية',
+                    columns: [
+                        { key: 'code', label: 'رمز المهنة', width: 10 },
+                        { key: 'name_ar', label: 'المسمى المهني (عربي)', width: 26 },
+                        { key: 'isco_code', label: 'ISCO-08', width: 12 },
+                        { key: 'major_group_name', label: 'المجموعة الرئيسية', width: 18 },
+                        { key: 'sector', label: 'القطاع', width: 14 },
+                        { key: 'skill_level', label: 'المستوى المهاري', width: 12 },
+                        { key: 'hazard_level', label: 'الخطورة OSH', width: 12 },
+                        { key: 'demand_level', label: 'الطلب', width: 10 },
+                        { key: 'is_technical', label: 'تقنية', width: 8, format: v => (v ? 'نعم' : 'لا') },
+                    ],
+                };
+            case 'violations':
+                return {
+                    data: violations, filename: 'محاضر المخالفات العمالية',
+                    columns: [
+                        { key: 'violation_number', label: 'رقم المحضر', width: 14 },
+                        { key: 'violation_type', label: 'نوع المخالفة', width: 22 },
+                        { key: 'severity', label: 'درجة الجسامة', width: 12 },
+                        { key: 'status', label: 'الإجراء المتخذ', width: 14 },
+                        { key: 'penalty_amount', label: 'الغرامة المقررة', width: 14, format: v => v ? `${Number(v).toLocaleString('ar-YE')} ر.ي` : '—' },
+                        { key: 'legal_basis', label: 'السند القانوني', width: 18 },
+                    ],
+                };
+            case 'inspections':
+                return {
+                    data: inspections, filename: 'محاضر التفتيش والسلامة المهنية',
+                    columns: [
+                        { key: 'inspection_number', label: 'رقم المحضر', width: 14 },
+                        { key: 'enterprise_name', label: 'المنشأة', width: 22 },
+                        { key: 'inspection_type', label: 'نوع التفتيش', width: 14 },
+                        { key: 'inspector_name', label: 'المفتش', width: 16 },
+                        { key: 'overall_score', label: 'نسبة الامتثال', width: 12 },
+                        { key: 'compliance_status', label: 'حالة المنشأة', width: 14 },
+                        { key: 'findings_count', label: 'الملاحظات', width: 10 },
+                        { key: 'violations_count', label: 'المخالفات', width: 10 },
+                        { key: 'inspection_date', label: 'تاريخ النزول', width: 14 },
+                    ],
+                };
+            case 'compliance':
+                return {
+                    data: complianceMatrices, filename: 'مصفوفات الامتثال المؤسسي',
+                    columns: [
+                        { key: 'enterprise_name', label: 'اسم المنشأة', width: 22 },
+                        { key: 'article_number', label: 'رقم المادة', width: 14 },
+                        { key: 'article_title', label: 'موضوع المادة القانونية', width: 22 },
+                        { key: 'compliance_status', label: 'مستوى الالتزام', width: 14 },
+                        { key: 'checked_by', label: 'المراقب القانوني', width: 16 },
+                        { key: 'checked_at', label: 'تاريخ الفحص', width: 14 },
+                    ],
+                };
+            case 'dispatches':
+                return {
+                    data: dispatches, filename: 'إرساليات وتوجيه العمالة',
+                    columns: [
+                        { key: 'dispatch_number', label: 'رقم الإرسالية', width: 14 },
+                        { key: 'entity_name', label: 'المنشأة المصدرة', width: 22 },
+                        { key: 'worker_name', label: 'اسم العامل', width: 18 },
+                        { key: 'destination_country', label: 'جهة/موقع العمل', width: 16 },
+                        { key: 'status', label: 'حالة الإرسالية', width: 12 },
+                    ],
+                };
+            case 'financial':
+                return {
+                    data: payments, filename: 'سداد الرسوم والتحصيل المالي',
+                    columns: [
+                        { key: 'entity_name', label: 'المنشأة / الجهة', width: 22 },
+                        { key: 'amount', label: 'المبلغ المسدد', width: 14, format: v => v ? `${Number(v).toLocaleString('ar-YE')} ر.ي` : '—' },
+                        { key: 'payment_type', label: 'بند الرسوم', width: 16 },
+                        { key: 'payment_status', label: 'حالة السداد', width: 12 },
+                        { key: 'payment_date', label: 'تاريخ السند', width: 14 },
+                    ],
+                };
+            case 'risk_assessments':
+                return {
+                    data: riskAssessments, filename: 'تقييم المخاطر التنبؤي',
+                    columns: [
+                        { key: 'entity_name', label: 'المنشأة', width: 22 },
+                        { key: 'risk_type', label: 'نوع المخاطرة', width: 16 },
+                        { key: 'risk_level', label: 'مستوى الخطر', width: 14 },
+                        { key: 'likelihood', label: 'الاحتمالية', width: 10 },
+                        { key: 'impact', label: 'الأثر', width: 10 },
+                        { key: 'risk_score', label: 'المؤشر الرقمي', width: 10 },
+                        { key: 'responsible_person', label: 'المسؤول الرقابي', width: 18 },
+                    ],
+                };
+            case 'legal_references':
+                return {
+                    data: legalRefs, filename: 'الموسوعة القانونية وقانون العمل',
+                    columns: [
+                        { key: 'law_name_ar', label: 'اسم القانون / اللائحة', width: 28 },
+                        { key: 'law_number', label: 'رقم التشريع', width: 12 },
+                        { key: 'law_year', label: 'سنة الإصدار', width: 10 },
+                        { key: 'status', label: 'سريان القانون', width: 10 },
+                        { key: 'summary', label: 'الملخص والمضمون', width: 30 },
+                    ],
+                };
+            case 'training':
+                return {
+                    data: trainingRecords, filename: 'سجلات التدريب والتأهيل',
+                    columns: [
+                        { key: 'training_name', label: 'البرنامج التدريبي', width: 24 },
+                        { key: 'training_type', label: 'المجال التخصصي', width: 14 },
+                        { key: 'employee_name', label: 'اسم المتدرب', width: 18 },
+                        { key: 'training_provider', label: 'مركز التدريب المعتمد', width: 20 },
+                        { key: 'duration_hours', label: 'الساعات', width: 10 },
+                        { key: 'status', label: 'حالة البرنامج', width: 12 },
+                    ],
+                };
+            case 'licenses':
+                return {
+                    data: licenses, filename: 'تراخيص مزاولة الأنشطة',
+                    columns: [
+                        { key: 'license_number', label: 'رقم الترخيص', width: 14 },
+                        { key: 'license_type', label: 'نوع النشاط', width: 16 },
+                        { key: 'entity_name', label: 'اسم المنشأة', width: 22 },
+                        { key: 'issue_date', label: 'تاريخ المنح', width: 14 },
+                        { key: 'expiry_date', label: 'تاريخ الانتهاء', width: 14 },
+                        { key: 'status', label: 'الحالة', width: 10 },
+                    ],
+                };
+            case 'evaluations':
+                return {
+                    data: evalCerts, filename: 'شهادات الكفاءة والمطابقة المهنية',
+                    columns: [
+                        { key: 'certificate_number', label: 'رقم الشهادة', width: 14 },
+                        { key: 'enterprise_name', label: 'المنشأة الحائزة', width: 22 },
+                        { key: 'profession_id', label: 'المهنة', width: 18, format: (v: any) => { const p = professions.find(x => x.id === v); return p ? (p.name_ar || p.name) : (v || '—'); } },
+                        { key: 'overall_score', label: 'الدرجة', width: 10 },
+                        { key: 'labor_law_compliance', label: 'قانون العمل', width: 12 },
+                        { key: 'safety_compliance', label: 'OSH', width: 10 },
+                        { key: 'training_compliance', label: 'التدريب', width: 10 },
+                        { key: 'yemenization_compliance', label: 'التوطين', width: 10 },
+                        { key: 'assessed_against_standards', label: 'مُقيّمة', width: 10, format: (v: any) => (v ? 'نعم' : 'لا') },
+                        { key: 'standard_version', label: 'إصدار المعيار', width: 12 },
+                        { key: 'status', label: 'الاعتماد', width: 10 },
+                    ],
+                };
+            case 'alerts':
+                return {
+                    data: alerts, filename: 'تنبيهات الامتثال والإنذارات',
+                    columns: [
+                        { key: 'alert_type', label: 'نوع الإنذار', width: 20 },
+                        { key: 'severity', label: 'مستوى الأهمية', width: 12 },
+                        { key: 'description', label: 'نص التنبيه القانوني', width: 32 },
+                        { key: 'is_resolved', label: 'موقف المعالجة', width: 12, format: v => v ? 'تمت التسوية' : 'قيد المتابعة' },
+                    ],
+                };
+            case 'documents':
+                return {
+                    data: documents.map(d => ({
+                        ...d,
+                        docNumber: d.docNumber ?? d.doc_number ?? d.document_number,
+                        name: d.name ?? d.document_name,
+                        type: d.type ?? d.doc_type,
+                        entityName: d.entityName ?? d.entity_name,
+                        issueDate: d.issueDate ?? d.issue_date,
+                    })),
+                    filename: 'مستندات النقابات والمنظمات',
+                    columns: [
+                        { key: 'docNumber', label: 'رقم المستند', width: 14 },
+                        { key: 'name', label: 'الاسم', width: 24 },
+                        { key: 'type', label: 'النوع', width: 16 },
+                        { key: 'entityName', label: 'الجهة المصدرة', width: 22 },
+                        { key: 'status', label: 'الحالة', width: 12 },
+                        { key: 'issueDate', label: 'تاريخ الإصدار', width: 14 },
+                        { key: 'reviewer', label: 'المراجع', width: 16 },
+                    ],
+                };
+            default:
+                return { data: [], filename: 'تقرير', columns: [] };
+        }
+    };
+    const handleExcelExport = () => {
+        const { data, columns } = getReportData();
+        if (data.length === 0) {
+            toast.warning('لا توجد بيانات للتصدير');
+            return;
+        }
+        exportReportToExcel({
+            title: MAP[reportType], reportType: 'statistics', data, columns,
+            dateFrom, dateTo, showGovernmentHeader: true,
+        });
+        toast.success('تم التصدير إلى Excel بنجاح');
+        logAudit({ action: 'export', resource: 'report', details: { type: reportType, format: 'xlsx' } });
+    };
+    const handlePDFExport = () => {
+        const { data, columns } = getReportData();
+        if (data.length === 0) {
+            toast.warning('لا توجد بيانات للتصدير');
+            return;
+        }
+        exportReportToPDF({
+            title: MAP[reportType], reportType: 'statistics', data, columns,
+            dateFrom, dateTo, orientation: 'landscape',
+        });
+        toast.success('تم التصدير إلى PDF بنجاح');
+        logAudit({ action: 'export', resource: 'report', details: { type: reportType, format: 'pdf' } });
+    };
+    const reportTypes: {
+        id: ReportType;
+        label: string;
+        icon: any;
+        count: number;
+    }[] = [
+        { id: 'commercial', label: 'المنشآت التجارية', icon: Building2, count: commercialEsts.length },
+        { id: 'unions', label: 'النقابات والاتحادات', icon: Users, count: entities.length },
+        { id: 'disputes', label: 'المنازعات والصلح', icon: Scale, count: disputes.length },
+        { id: 'expatriates', label: 'العمالة الوافدة', icon: Globe, count: expatriateLicenses.length },
+        { id: 'members', label: 'الكوادر العمالية', icon: Users, count: members.length },
+        { id: 'professions', label: 'المهن القياسية', icon: Briefcase, count: professions.length },
+        { id: 'violations', label: 'المخالفات العمالية', icon: AlertTriangle, count: violations.length },
+        { id: 'inspections', label: 'التفتيش والسلامة', icon: ClipboardCheck, count: inspections.length },
+        { id: 'compliance', label: 'الامتثال المؤسسي', icon: Shield, count: complianceMatrices.length },
+        { id: 'dispatches', label: 'إرساليات العمالة', icon: FileText, count: dispatches.length },
+        { id: 'financial', label: 'التحصيل والرسوم', icon: TrendingUp, count: payments.length },
+        { id: 'risk_assessments', label: 'تقييم المخاطر', icon: AlertTriangle, count: riskAssessments.length },
+        { id: 'legal_references', label: 'الموسوعة القانونية', icon: Scale, count: legalRefs.length },
+        { id: 'training', label: 'التدريب والتأهيل', icon: Award, count: trainingRecords.length },
+        { id: 'licenses', label: 'تراخيص الأنشطة', icon: Globe, count: licenses.length },
+        { id: 'evaluations', label: 'شهادات الكفاءة', icon: BarChart3, count: evalCerts.length },
+        { id: 'documents', label: 'مستندات النقابات', icon: FileText, count: documents.length },
+        { id: 'alerts', label: 'الإنذارات والتنبيهات', icon: AlertTriangle, count: alerts.length },
+    ];
+    const currentData = getReportData();
+    const handleBatchRiskCalc = async () => {
+        try {
+            toast.info('جاري حساب المخاطر لجميع النقابات والمنظمات...');
+            const res = await fetch('/api/risk-engine/batch-calculate', { method: 'POST' });
+            if (res.ok) {
+                const data = await res.json();
+                toast.success(`تم حساب المخاطر لـ ${data.processed} كيان`);
+                fetchAll();
+            }
+            else {
+                toast.error('خطأ في حساب المخاطر');
+            }
+        }
+        catch {
+            toast.error('خطأ في الاتصال');
+        }
+    };
+    return (<div className="space-y-6" dir="rtl">
+      <PageHeader title="التقارير والمخرجات الرسمية" subtitle="قوالب جاهزة للطباعة والتصدير بتنسيق رسمي حكومي" breadcrumbs={[{ label: 'الرئيسية', to: '/ministry' }, { label: 'التقارير' }]} actions={<div className="flex items-center gap-2">
+            <button onClick={handleBatchRiskCalc} className="flex items-center gap-2 px-4 py-2 bg-warning text-white rounded-lg text-sm font-semibold hover:bg-warning/90">
+              <Calculator size={16}/> حساب المخاطر الجماعي
+            </button>
+            <button onClick={handleExcelExport} className="flex items-center gap-2 px-4 py-2 bg-success text-white rounded-lg text-sm font-semibold hover:bg-success/90">
+              <FileSpreadsheet className="w-4 h-4"/> تصدير Excel
+            </button>
+            <button onClick={handlePDFExport} className="flex items-center gap-2 px-4 py-2 bg-error text-white rounded-lg text-sm font-semibold hover:bg-error/90">
+              <FileText className="w-4 h-4"/> تصدير PDF
+            </button>
+            <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark">
+              <Printer className="w-4 h-4"/> طباعة
+            </button>
+            <button onClick={fetchAll} className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm hover:bg-muted">
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}/> تحديث
+            </button>
+          </div>}/>
 
-  const selectedTemplate = REPORT_TEMPLATES.find(t => t.id === reportType) || REPORT_TEMPLATES[0];
-
-  const filteredData = useMemo(() => {
-    let d = selectedTemplate.data;
-    if (govFilter !== 'الكل') d = d.filter((r: any) => r.governorate === govFilter);
-    if (statusFilter !== 'الكل') d = d.filter((r: any) => r.status === statusFilter);
-    return d;
-  }, [selectedTemplate, govFilter, statusFilter]);
-
-  const buildOptions = (): PrintExportOptions => ({
-    title: selectedTemplate.label,
-    subtitle: `تقرير رسمي صادر عن وزارة الشؤون الاجتماعية والعمل`,
-    reportType: selectedTemplate.reportType,
-    data: filteredData,
-    columns: selectedTemplate.columns,
-    dateFrom,
-    dateTo,
-    showSignatureBlock: true,
-    showPageNumbers: true,
-    orientation: reportType === 'financial' ? 'landscape' : 'portrait',
-  });
-
-  const handlePreviewPrint = () => setPrintOptions(buildOptions());
-  const handleExportExcel = () => exportReportToExcel(buildOptions());
-  const handleExportPDF = () => exportReportToPDF(buildOptions());
-
-  const summaryStats = useMemo(() => ({
-    total: DEMO_UNIONS.length,
-    active: DEMO_UNIONS.filter(u => u.status === 'active').length,
-    compliant: DEMO_UNIONS.filter(u => u.complianceStatus === 'compliant').length,
-    highRisk: DEMO_UNIONS.filter(u => ['high', 'critical'].includes(u.riskLevel)).length,
-  }), []);
-
-  return (
-    <div className="space-y-6" dir="rtl">
-      {/* ترويسة الصفحة */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">التقارير والمخرجات الرسمية</h1>
-          <p className="text-sm text-gray-500 mt-1">قوالب جاهزة للطباعة والتصدير بتنسيق حكومي رسمي</p>
-        </div>
-        <div className="flex items-center gap-2 text-xs text-gray-400 bg-gray-50 px-3 py-2 rounded-lg border">
-          <RefreshCw className="w-3 h-3" />
-          <span>آخر تحديث: {new Date().toLocaleDateString('ar-YE')}</span>
-        </div>
-      </div>
-
-      {/* إحصائيات سريعة */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Stats Summary */}
+      <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
         {[
-          { label: 'إجمالي الكيانات', value: summaryStats.total, icon: Building2, color: 'text-blue-700 bg-blue-50 border-blue-200' },
-          { label: 'كيانات نشطة', value: summaryStats.active, icon: TrendingUp, color: 'text-green-700 bg-green-50 border-green-200' },
-          { label: 'ملتزمة', value: summaryStats.compliant, icon: Shield, color: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
-          { label: 'مخاطر عالية', value: summaryStats.highRisk, icon: AlertTriangle, color: 'text-red-700 bg-red-50 border-red-200' },
-        ].map(s => (
-          <div key={s.label} className={`flex items-center gap-3 border rounded-xl p-4 ${s.color}`}>
-            <s.icon className="w-8 h-8 shrink-0" />
-            <div>
-              <p className="text-2xl font-black">{s.value}</p>
-              <p className="text-xs font-medium">{s.label}</p>
-            </div>
-          </div>
-        ))}
+            { l: 'النقابات والمنظمات', v: summaryStats.totalEntities, c: 'text-primary' },
+            { l: 'الأعضاء', v: summaryStats.totalMembers, c: 'text-success' },
+            { l: 'المهن', v: summaryStats.totalProfessions, c: 'text-gold' },
+            { l: 'المخالفات', v: summaryStats.totalViolations, c: 'text-error' },
+            { l: 'رساليات', v: summaryStats.totalDispatches, c: 'text-teal' },
+        ].map(s => (<div key={s.l} className="bg-card rounded-xl border border-border p-3 text-center">
+            <p className={`text-xl font-black ${s.c}`}>{s.v.toLocaleString()}</p>
+            <p className="text-[10px] text-muted-foreground">{s.l}</p>
+          </div>))}
       </div>
 
-      {/* اختيار نوع التقرير */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-        <h2 className="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-[#1E3A8A]" />
-          اختر نوع التقرير
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          {REPORT_TEMPLATES.map(t => (
-            <button
-              key={t.id}
-              onClick={() => setReportType(t.id)}
-              className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
-                reportType === t.id
-                  ? 'border-[#1E3A8A] bg-[#EFF6FF] text-[#1E3A8A]'
-                  : 'border-gray-200 hover:border-gray-300 text-gray-600'
-              }`}
-            >
-              <t.icon className="w-6 h-6" />
-              <span className="text-xs font-semibold text-center leading-tight">{t.label}</span>
+      {/* Report Type Selector */}
+      <div className="bg-card rounded-xl border border-border shadow-sm p-4">
+        <h2 className="text-sm font-bold text-heading mb-3 flex items-center gap-2"><BarChart3 className="w-4 h-4 text-primary"/>اختر نوع التقرير</h2>
+        <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
+          {reportTypes.map(t => {
+            const Icon = t.icon;
+            return (<button key={t.id} onClick={() => setReportType(t.id)} className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border-2 transition-all ${reportType === t.id ? 'border-primary bg-primary/5 text-primary shadow' : 'border-border hover:border-primary/30 text-muted-foreground'}`}>
+                <Icon className="w-5 h-5"/>
+                <span className="text-[10px] font-semibold">{t.label}</span>
+                <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">{t.count}</span>
+              </button>);
+        })}
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-card rounded-xl border border-border p-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div><label className="block text-xs font-semibold text-muted-foreground mb-1">من تاريخ</label>
+            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="w-full px-3 py-2 border border-border rounded-lg text-sm"/></div>
+          <div><label className="block text-xs font-semibold text-muted-foreground mb-1">إلى تاريخ</label>
+            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="w-full px-3 py-2 border border-border rounded-lg text-sm"/></div>
+          <div><label className="block text-xs font-semibold text-muted-foreground mb-1">المحافظة</label>
+            <select value={govFilter} onChange={e => setGovFilter(e.target.value)} className="w-full px-3 py-2 border border-border rounded-lg text-sm">
+              <option value="all">جميع المحافظات</option>
+              {[...new Set(entities.map(e => e.governorate).filter(Boolean))].map(g => <option key={g} value={g}>{g}</option>)}
+            </select></div>
+          <div className="flex items-end gap-2">
+            <button onClick={handleExcelExport} className="flex items-center gap-1 px-4 py-2 bg-success text-white rounded-lg text-xs font-semibold hover:bg-success/90">
+              <Download className="w-3 h-3"/> Excel
             </button>
-          ))}
-        </div>
-      </div>
-
-      {/* منشئ التقرير */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-        {/* تبويبات */}
-        <div className="flex gap-1 mb-5 border-b border-gray-200">
-          {[
-            { id: 'builder', label: 'منشئ التقرير' },
-            { id: 'charts', label: 'المخططات البيانية' },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
-                activeTab === tab.id
-                  ? 'border-[#1E3A8A] text-[#1E3A8A]'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              {tab.label}
+            <button onClick={handlePDFExport} className="flex items-center gap-1 px-4 py-2 bg-error text-white rounded-lg text-xs font-semibold hover:bg-error/90">
+              <Download className="w-3 h-3"/> PDF
             </button>
-          ))}
-        </div>
-
-        {activeTab === 'builder' ? (
-          <>
-            {/* فلاتر */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">من تاريخ</label>
-                <input
-                  type="date"
-                  value={dateFrom}
-                  onChange={e => setDateFrom(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1E3A8A] focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">إلى تاريخ</label>
-                <input
-                  type="date"
-                  value={dateTo}
-                  onChange={e => setDateTo(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1E3A8A] focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">المحافظة</label>
-                <select
-                  value={govFilter}
-                  onChange={e => setGovFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1E3A8A]"
-                >
-                  {['الكل', 'صنعاء', 'عدن', 'تعز', 'حضرموت'].map(g => <option key={g}>{g}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">الحالة</label>
-                <select
-                  value={statusFilter}
-                  onChange={e => setStatusFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1E3A8A]"
-                >
-                  {['الكل', 'active', 'suspended', 'inactive'].map(s => (
-                    <option key={s} value={s}>{s === 'الكل' ? 'الكل' : s === 'active' ? 'نشط' : s === 'suspended' ? 'معلق' : 'متوقف'}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* معاينة الجدول */}
-            <div className="border border-gray-200 rounded-xl overflow-hidden mb-5">
-              <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Filter className="w-4 h-4" />
-                  <span>إجمالي السجلات: <strong className="text-gray-800">{filteredData.length}</strong></span>
-                </div>
-              </div>
-              <div className="overflow-x-auto max-h-72">
-                <table className="w-full text-sm">
-                  <thead className="bg-[#1E3A8A] text-white sticky top-0">
-                    <tr>
-                      <th className="px-3 py-2 text-right font-semibold w-8">#</th>
-                      {selectedTemplate.columns.slice(0, 6).map(col => (
-                        <th key={col.key} className="px-3 py-2 text-right font-semibold">{col.label}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {filteredData.map((row: any, i: number) => (
-                      <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-blue-50/40'}>
-                        <td className="px-3 py-2 text-center text-gray-400">{i + 1}</td>
-                        {selectedTemplate.columns.slice(0, 6).map(col => (
-                          <td key={col.key} className="px-3 py-2 text-gray-700">
-                            {col.format ? col.format(row[col.key]) : (row[col.key] ?? '—')}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* أزرار التصدير والطباعة */}
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={handlePreviewPrint}
-                className="flex items-center gap-2 px-5 py-2.5 bg-[#1E3A8A] text-white rounded-xl font-semibold hover:bg-blue-800 transition-colors shadow-sm"
-              >
-                <Printer className="w-4 h-4" />
-                معاينة وطباعة
-              </button>
-              <button
-                onClick={handleExportExcel}
-                className="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors shadow-sm"
-              >
-                <FileSpreadsheet className="w-4 h-4" />
-                تصدير Excel
-              </button>
-              <button
-                onClick={handleExportPDF}
-                className="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors shadow-sm"
-              >
-                <FileText className="w-4 h-4" />
-                تصدير PDF
-              </button>
-              <button
-                onClick={() => {
-                  const opts = buildOptions();
-                  exportReportToExcel({ ...opts, reportType: 'statistics' });
-                }}
-                className="flex items-center gap-2 px-5 py-2.5 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
-              >
-                <Download className="w-4 h-4" />
-                تصدير CSV
-              </button>
-            </div>
-          </>
-        ) : (
-          /* تبويب المخططات */
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">التسجيل الشهري الجديد</h3>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={MONTHLY_DATA}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="unions" name="نقابات جديدة" fill="#1E3A8A" radius={[3, 3, 0, 0]} />
-                  <Bar dataKey="members" name="أعضاء جدد" fill="#60A5FA" radius={[3, 3, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">توزيع النقابات حسب المحافظة</h3>
-              <ResponsiveContainer width="100%" height={220}>
-                <PieChart>
-                  <Pie data={GOV_DISTRIBUTION} cx="50%" cy="50%" outerRadius={80}
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    labelLine={false}
-                  >
-                    {GOV_DISTRIBUTION.map((_, idx) => (
-                      <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">توزيع حسب نوع التصنيف</h3>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={TYPE_DISTRIBUTION} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis type="number" tick={{ fontSize: 11 }} />
-                  <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={80} />
-                  <Tooltip />
-                  <Bar dataKey="value" name="عدد الكيانات" fill="#2563EB" radius={[0, 3, 3, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <h3 className="text-sm font-semibold text-gray-700">ملخص الامتثال</h3>
-              {[
-                { label: 'ملتزمة', value: summaryStats.compliant, total: summaryStats.total, color: 'bg-green-500' },
-                { label: 'غير ملتزمة', value: summaryStats.total - summaryStats.compliant, total: summaryStats.total, color: 'bg-red-400' },
-                { label: 'نشطة', value: summaryStats.active, total: summaryStats.total, color: 'bg-blue-500' },
-                { label: 'مخاطر عالية', value: summaryStats.highRisk, total: summaryStats.total, color: 'bg-orange-500' },
-              ].map(item => (
-                <div key={item.label}>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-gray-600">{item.label}</span>
-                    <span className="font-semibold text-gray-800">{item.value}/{item.total}</span>
-                  </div>
-                  <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div className={`h-full ${item.color} rounded-full`} style={{ width: `${(item.value / item.total) * 100}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
-        )}
-      </div>
-
-      {/* قوالب التقارير الجاهزة */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-        <h2 className="text-base font-bold text-gray-800 mb-4">قوالب التقارير الرسمية الجاهزة</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[
-            {
-              title: 'تقرير إحصائي شامل', desc: 'جميع الكيانات مع بيانات الامتثال والمخاطر',
-              icon: BarChart3, type: 'compliance' as ReportType, data: DEMO_UNIONS, cols: UNION_REPORT_COLUMNS,
-              badge: 'شهري', badgeColor: 'bg-blue-100 text-blue-700',
-            },
-            {
-              title: 'التقرير المالي السنوي', desc: 'ملخص الميزانيات والإيرادات والمصروفات',
-              icon: TrendingUp, type: 'financial_summary' as ReportType, data: DEMO_UNIONS, cols: UNION_REPORT_COLUMNS,
-              badge: 'سنوي', badgeColor: 'bg-green-100 text-green-700',
-            },
-            {
-              title: 'تقرير المخالفات والعقوبات', desc: 'قائمة المخالفات المسجلة والإجراءات المتخذة',
-              icon: AlertTriangle, type: 'members_list' as ReportType, data: DEMO_VIOLATIONS, cols: VIOLATION_REPORT_COLUMNS,
-              badge: 'ربع سنوي', badgeColor: 'bg-red-100 text-red-700',
-            },
-            {
-              title: 'قائمة الأعضاء الكاملة', desc: 'سجل الأعضاء المسجلين مع بياناتهم الكاملة',
-              icon: Users, type: 'members_list' as ReportType, data: DEMO_MEMBERS, cols: MEMBER_REPORT_COLUMNS,
-              badge: 'عند الطلب', badgeColor: 'bg-purple-100 text-purple-700',
-            },
-            {
-              title: 'تقرير الأنشطة والفعاليات', desc: 'الأنشطة المنجزة والمخططة مع التكاليف',
-              icon: Calendar, type: 'members_list' as ReportType, data: DEMO_ACTIVITIES, cols: ACTIVITY_REPORT_COLUMNS,
-              badge: 'نصف سنوي', badgeColor: 'bg-indigo-100 text-indigo-700',
-            },
-            {
-              title: 'تقرير التراخيص المنتهية', desc: 'كيانات تحتاج تجديد ترخيصها',
-              icon: Shield,
-              type: 'compliance' as ReportType,
-              data: DEMO_UNIONS.filter(u => ['expired', 'pending_renewal'].includes(u.licenseStatus)),
-              cols: UNION_REPORT_COLUMNS,
-              badge: 'فوري', badgeColor: 'bg-yellow-100 text-yellow-700',
-            },
-          ].map((tpl, i) => (
-            <div key={i} className="border border-gray-200 rounded-xl p-4 hover:border-[#1E3A8A] hover:shadow-sm transition-all group">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-[#EFF6FF] rounded-lg group-hover:bg-[#DBEAFE] transition-colors">
-                    <tpl.icon className="w-5 h-5 text-[#1E3A8A]" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-800 text-sm">{tpl.title}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{tpl.desc}</p>
-                  </div>
-                </div>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${tpl.badgeColor}`}>{tpl.badge}</span>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPrintOptions({
-                    title: tpl.title,
-                    subtitle: tpl.desc,
-                    reportType: tpl.type,
-                    data: tpl.data,
-                    columns: tpl.cols,
-                    dateFrom, dateTo,
-                    showSignatureBlock: true,
-                  })}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-[#1E3A8A] text-white rounded-lg text-xs font-semibold hover:bg-blue-800 transition-colors"
-                >
-                  <Printer className="w-3 h-3" /> طباعة
-                </button>
-                <button
-                  onClick={() => exportReportToExcel({ title: tpl.title, reportType: tpl.type, data: tpl.data, columns: tpl.cols, dateFrom, dateTo })}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700 transition-colors"
-                >
-                  <FileSpreadsheet className="w-3 h-3" /> Excel
-                </button>
-                <button
-                  onClick={() => exportReportToPDF({ title: tpl.title, reportType: tpl.type, data: tpl.data, columns: tpl.cols, dateFrom, dateTo })}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700 transition-colors"
-                >
-                  <FileText className="w-3 h-3" /> PDF
-                </button>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
 
-      {/* نافذة المعاينة والطباعة */}
-      {printOptions && (
-        <PrintPreviewModal
-          options={printOptions}
-          onClose={() => setPrintOptions(null)}
-        />
-      )}
-    </div>
-  );
+      {/* Domain Analytical Panel (aggregate / analytical / evaluative) */}
+      {(['commercial', 'professions', 'inspections', 'evaluations', 'unions', 'documents'].includes(reportType)) && (<DomainAnalyticalPanel domain={reportType} data={currentData.data} professions={professions}/>)}
+
+      {/* Data Table */}
+      <div className="bg-card rounded-xl border border-border shadow-sm">
+        <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+          <h3 className="font-bold text-heading text-sm">
+            {MAP[reportType]} — {currentData.data.length} سجل
+          </h3>
+          <div className="flex gap-2">
+            <button onClick={handleExcelExport} className="flex items-center gap-1 px-3 py-1.5 bg-success/10 text-success-dark rounded-lg text-xs font-semibold hover:bg-success/20">
+              <FileSpreadsheet className="w-3 h-3"/> Excel
+            </button>
+            <button onClick={handlePDFExport} className="flex items-center gap-1 px-3 py-1.5 bg-error/10 text-error rounded-lg text-xs font-semibold hover:bg-error/20">
+              <FileText className="w-3 h-3"/> PDF
+            </button>
+          </div>
+        </div>
+        <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-primary text-white sticky top-0 z-10">
+              <tr>
+                <th className="px-3 py-2 text-center w-8">#</th>
+                {currentData.columns.map(col => (<th key={col.key} className="px-3 py-2 text-right text-xs">{col.label}</th>))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {currentData.data.length === 0 ? (<tr><td colSpan={currentData.columns.length + 1} className="px-4 py-8 text-center text-muted-foreground">لا توجد بيانات</td></tr>) : (currentData.data.map((row, i) => (<tr key={i} className={`${i % 2 === 0 ? 'bg-card' : 'bg-muted/30'} hover:bg-accent transition-colors`}>
+                    <td className="px-3 py-2 text-center text-muted-foreground text-xs">{i + 1}</td>
+                     {currentData.columns.map(col => (<td key={col.key} className="px-3 py-2 text-heading text-xs">
+                        {col.format ? col.format(row[col.key]) : (col.key === 'status' || col.key.endsWith('_status') ? translateStatus(row[col.key]) : (row[col.key] ?? '—'))}
+                      </td>))}
+                  </tr>)))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-card rounded-xl border border-border p-5">
+          <h3 className="text-sm font-semibold text-heading mb-3">التوزيع الجغرافي للكيانات</h3>
+          <ResponsiveContainer width="100%" height={220}>
+            <PieChart>
+              <Pie data={govDistribution} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                {govDistribution.map((_, idx) => <Cell key={idx} fill={COLORS[idx % COLORS.length]}/>)}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="bg-card rounded-xl border border-border p-5">
+          <h3 className="text-sm font-semibold text-heading mb-3">التوزيع حسب النوع</h3>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={typeDistribution} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
+              <XAxis type="number" tick={{ fontSize: 11 }}/>
+              <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={80}/>
+              <Tooltip />
+              <Bar dataKey="value" name="عدد النقابات والمنظمات" fill="#1E3A8A" radius={[0, 3, 3, 0]}/>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="bg-card rounded-xl border border-border p-5">
+          <h3 className="text-sm font-semibold text-heading mb-3">توزيع الأعضاء حسب الجنس</h3>
+          <ResponsiveContainer width="100%" height={200}>
+            <PieChart>
+              <Pie data={genderData} cx="50%" cy="50%" outerRadius={70} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                {genderData.map((_, idx) => <Cell key={idx} fill={COLORS[idx % COLORS.length]}/>)}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="bg-card rounded-xl border border-border p-5">
+          <h3 className="text-sm font-semibold text-heading mb-3">ملخص شامل</h3>
+          <div className="space-y-2">
+            {[
+            { l: 'إجمالي النقابات والمنظمات', v: summaryStats.totalEntities, c: 'bg-primary', max: summaryStats.totalEntities },
+            { l: 'إجمالي الأعضاء', v: summaryStats.totalMembers, c: 'bg-success', max: Math.max(summaryStats.totalMembers, 1) },
+            { l: 'الملتزمين بالامتثال', v: summaryStats.compliant, c: 'bg-info', max: Math.max(summaryStats.totalEntities, 1) },
+            { l: 'رساليات نشطة', v: summaryStats.totalDispatches, c: 'bg-warning', max: Math.max(summaryStats.totalDispatches, 1) },
+        ].map(item => (<div key={item.l}>
+                <div className="flex justify-between text-xs mb-0.5">
+                  <span className="text-muted-foreground">{item.l}</span>
+                  <span className="font-semibold text-heading">{item.v}</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div className={`h-full ${item.c} rounded-full transition-all`} style={{ width: `${Math.min((item.v / item.max) * 100, 100)}%` }}/>
+                </div>
+              </div>))}
+          </div>
+        </div>
+      </div>
+    </div>);
 }

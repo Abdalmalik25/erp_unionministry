@@ -1,22 +1,30 @@
-
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
-    <head>
-      
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <meta name="theme-color" content="#1E3A8A" />
-      <title>نظام إدارة المنظمات النقابية</title>
-      <meta name="description" content="منصة حكومية لإدارة النقابات والعضويات والأنشطة وفق متطلبات العمل المؤسسي في اليمن." />
-      <style>html, body { height: 100%; margin: 0; } #root { height: 100%; }</style>
-      
-    </head>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0a2540" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="description" content="المنظومة الوطنية للعمل النقابي — منصة وزارة الشؤون الاجتماعية والعمل لخدمة النقابات والاتحادات والجمعيات وأصحاب العمل في اليمن." />
+    <title>نظام قطاع العمل — وزارة الشؤون الاجتماعية والعمل</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preload" as="image" href="/logo_yemen.jpg" fetchpriority="high" />
 
-    <body>
-      
-      <div id="root"></div>
-      <script type="module" src="/src/main.tsx"></script>
-      
-    </body>
-  </html>
-  
+    <!-- الخطوط الرسمية: تحميل مبكر عالي الأداء -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Tajawal:wght@300;400;500;700;800;900&display=swap"
+      fetchpriority="high"
+    />
+
+    <!-- منع وميض الثيم الخاطئ (FOUC) عند التحميل — سكربت خارجي متوافق مع CSP -->
+    <script src="/theme-init.js"></script>
+    <link rel="stylesheet" href="/base.css" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -4,7 +4,7 @@
  */
 
 import { db } from './indexedDB';
-import { operationsManager, Operation } from './operations';
+import { operationsManager } from './operations';
 import { logAudit } from './security';
 
 // ============================================================
@@ -238,6 +238,7 @@ export async function restoreLocalBackup<T>(key: string): Promise<T | null> {
     const backup = JSON.parse(backupStr);
     return backup.data as T;
   } catch {
+    // JSON parse failed for backup data
     return null;
   }
 }
@@ -281,6 +282,7 @@ export function hasRecentBackup(key: string, maxAgeMs: number = 24 * 60 * 60 * 1
     const backup = JSON.parse(backupStr);
     return Date.now() - backup.timestamp < maxAgeMs;
   } catch {
+    // JSON parse failed for backup timestamp
     return false;
   }
 }

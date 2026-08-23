@@ -1,0 +1,10 @@
+import pg from 'pg';
+import { readFileSync } from 'fs';
+const env = readFileSync('G:\\App25\\unionministry1\\.env','utf8').split('\n');
+env.forEach(l => { const t=l.trim(); if(!t||t.startsWith('#'))return; const i=t.indexOf('='); if(i===-1)return; const k=t.slice(0,i).trim(); const v=t.slice(i+1).trim().replace(/^['"]|['"]$/g,''); if(!process.env[k])process.env[k]=v; });
+const pool = new pg.Pool({connectionString: process.env.DATABASE_URL, ssl:{rejectUnauthorized:false}, max:1});
+const r = await pool.query("SELECT t.typname, e.enumlabel FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid WHERE t.typname NOT LIKE '%_seq%' ORDER BY t.typname, e.enumsortorder");
+const grouped = {};
+r.rows.forEach(x => { if (!grouped[x.typname]) grouped[x.typname] = []; grouped[x.typname].push(x.enumlabel); });
+Object.keys(grouped).sort().forEach(k => console.log(k + ': ' + grouped[k].join(', ')));
+await pool.end();

@@ -1,30 +1,56 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Search, Plus, Edit, Trash2, Download, Upload } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Plus, Search, Download, Edit, Trash2, RefreshCw, Users, RotateCcw } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { Input, Select } from '../../components/ui/Input';
+import { Input } from '../../components/ui/Input';
+import { SimpleSelect } from '../../components/ui/simple-select';
 import { Modal } from '../../components/ui/Modal';
 import { toast } from '../../components/ui/Toast';
-import { useMembers } from '../../hooks/useApi';
-import { validate, memberValidationSchema, sanitizeData, validateYemeniNationalId } from '../../utils/validation';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { logAudit } from '../../utils/security';
+import { PermissionGate } from '../../hooks/usePermissions';
+import { Switch } from '../../components/ui/switch';
+
+const Select = ({ value, onChange, options, label, error, ...props }: { value?: string; onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void; options: { value: string; label: string }[]; label?: string; error?: string; [key: string]: any }) => (
+  <div>
+    {label && <label className="block text-sm font-semibold text-foreground mb-1">{label}</label>}
+    <SimpleSelect value={value} onChange={(e) => onChange?.(e)} options={options} {...props} />
+    {error && <p className="text-xs text-error mt-1">{error}</p>}
+  </div>
+);
 
 interface Member {
-  nationalId: string;
-  fullName: string;
+  id?: string;
+  entity_id?: string;
+  national_id: string;
+  full_name: string;
   gender: string;
-  birthDate: string;
-  unionNumber: string;
+  birth_date?: string;
+  unified_code?: string;
+  entity_name?: string;
   profession: string;
   status: string;
   phone?: string;
   email?: string;
   address?: string;
-  joinDate?: string;
+  join_date?: string;
+  job_title?: string;
+  membership_number?: string;
+  [key: string]: any;
 }
 
+const STATUS_OPTIONS = [
+  { value: 'نشط', label: 'نشط' },
+  { value: 'موقف', label: 'موقف' },
+  { value: 'مفصول', label: 'مفصول' },
+  { value: 'متوفى', label: 'متوفى' },
+];
+
 export function MembersManagement() {
-  const { data, loading, error, getAll, create } = useMembers();
   const [members, setMembers] = useState<Member[]>([]);
+  const [entities, setEntities] = useState<Array<{ entity_id: string; entity_name: string; unified_code: string }>>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterUnion, setFilterUnion] = useState('الكل');
   const [filterGender, setFilterGender] = useState('الكل');
@@ -33,53 +59,81 @@ export function MembersManagement() {
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [selectedTab, setSelectedTab] = useState('personal');
   const [formData, setFormData] = useState<Partial<Member>>({});
-  const [formErrors, setFormErrors] = useState<any>({});
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [showDeleted, setShowDeleted] = useState(false);
 
-  useEffect(() => {
-    loadMembers();
-  }, []);
-
-  useEffect(() => {
-    if (data?.members) {
-      setMembers(data.members.map((m: any) => m.value || m));
-    }
-  }, [data]);
-
-  const loadMembers = async () => {
+  const fetchData = useCallback(async () => {
+    setLoading(true);
     try {
-      await getAll();
-    } catch (err) {
-      toast.error('فشل في تحميل البيانات');
-    }
-  };
+      const deletedParam = showDeleted ? '?include_deleted=true' : '';
+      const [mRes, eRes] = await Promise.all([
+        fetch(`/api/members${deletedParam}`),
+        fetch('/api/entities'),
+      ]);
+      if (mRes.ok) {
+        const data = await mRes.json();
+        setMembers(Array.isArray(data) ? data : data.data || data.members || []);
+      }
+      if (eRes.ok) {
+        const data = await eRes.json();
+        setEntities(Array.isArray(data) ? data : data.data || data.entities || []);
+      }
+      logAudit({ action: 'view', resource: 'members' });
+    } catch { toast.error('خطأ في تحميل البيانات'); }
+    finally { setLoading(false); }
+  }, [showDeleted]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const filteredMembers = useMemo(() => {
     return members.filter((member) => {
-      const matchesSearch =
-        member.fullName?.includes(searchTerm) ||
-        member.nationalId?.includes(searchTerm) ||
-        member.phone?.includes(searchTerm);
-
-      const matchesUnion = filterUnion === 'الكل' || member.unionNumber === filterUnion;
+      const q = searchTerm.toLowerCase();
+      const matchesSearch = !q ||
+        member.full_name?.toLowerCase().includes(q) ||
+        member.national_id?.includes(q) ||
+        member.phone?.includes(q) ||
+        member.email?.toLowerCase().includes(q);
+      const matchesUnion = filterUnion === 'الكل' || member.unified_code === filterUnion;
       const matchesGender = filterGender === 'الكل' || member.gender === filterGender;
       const matchesStatus = filterStatus === 'الكل' || member.status === filterStatus;
-
       return matchesSearch && matchesUnion && matchesGender && matchesStatus;
     });
   }, [members, searchTerm, filterUnion, filterGender, filterStatus]);
 
+  const entityOptions = useMemo(() => [
+    { value: 'الكل', label: 'جميع النقابات والمنظمات' },
+    ...entities.map(e => ({ value: e.unified_code, label: e.entity_name })),
+  ], [entities]);
+
+  const stats = useMemo(() => ({
+    total: members.length,
+    active: members.filter(m => m.status === 'نشط').length,
+    male: members.filter(m => m.gender === 'ذكر').length,
+    female: members.filter(m => m.gender === 'أنثى').length,
+  }), [members]);
+
   const handleOpenModal = (member?: Member) => {
     if (member) {
       setEditingMember(member);
-      setFormData(member);
+      setFormData({
+        nationalId: member.national_id,
+        fullName: member.full_name,
+        gender: member.gender,
+        birthDate: member.birth_date,
+        unionNumber: member.unified_code,
+        profession: member.profession,
+        status: member.status,
+        phone: member.phone,
+        email: member.email,
+        address: member.address,
+        joinDate: member.join_date,
+        jobTitle: member.job_title,
+        membershipNumber: member.membership_number,
+      });
     } else {
       setEditingMember(null);
-      setFormData({
-        status: 'نشط',
-        gender: 'ذكر',
-        joinDate: new Date().toISOString().split('T')[0],
-      });
+      setFormData({ status: 'نشط', gender: 'ذكر', joinDate: new Date().toISOString().split('T')[0] });
     }
     setFormErrors({});
     setSelectedTab('personal');
@@ -94,144 +148,137 @@ export function MembersManagement() {
   };
 
   const handleInputChange = (field: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData(prev => ({ ...prev, [field]: value }));
     if (formErrors[field]) {
-      setFormErrors((prev: any) => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
+      setFormErrors(prev => { const n = { ...prev }; delete n[field]; return n; });
     }
+  };
+
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (!formData.nationalId || formData.nationalId.length !== 11) errors.nationalId = 'الرقم الوطني يجب أن يكون 11 رقماً';
+    if (!formData.fullName?.trim()) errors.fullName = 'الاسم مطلوب';
+    if (!formData.gender) errors.gender = 'الجنس مطلوب';
+    if (!formData.profession?.trim()) errors.profession = 'المهنة مطلوبة';
+    if (formData.phone && !/^7[0-9]{8}$/.test(formData.phone)) errors.phone = 'رقم الهاتف غير صحيح (9 أرقام تبدأ بـ 7)';
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errors.email = 'البريد الإلكتروني غير صحيح';
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async () => {
-    // التحقق من الرقم الوطني اليمني
-    if (formData.nationalId && !validateYemeniNationalId(formData.nationalId)) {
-      setFormErrors({ ...formErrors, nationalId: 'رقم وطني غير صحيح' });
-      toast.error('الرقم الوطني غير صحيح');
-      return;
-    }
-
-    const errors = validate(formData, memberValidationSchema);
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
-      toast.error('الرجاء تصحيح الأخطاء في النموذج');
-      return;
-    }
-
+    if (!validateForm()) { toast.error('يرجى تصحيح الأخطاء'); return; }
     setSubmitting(true);
-
     try {
-      const cleanData = sanitizeData(formData);
-      await create(cleanData);
-      toast.success('تم إضافة العضو بنجاح');
-      handleCloseModal();
-      await loadMembers();
-    } catch (err: any) {
-      toast.error(err.message || 'حدث خطأ أثناء الحفظ');
-    } finally {
-      setSubmitting(false);
-    }
+      const endpoint = editingMember?.id ? `/api/members/${editingMember.id}` : '/api/members';
+      const method = editingMember?.id ? 'PUT' : 'POST';
+      const body = {
+        national_id: formData.nationalId,
+        full_name: formData.fullName,
+        gender: formData.gender,
+        birth_date: formData.birthDate,
+        occupation: formData.profession,
+        phone: formData.phone,
+        email: formData.email,
+        address: formData.address,
+        join_date: formData.joinDate,
+        status: formData.status,
+        job_title: formData.jobTitle,
+        membership_number: formData.membershipNumber,
+        entity_id: entities.find(e => e.unified_code === formData.unionNumber)?.entity_id,
+      };
+      const r = await fetch(endpoint, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (r.ok) {
+        toast.success(editingMember ? 'تم التحديث بنجاح' : 'تمت الإضافة بنجاح');
+        logAudit({ action: editingMember ? 'update' : 'create', resource: 'member' });
+        handleCloseModal();
+        fetchData();
+      } else {
+        const err = await r.json().catch(() => ({}));
+        toast.error(err.error || 'حدث خطأ');
+      }
+    } catch { toast.error('خطأ في الاتصال'); }
+    finally { setSubmitting(false); }
   };
 
-  const stats = useMemo(() => ({
-    total: members.length,
-    active: members.filter((m) => m.status === 'نشط').length,
-    male: members.filter((m) => m.gender === 'ذكر').length,
-    female: members.filter((m) => m.gender === 'أنثى').length,
-  }), [members]);
+  const handleDelete = async (m: Member) => {
+    if (!confirm(`هل أنت متأكد من حذف "${m.full_name}"؟ سيتم نقله إلى المحذوفات ويمكن استعادته لاحقاً.`)) return;
+    try {
+      const r = await fetch(`/api/members/${m.id}`, { method: 'DELETE' });
+      if (r.ok) { toast.success('تم الحذف بنجاح'); logAudit({ action: 'delete', resource: 'member', details: { id: m.id } }); fetchData(); }
+      else { toast.error('خطأ في الحذف'); }
+    } catch { toast.error('خطأ في الاتصال'); }
+  };
+
+  const handleRestore = async (m: Member) => {
+    try {
+      const r = await fetch(`/api/members/${m.id}/restore`, { method: 'PUT' });
+      if (r.ok) { toast.success('تمت الاستعادة بنجاح'); fetchData(); }
+      else { toast.error('خطأ في الاستعادة'); }
+    } catch { toast.error('خطأ في الاتصال'); }
+  };
+
+  const handleExport = () => {
+    const headers = ['الرقم الوطني', 'الاسم', 'الجنس', 'المهنة', 'الحالة', 'الهاتف', 'البريد', 'النقابة', 'تاريخ الانتساب'];
+    const rows = filteredMembers.map(m => [m.national_id, m.full_name, m.gender, m.profession, m.status, m.phone || '', m.email || '', m.unified_code || '', m.join_date || '']);
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `أعضاء_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    toast.success('تم التصدير بنجاح');
+    logAudit({ action: 'export', resource: 'members' });
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">إدارة الأعضاء</h1>
-          <p className="text-sm text-gray-600 mt-1">
-            عرض وإدارة جميع أعضاء المنظمات النقابية
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button
-            variant="success"
-            icon={<Upload size={20} />}
-          >
-            استيراد Excel
-          </Button>
-          <Button
-            onClick={() => handleOpenModal()}
-            variant="primary"
-            icon={<Plus size={20} />}
-          >
-            إضافة عضو
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-6" dir="rtl">
+      <PageHeader title="سجل العمال والنقابيين المسجلين" subtitle="عرض وإدارة سجلات القوى العاملة وأعضاء النقابات واللجان المسجّلة"
+        actions={<>
+          <PermissionGate permission="members:export">
+            <Button variant="outline" onClick={handleExport} icon={<Download size={18} />}>تصدير</Button>
+          </PermissionGate>
+          <PermissionGate permission="members:create">
+            <Button onClick={() => handleOpenModal()} icon={<Plus size={18} />}>تسجيل عامل / عضو</Button>
+          </PermissionGate>
+        </>} />
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card padding="md" className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-          <p className="text-sm text-blue-700 font-medium mb-1">إجمالي الأعضاء</p>
-          <p className="text-3xl font-bold text-blue-900">{stats.total}</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card padding="md" className="bg-gradient-to-br from-primary-bright/10 to-primary-bright/15 border-primary-bright/15">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary-bright/15 rounded-lg flex items-center justify-center"><Users className="w-5 h-5 text-primary-dark" /></div>
+            <div><p className="text-xs text-primary-dark font-medium">إجمالي الأعضاء</p><p className="text-2xl font-bold text-primary-dark">{stats.total}</p></div>
+          </div>
         </Card>
-        <Card padding="md" className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-          <p className="text-sm text-green-700 font-medium mb-1">الأعضاء النشطين</p>
-          <p className="text-3xl font-bold text-green-900">{stats.active}</p>
+        <Card padding="md" className="bg-gradient-to-br from-success/10 to-success/15 border-success/15">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-success/15 rounded-lg flex items-center justify-center"><Users className="w-5 h-5 text-success-dark" /></div>
+            <div><p className="text-xs text-success-dark font-medium">نشطين</p><p className="text-2xl font-bold text-success-dark">{stats.active}</p></div>
+          </div>
         </Card>
-        <Card padding="md" className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-          <p className="text-sm text-purple-700 font-medium mb-1">ذكور</p>
-          <p className="text-3xl font-bold text-purple-900">{stats.male}</p>
+        <Card padding="md" className="bg-gradient-to-br from-gold/10 to-gold/15 border-gold/15">
+          <p className="text-xs text-gold-dark font-medium mb-1">ذكور</p>
+          <p className="text-2xl font-bold text-gold-dark">{stats.male}</p>
         </Card>
-        <Card padding="md" className="bg-gradient-to-br from-pink-50 to-pink-100 border-pink-200">
-          <p className="text-sm text-pink-700 font-medium mb-1">إناث</p>
-          <p className="text-3xl font-bold text-pink-900">{stats.female}</p>
+        <Card padding="md" className="bg-gradient-to-br from-teal/10 to-teal/15 border-teal/15">
+          <p className="text-xs text-teal-dark font-medium mb-1">إناث</p>
+          <p className="text-2xl font-bold text-teal-dark">{stats.female}</p>
         </Card>
       </div>
 
       {/* Filters */}
       <Card>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <Input
-            placeholder="بحث بالاسم أو الرقم الوطني..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            icon={<Search size={18} />}
-          />
-
-          <Select
-            value={filterUnion}
-            onChange={(e) => setFilterUnion(e.target.value)}
-            options={[
-              { value: 'الكل', label: 'جميع النقابات' },
-              { value: 'YE-2024-001', label: 'نقابة المهندسين' },
-              { value: 'YE-2024-002', label: 'نقابة عمال البناء' },
-            ]}
-          />
-
-          <Select
-            value={filterGender}
-            onChange={(e) => setFilterGender(e.target.value)}
-            options={[
-              { value: 'الكل', label: 'جميع الجنسين' },
-              { value: 'ذكر', label: 'ذكر' },
-              { value: 'أنثى', label: 'أنثى' },
-            ]}
-          />
-
-          <Select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            options={[
-              { value: 'الكل', label: 'جميع الحالات' },
-              { value: 'نشط', label: 'نشط' },
-              { value: 'موقف', label: 'موقف' },
-              { value: 'مفصول', label: 'مفصول' },
-            ]}
-          />
-
-          <Button variant="success" icon={<Download size={18} />}>
-            تصدير Excel
-          </Button>
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+          <Input placeholder="بحث بالاسم أو الرقم الوطني أو الهاتف..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} icon={<Search size={18} />} />
+          <Select value={filterUnion} onChange={e => setFilterUnion(e.target.value)} options={entityOptions} />
+          <Select value={filterGender} onChange={e => setFilterGender(e.target.value)} options={[{ value: 'الكل', label: 'جميع الجنسين' }, { value: 'ذكر', label: 'ذكر' }, { value: 'أنثى', label: 'أنثى' }]} />
+          <Select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} options={[{ value: 'الكل', label: 'جميع الحالات' }, ...STATUS_OPTIONS]} />
+          <div className="flex items-center gap-2">
+            <Switch checked={showDeleted} onCheckedChange={setShowDeleted} />
+            <span className="text-xs font-semibold text-muted-foreground">المحذوفات</span>
+          </div>
+          <Button variant="ghost" onClick={fetchData} icon={<RefreshCw size={16} className={loading ? 'animate-spin' : ''} />}>تحديث</Button>
         </div>
       </Card>
 
@@ -239,60 +286,66 @@ export function MembersManagement() {
       <Card padding="none">
         {loading ? (
           <div className="p-12 text-center">
-            <div className="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p className="text-gray-600">جاري التحميل...</p>
+            <div className="inline-block w-8 h-8 border-4 border-primary-bright border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p className="text-muted-foreground">جاري التحميل...</p>
           </div>
         ) : filteredMembers.length === 0 ? (
-          <div className="p-12 text-center">
-            <p className="text-gray-600">لا يوجد أعضاء</p>
-          </div>
+          <EmptyState title="لا يوجد أعضاء" description="لم يتم تسجيل أي أعضاء بعد" icon={<Users className="w-14 h-14" />} />
         ) : (
           <>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-muted border-b border-border">
                   <tr>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700">الرقم الوطني</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700">الاسم الكامل</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700">الجنس</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700">المهنة</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700">الحالة</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700">الإجراءات</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-foreground">الرقم الوطني</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-foreground">الاسم</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-foreground">الجنس</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-foreground">المهنة</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-foreground">النقابة</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-foreground">الهاتف</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-foreground">الحالة</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-foreground">إجراءات</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-border">
                   {filteredMembers.map((member) => (
-                    <tr key={member.nationalId} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 text-sm text-gray-800 font-mono">{member.nationalId}</td>
-                      <td className="px-6 py-4 text-sm text-gray-800 font-semibold">{member.fullName}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{member.gender}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{member.profession}</td>
+                    <tr key={member.id || member.national_id} className={`hover:bg-accent transition-colors ${(member as any).deleted_at ? 'opacity-50 bg-error/5' : ''}`}>
+                      <td className="px-6 py-4 text-sm text-heading font-mono">{member.national_id}</td>
+                      <td className="px-6 py-4 text-sm text-heading font-semibold">
+                        {member.full_name}
+                        {(member as any).deleted_at && <span className="mr-2 text-xs bg-error/10 text-error px-1.5 py-0.5 rounded">محذوف</span>}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-muted-foreground">{member.gender === 'ذكر' ? '♂ ذكر' : '♀ أنثى'}</td>
+                      <td className="px-6 py-4 text-sm text-muted-foreground">{member.profession || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-muted-foreground">{member.entity_name || member.unified_code || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-muted-foreground font-mono" dir="ltr">{member.phone || '-'}</td>
                       <td className="px-6 py-4">
-                        <span
-                          className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                            member.status === 'نشط'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}
-                        >
-                          {member.status}
-                        </span>
+                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                          member.status === 'نشط' ? 'bg-success/15 text-success-dark'
+                          : member.status === 'موقف' ? 'bg-warning/15 text-warning-dark'
+                          : 'bg-error/15 text-error-dark'
+                        }`}>{member.status}</span>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleOpenModal(member)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="تعديل"
-                          >
-                            <Edit size={18} />
-                          </button>
-                          <button
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="حذف"
-                          >
-                            <Trash2 size={18} />
-                          </button>
+                        <div className="flex items-center gap-1">
+                          {(member as any).deleted_at ? (
+                            <button onClick={() => handleRestore(member)} className="flex items-center gap-1 px-2 py-1 text-xs font-semibold text-success hover:bg-success/10 rounded-lg transition-colors" title="استعادة">
+                              <RotateCcw size={14} /> استعادة
+                            </button>
+                          ) : (
+                            <>
+                              <PermissionGate permission="members:edit">
+                                <button onClick={() => handleOpenModal(member)} className="p-2 text-primary-bright hover:bg-primary-bright/10 rounded-lg transition-colors" title="تعديل">
+                                  <Edit size={16} />
+                                </button>
+                              </PermissionGate>
+                              <PermissionGate permission="members:delete">
+                                <button onClick={() => handleDelete(member)} className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors" title="حذف">
+                                  <Trash2 size={16} />
+                                </button>
+                              </PermissionGate>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -300,11 +353,8 @@ export function MembersManagement() {
                 </tbody>
               </table>
             </div>
-
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-              <p className="text-sm text-gray-600">
-                عرض {filteredMembers.length} من {members.length} عضو
-              </p>
+            <div className="px-6 py-4 bg-muted border-t border-border flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">عرض {filteredMembers.length} من {members.length} عضو</p>
             </div>
           </>
         )}
@@ -312,154 +362,42 @@ export function MembersManagement() {
 
       {/* Modal */}
       {showModal && (
-        <Modal
-          isOpen={showModal}
-          onClose={handleCloseModal}
-          title={editingMember ? 'تعديل عضو' : 'إضافة عضو جديد'}
-          size="lg"
-          footer={
-            <>
-              <Button variant="ghost" onClick={handleCloseModal}>
-                إلغاء
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleSubmit}
-                loading={submitting}
-              >
-                {editingMember ? 'تحديث' : 'حفظ'}
-              </Button>
-            </>
-          }
-        >
-          {/* Tabs */}
-          <div className="border-b border-gray-200 mb-6">
+        <Modal isOpen={showModal} onClose={handleCloseModal} title={editingMember ? 'تعديل عضو' : 'إضافة عضو جديد'} size="lg"
+          footer={<><Button variant="ghost" onClick={handleCloseModal}>إلغاء</Button><Button onClick={handleSubmit} loading={submitting}>{editingMember ? 'تحديث' : 'حفظ'}</Button></>}>
+          <div className="border-b border-border mb-6">
             <div className="flex gap-4">
-              {[
-                { id: 'personal', label: 'البيانات الشخصية' },
-                { id: 'contact', label: 'بيانات الاتصال والعمل' },
-                { id: 'membership', label: 'بيانات العضوية' },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setSelectedTab(tab.id)}
-                  className={`py-3 px-4 border-b-2 transition-colors font-medium ${
-                    selectedTab === tab.id
-                      ? 'border-blue-600 text-blue-600'
-                      : 'border-transparent text-gray-600 hover:text-gray-800'
-                  }`}
-                >
+              {[{ id: 'personal', label: 'البيانات الشخصية' }, { id: 'contact', label: 'بيانات الاتصال' }, { id: 'membership', label: 'بيانات العضوية' }].map(tab => (
+                <button key={tab.id} onClick={() => setSelectedTab(tab.id)}
+                  className={`py-3 px-4 border-b-2 transition-colors font-medium ${selectedTab === tab.id ? 'text-primary border-primary' : 'border-transparent text-muted-foreground hover:text-heading'}`}>
                   {tab.label}
                 </button>
               ))}
             </div>
           </div>
-
-          {/* Form Content */}
           <div className="space-y-4">
             {selectedTab === 'personal' && (
               <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="الرقم الوطني"
-                  value={formData.nationalId || ''}
-                  onChange={(e) => handleInputChange('nationalId', e.target.value)}
-                  placeholder="01011234567"
-                  required
-                  error={formErrors.nationalId}
-                  helperText="11 رقم"
-                  disabled={!!editingMember}
-                />
-                <Input
-                  label="الاسم الكامل"
-                  value={formData.fullName || ''}
-                  onChange={(e) => handleInputChange('fullName', e.target.value)}
-                  required
-                  error={formErrors.fullName}
-                />
-                <Select
-                  label="الجنس"
-                  value={formData.gender || ''}
-                  onChange={(e) => handleInputChange('gender', e.target.value)}
-                  options={[
-                    { value: 'ذكر', label: 'ذكر' },
-                    { value: 'أنثى', label: 'أنثى' },
-                  ]}
-                  required
-                  error={formErrors.gender}
-                />
-                <Input
-                  label="تاريخ الميلاد"
-                  type="date"
-                  value={formData.birthDate || ''}
-                  onChange={(e) => handleInputChange('birthDate', e.target.value)}
-                  required
-                  error={formErrors.birthDate}
-                />
+                <Input label="الرقم الوطني" value={formData.nationalId || ''} onChange={e => handleInputChange('nationalId', e.target.value)} placeholder="01011234567" required error={formErrors.nationalId} disabled={!!editingMember} />
+                <Input label="الاسم الكامل" value={formData.fullName || ''} onChange={e => handleInputChange('fullName', e.target.value)} required error={formErrors.fullName} />
+                <Select label="الجنس" value={formData.gender || ''} onChange={e => handleInputChange('gender', e.target.value)} options={[{ value: 'ذكر', label: 'ذكر' }, { value: 'أنثى', label: 'أنثى' }]} error={formErrors.gender} />
+                <Input label="تاريخ الميلاد" type="date" value={formData.birthDate || ''} onChange={e => handleInputChange('birthDate', e.target.value)} error={formErrors.birthDate} />
               </div>
             )}
-
             {selectedTab === 'contact' && (
               <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <Input
-                    label="العنوان"
-                    value={formData.address || ''}
-                    onChange={(e) => handleInputChange('address', e.target.value)}
-                  />
-                </div>
-                <Input
-                  label="المهنة"
-                  value={formData.profession || ''}
-                  onChange={(e) => handleInputChange('profession', e.target.value)}
-                  required
-                  error={formErrors.profession}
-                />
-                <Input
-                  label="الهاتف"
-                  value={formData.phone || ''}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  placeholder="777123456"
-                  error={formErrors.phone}
-                  helperText="9 أرقام تبدأ بـ 7"
-                />
-                <Input
-                  label="البريد الإلكتروني"
-                  type="email"
-                  value={formData.email || ''}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  error={formErrors.email}
-                />
+                <Input label="المهنة" value={formData.profession || ''} onChange={e => handleInputChange('profession', e.target.value)} required error={formErrors.profession} />
+                <Input label="المنصب الوظيفي" value={formData.jobTitle || ''} onChange={e => handleInputChange('jobTitle', e.target.value)} />
+                <Input label="الهاتف" value={formData.phone || ''} onChange={e => handleInputChange('phone', e.target.value)} placeholder="777123456" error={formErrors.phone} />
+                <Input label="البريد الإلكتروني" type="email" value={formData.email || ''} onChange={e => handleInputChange('email', e.target.value)} error={formErrors.email} />
+                <div className="col-span-2"><Input label="العنوان" value={formData.address || ''} onChange={e => handleInputChange('address', e.target.value)} /></div>
               </div>
             )}
-
             {selectedTab === 'membership' && (
               <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="رقم النقابة"
-                  value={formData.unionNumber || ''}
-                  onChange={(e) => handleInputChange('unionNumber', e.target.value)}
-                  placeholder="YE-2024-001"
-                  required
-                  error={formErrors.unionNumber}
-                />
-                <Input
-                  label="تاريخ الانتساب"
-                  type="date"
-                  value={formData.joinDate || ''}
-                  onChange={(e) => handleInputChange('joinDate', e.target.value)}
-                />
-                <Select
-                  label="الحالة"
-                  value={formData.status || 'نشط'}
-                  onChange={(e) => handleInputChange('status', e.target.value)}
-                  options={[
-                    { value: 'نشط', label: 'نشط' },
-                    { value: 'موقف', label: 'موقف' },
-                    { value: 'مفصول', label: 'مفصول' },
-                    { value: 'متوفى', label: 'متوفى' },
-                  ]}
-                  required
-                />
+                <Select label="النقابة أو منظمة" value={formData.unionNumber || ''} onChange={e => handleInputChange('unionNumber', e.target.value)} options={entityOptions.slice(1)} error={formErrors.unionNumber} />
+                <Input label="رقم العضوية" value={formData.membershipNumber || ''} onChange={e => handleInputChange('membershipNumber', e.target.value)} />
+                <Input label="تاريخ الانتساب" type="date" value={formData.joinDate || ''} onChange={e => handleInputChange('joinDate', e.target.value)} />
+                <Select label="الحالة" value={formData.status || 'نشط'} onChange={e => handleInputChange('status', e.target.value)} options={STATUS_OPTIONS} />
               </div>
             )}
           </div>

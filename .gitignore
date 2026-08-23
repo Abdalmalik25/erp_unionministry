@@ -24,3 +24,16 @@ pnpm-debug.log*
 
 # System files
 Thumbs.db
+.vercel
+
+# Local pnpm store (must never be committed)
+%LOCALAPPDATA%/
+
+# Temporary build/audit artifacts
+*.log
+tsc_*.txt
+typecheck_result.txt
+compile*.txt
+build_output.txt
+check.txt
+dbquery*_temp.mjs

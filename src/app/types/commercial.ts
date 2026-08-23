@@ -4,7 +4,7 @@
  * Ministry of Social Affairs and Labor
  */
 
-import { EntityType, Classification, Sector, LegalForm, EntityStatus, ComplianceStatus, RiskLevel } from './entity';
+import {  Classification, Sector, EntityStatus, ComplianceStatus, RiskLevel } from './entity';
 
 // ============================================================
 // أنواع المنشآت التجارية

@@ -7,10 +7,15 @@ import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { toast } from '../components/ui/Toast';
 
+// التحقق من صحة إعدادات Supabase قبل الاتصال
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const isRealtimeEnabled = import.meta.env.VITE_ENABLE_REALTIME === 'true';
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+// إنشاء عميل Supabase فقط إذا كانت الإعدادات صالحة
+const supabase = supabaseUrl && supabaseKey && isRealtimeEnabled
+  ? createClient(supabaseUrl, supabaseKey)
+  : null;
 
 interface RealtimeConfig {
   table: string;
@@ -24,13 +29,21 @@ interface RealtimeConfig {
 }
 
 /**
- * Hook للاستماع للتحديثات الفورية
+ * Hook للاستماع للتحديثات الفورية مع حماية من فشل WebSocket
  */
 export function useRealtimeUpdates(config: RealtimeConfig) {
   const [isConnected, setIsConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
   useEffect(() => {
+    // التحقق من صحة إعدادات Supabase
+    if (!supabase) {
+      console.warn('[Realtime] Supabase client not configured, skipping realtime connection');
+      console.info('[Realtime] To enable realtime, set VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, and VITE_ENABLE_REALTIME in .env');
+      setIsConnected(false);
+      return;
+    }
+
     const channel = supabase
       .channel(`realtime:${config.table}`)
       .on(
@@ -77,7 +90,9 @@ export function useRealtimeUpdates(config: RealtimeConfig) {
       });
 
     return () => {
-      supabase.removeChannel(channel);
+      if (supabase) {
+        supabase.removeChannel(channel);
+      }
       setIsConnected(false);
     };
   }, [
@@ -133,6 +148,12 @@ export function useRealtimeList<T>(
 
   // تحديث البيانات
   const refresh = useCallback(async () => {
+    if (!supabase) {
+      console.warn('[Realtime] Cannot refresh data - Supabase client not configured');
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
       const { data: newData, error } = await supabase
@@ -140,7 +161,6 @@ export function useRealtimeList<T>(
         .select('*');
 
       if (error) throw error;
-
       setData(newData || []);
     } catch (error) {
       console.error('[Realtime] Refresh error:', error);
@@ -149,6 +169,11 @@ export function useRealtimeList<T>(
       setIsLoading(false);
     }
   }, [table]);
+
+  // جلب البيانات أول مرة
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   return {
     data,
@@ -189,6 +214,12 @@ export function useRealtimeItem<T>(
 
   // تحديث البيانات
   const refresh = useCallback(async () => {
+    if (!supabase) {
+      console.warn('[Realtime] Cannot refresh item - Supabase client not configured');
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
       const { data: newData, error } = await supabase
@@ -198,7 +229,6 @@ export function useRealtimeItem<T>(
         .single();
 
       if (error) throw error;
-
       setData(newData);
     } catch (error) {
       console.error('[Realtime] Refresh error:', error);
@@ -244,6 +274,10 @@ export function useRealtimeCount(
 
   // تحديث العدد
   const refresh = useCallback(async () => {
+    if (!supabase) {
+      return;
+    }
+
     try {
       let query = supabase.from(table).select('*', { count: 'exact', head: true });
 
@@ -255,7 +289,6 @@ export function useRealtimeCount(
       const { count: newCount, error } = await query;
 
       if (error) throw error;
-
       setCount(newCount || 0);
     } catch (error) {
       console.error('[Realtime] Count refresh error:', error);
@@ -281,6 +314,10 @@ export function useBroadcast(channelName: string) {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
+    if (!supabase) {
+      return;
+    }
+
     const channel = supabase.channel(channelName);
 
     channel
@@ -293,13 +330,20 @@ export function useBroadcast(channelName: string) {
       });
 
     return () => {
-      supabase.removeChannel(channel);
+      if (supabase) {
+        supabase.removeChannel(channel);
+      }
       setIsConnected(false);
     };
   }, [channelName]);
 
   const send = useCallback(
     async (message: any) => {
+      if (!supabase) {
+        console.warn('[Broadcast] Cannot send - Supabase client not configured');
+        return;
+      }
+
       const channel = supabase.channel(channelName);
       await channel.send({
         type: 'broadcast',
@@ -325,6 +369,10 @@ export function usePresence(channelName: string, userId: string, userInfo: any) 
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
+    if (!supabase) {
+      return;
+    }
+
     const channel = supabase.channel(channelName);
 
     channel
@@ -352,8 +400,11 @@ export function usePresence(channelName: string, userId: string, userInfo: any) 
       });
 
     return () => {
-      channel.untrack();
-      supabase.removeChannel(channel);
+      if (supabase) {
+        const channel = supabase.channel(channelName);
+        channel.untrack();
+        supabase.removeChannel(channel);
+      }
       setIsConnected(false);
     };
   }, [channelName, userId, userInfo]);

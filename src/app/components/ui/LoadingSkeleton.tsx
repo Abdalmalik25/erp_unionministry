@@ -40,7 +40,7 @@ export const Skeleton = memo(function Skeleton({
 
   return (
     <div
-      className={`bg-gray-200 ${variantClasses[variant]} ${animationClasses[animation]} ${className}`}
+      className={`bg-border ${variantClasses[variant]} ${animationClasses[animation]} ${className}`}
       style={style}
     />
   );
@@ -61,7 +61,7 @@ export const TableSkeleton = memo(function TableSkeleton({
   return (
     <div className="space-y-3">
       {/* Header */}
-      <div className="flex gap-4 bg-gray-50 p-4 rounded-lg">
+      <div className="flex gap-4 bg-muted p-4 rounded-lg">
         {Array.from({ length: columns }).map((_, i) => (
           <Skeleton key={i} width="100%" height="1.5rem" />
         ))}
@@ -69,7 +69,7 @@ export const TableSkeleton = memo(function TableSkeleton({
 
       {/* Rows */}
       {Array.from({ length: rows }).map((_, rowIndex) => (
-        <div key={rowIndex} className="flex gap-4 p-4 border-b border-gray-100">
+        <div key={rowIndex} className="flex gap-4 p-4 border-b border-border">
           {Array.from({ length: columns }).map((_, colIndex) => (
             <Skeleton key={colIndex} width="100%" height="1.25rem" />
           ))}
@@ -84,7 +84,7 @@ export const TableSkeleton = memo(function TableSkeleton({
 // ============================================
 export const CardSkeleton = memo(function CardSkeleton() {
   return (
-    <div className="bg-white rounded-xl p-6 border border-gray-200 space-y-4">
+    <div className="bg-card rounded-xl p-6 border border-border space-y-4">
       <div className="flex items-center gap-4">
         <Skeleton variant="circular" width={48} height={48} />
         <div className="flex-1 space-y-2">
@@ -112,7 +112,7 @@ export const CardSkeleton = memo(function CardSkeleton() {
 // ============================================
 export const StatsCardSkeleton = memo(function StatsCardSkeleton() {
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200">
+    <div className="bg-gradient-to-br from-muted to-border rounded-xl p-6 border border-border">
       <Skeleton width="60%" height="1rem" className="mb-3" />
       <Skeleton width="40%" height="2.5rem" />
     </div>
@@ -134,18 +134,18 @@ export const DashboardSkeleton = memo(function DashboardSkeleton() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
+        <div className="bg-card rounded-xl p-6 border border-border">
           <Skeleton width="40%" height="1.5rem" className="mb-4" />
           <Skeleton width="100%" height={300} variant="rounded" />
         </div>
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
+        <div className="bg-card rounded-xl p-6 border border-border">
           <Skeleton width="40%" height="1.5rem" className="mb-4" />
           <Skeleton width="100%" height={300} variant="rounded" />
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl p-6 border border-gray-200">
+      <div className="bg-card rounded-xl p-6 border border-border">
         <Skeleton width="30%" height="1.5rem" className="mb-4" />
         <TableSkeleton rows={5} columns={6} />
       </div>
@@ -185,7 +185,7 @@ export const ListSkeleton = memo(function ListSkeleton({ items = 5 }: ListSkelet
   return (
     <div className="space-y-3">
       {Array.from({ length: items }).map((_, i) => (
-        <div key={i} className="flex items-center gap-4 p-4 bg-white rounded-lg border border-gray-200">
+        <div key={i} className="flex items-center gap-4 p-4 bg-card rounded-lg border border-border">
           <Skeleton variant="circular" width={40} height={40} />
           <div className="flex-1 space-y-2">
             <Skeleton width="70%" height="1rem" />

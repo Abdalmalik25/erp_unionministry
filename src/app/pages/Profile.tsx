@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { User, Mail, Shield, Bell, Moon, Sun, Lock, Save, Info, Building2, Code } from 'lucide-react';
+import { User, Mail, Bell, Moon, Sun, Lock, Save, Info, Building2, Code } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { toast } from '../components/ui/Toast';
 import { useAuth } from '../contexts/AuthContext';
 import { validatePasswordStrength } from '../utils/validation';
+import { BRAND } from '../branding';
 
 export function Profile() {
   const { user } = useAuth();
@@ -70,12 +71,12 @@ export function Profile() {
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-800">الملف الشخصي والإعدادات</h1>
-        <p className="text-sm text-gray-600 mt-1">إدارة معلوماتك الشخصية وإعدادات الحساب</p>
+        <h1 className="text-2xl font-bold text-heading">الملف الشخصي والإعدادات</h1>
+        <p className="text-sm text-muted-foreground mt-1">إدارة معلوماتك الشخصية وإعدادات الحساب</p>
       </div>
 
       {/* User Info Card */}
-      <Card className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+      <Card className="bg-gradient-to-r from-primary-bright to-primary-dark text-white">
         <div className="flex items-center gap-4">
           <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
             <User size={40} />
@@ -88,7 +89,7 @@ export function Profile() {
                 {user?.role}
               </span>
               <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-semibold">
-                {user?.userType === 'ministry' ? 'وزارة' : 'منظمة نقابية'}
+                {user?.userType === 'ministry' ? 'وزارة' : 'جهة مسجّلة'}
               </span>
             </div>
           </div>
@@ -96,7 +97,7 @@ export function Profile() {
       </Card>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-border">
         <div className="flex gap-6">
           {[
             { id: 'profile', label: 'المعلومات الشخصية', icon: User },
@@ -112,8 +113,8 @@ export function Profile() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 py-3 px-4 border-b-2 transition-colors font-medium ${
                   activeTab === tab.id
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-800'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <Icon size={18} />
@@ -127,8 +128,8 @@ export function Profile() {
       {/* Tab Content */}
       {activeTab === 'profile' && (
         <Card>
-          <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-            <User size={20} className="text-blue-600" />
+          <h3 className="text-lg font-bold text-heading mb-6 flex items-center gap-2">
+            <User size={20} className="text-primary-bright" />
             المعلومات الشخصية
           </h3>
 
@@ -172,8 +173,8 @@ export function Profile() {
 
       {activeTab === 'password' && (
         <Card>
-          <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-            <Lock size={20} className="text-blue-600" />
+          <h3 className="text-lg font-bold text-heading mb-6 flex items-center gap-2">
+            <Lock size={20} className="text-primary-bright" />
             تغيير كلمة المرور
           </h3>
 
@@ -197,8 +198,8 @@ export function Profile() {
             />
 
             {passwordStrength?.isStrong && (
-              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-sm text-green-800 font-medium">✓ كلمة مرور قوية</p>
+              <div className="p-3 bg-success/10 border border-success/30 rounded-lg">
+                <p className="text-sm text-success-dark font-medium">✓ كلمة مرور قوية</p>
               </div>
             )}
 
@@ -225,8 +226,8 @@ export function Profile() {
 
       {activeTab === 'notifications' && (
         <Card>
-          <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-            <Bell size={20} className="text-blue-600" />
+          <h3 className="text-lg font-bold text-heading mb-6 flex items-center gap-2">
+            <Bell size={20} className="text-primary-bright" />
             إعدادات الإشعارات
           </h3>
 
@@ -237,10 +238,10 @@ export function Profile() {
               { id: 'documents', label: 'إشعارات الوثائق', desc: 'عند مراجعة أو اعتماد الوثائق' },
               { id: 'activities', label: 'إشعارات الأنشطة', desc: 'عند إضافة أو تحديث الأنشطة' },
             ].map((item) => (
-              <div key={item.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div key={item.id} className="flex items-center justify-between p-4 bg-muted rounded-lg">
                 <div>
-                  <p className="font-semibold text-gray-800">{item.label}</p>
-                  <p className="text-sm text-gray-600 mt-0.5">{item.desc}</p>
+                  <p className="font-semibold text-heading">{item.label}</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">{item.desc}</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
@@ -251,7 +252,7 @@ export function Profile() {
                     }
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  <div className="w-11 h-6 bg-border peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                 </label>
               </div>
             ))}
@@ -271,19 +272,19 @@ export function Profile() {
 
       {activeTab === 'appearance' && (
         <Card>
-          <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-            <Moon size={20} className="text-blue-600" />
+          <h3 className="text-lg font-bold text-heading mb-6 flex items-center gap-2">
+            <Moon size={20} className="text-primary-bright" />
             المظهر
           </h3>
 
           <div className="space-y-4 max-w-2xl">
-            <div className="p-4 bg-gray-50 rounded-lg">
+            <div className="p-4 bg-muted rounded-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {darkMode ? <Moon size={20} /> : <Sun size={20} />}
                   <div>
-                    <p className="font-semibold text-gray-800">الوضع الداكن</p>
-                    <p className="text-sm text-gray-600 mt-0.5">
+                    <p className="font-semibold text-heading">الوضع الداكن</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">
                       {darkMode ? 'تم التفعيل' : 'معطل'}
                     </p>
                   </div>
@@ -298,13 +299,13 @@ export function Profile() {
                     }}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  <div className="w-11 h-6 bg-border peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                 </label>
               </div>
             </div>
 
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800">
+            <div className="p-4 bg-info/10 border border-info/30 rounded-lg">
+              <p className="text-sm text-info-dark">
                 💡 <strong>نصيحة:</strong> الوضع الداكن يقلل من إجهاد العين في الإضاءة المنخفضة
               </p>
             </div>
@@ -314,43 +315,43 @@ export function Profile() {
 
       {activeTab === 'about' && (
         <Card>
-          <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-            <Info size={20} className="text-blue-600" />
+          <h3 className="text-lg font-bold text-heading mb-6 flex items-center gap-2">
+            <Info size={20} className="text-primary-bright" />
             حول المنصة
           </h3>
 
           <div className="space-y-6">
             {/* Platform Info */}
-            <div className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
+            <div className="p-6 bg-gradient-to-r from-info/10 to-gold/10 rounded-xl border border-info/20">
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                <div className="w-16 h-16 bg-gradient-to-br from-primary-bright to-primary-dark rounded-2xl flex items-center justify-center text-white shadow-lg">
                   <Building2 size={32} />
                 </div>
                 <div>
-                  <h4 className="text-2xl font-bold text-gray-900">UnionSphere Enterprise</h4>
-                  <p className="text-sm text-gray-600 mt-1">نظام إدارة الكيانات المؤسسية الموحد</p>
+                  <h4 className="text-2xl font-bold text-foreground">{BRAND.systemName}</h4>
+                  <p className="text-sm text-muted-foreground mt-1">نظام إدارة النقابات والمنظمات المؤسسية الموحد</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 mt-6">
-                <div className="p-4 bg-white/80 backdrop-blur-sm rounded-lg">
-                  <p className="text-sm text-gray-600">الإصدار</p>
-                  <p className="text-lg font-bold text-gray-900">2.0.0</p>
+                <div className="p-4 bg-card/80 backdrop-blur-sm rounded-lg">
+                  <p className="text-sm text-muted-foreground">الإصدار</p>
+                  <p className="text-lg font-bold text-foreground">2.0.0</p>
                 </div>
-                <div className="p-4 bg-white/80 backdrop-blur-sm rounded-lg">
-                  <p className="text-sm text-gray-600">تاريخ الإصدار</p>
-                  <p className="text-lg font-bold text-gray-900">مايو 2026</p>
+                <div className="p-4 bg-card/80 backdrop-blur-sm rounded-lg">
+                  <p className="text-sm text-muted-foreground">تاريخ الإصدار</p>
+                  <p className="text-lg font-bold text-foreground">مايو 2026</p>
                 </div>
               </div>
             </div>
 
             {/* Ministry Info */}
-            <div className="p-6 bg-gray-50 rounded-xl border border-gray-200">
-              <h5 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                <Building2 size={18} className="text-blue-600" />
+            <div className="p-6 bg-muted rounded-xl border border-border">
+              <h5 className="font-bold text-foreground mb-3 flex items-center gap-2">
+                <Building2 size={18} className="text-primary-bright" />
                 الجهة المستفيدة
               </h5>
-              <div className="space-y-2 text-gray-700">
+              <div className="space-y-2 text-foreground">
                 <p><strong>الوزارة:</strong> وزارة الشؤون الاجتماعية والعمل</p>
                 <p><strong>الدولة:</strong> الجمهورية اليمنية</p>
                 <p><strong>النطاق:</strong> dynamicgsye.com</p>
@@ -358,46 +359,46 @@ export function Profile() {
             </div>
 
             {/* Developer Info */}
-            <div className="p-6 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border-2 border-emerald-200">
+            <div className="p-6 bg-gradient-to-br from-success/10 to-success/10 rounded-xl border-2 border-success/30">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-xl flex items-center justify-center text-white shadow-md">
+                <div className="w-12 h-12 bg-gradient-to-br from-success to-success rounded-xl flex items-center justify-center text-white shadow-md">
                   <Code size={24} />
                 </div>
                 <div>
-                  <h5 className="text-xl font-bold text-gray-900">تطوير وتنفيذ</h5>
-                  <p className="text-sm text-emerald-700 font-medium">شركة ديناميك لخدمات البرمجيات</p>
+                  <h5 className="text-xl font-bold text-foreground">تطوير وتنفيذ</h5>
+                  <p className="text-sm text-success-dark font-medium">شركة ديناميك لخدمات البرمجيات</p>
                 </div>
               </div>
 
               <div className="space-y-3 mt-4">
-                <div className="flex items-center gap-2 text-gray-700">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                <div className="flex items-center gap-2 text-foreground">
+                  <div className="w-2 h-2 rounded-full bg-success"></div>
                   <p><strong>الشركة:</strong> Dynamic Software Services</p>
                 </div>
-                <div className="flex items-center gap-2 text-gray-700">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                <div className="flex items-center gap-2 text-foreground">
+                  <div className="w-2 h-2 rounded-full bg-success"></div>
                   <p><strong>التخصص:</strong> حلول البرمجيات المؤسسية والحكومية</p>
                 </div>
-                <div className="flex items-center gap-2 text-gray-700">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                <div className="flex items-center gap-2 text-foreground">
+                  <div className="w-2 h-2 rounded-full bg-success"></div>
                   <p><strong>التقنيات:</strong> React, TypeScript, Supabase, Vercel</p>
                 </div>
-                <div className="flex items-center gap-2 text-gray-700">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                <div className="flex items-center gap-2 text-foreground">
+                  <div className="w-2 h-2 rounded-full bg-success"></div>
                   <p><strong>النوع:</strong> نظام ERP حكومي ذكي</p>
                 </div>
               </div>
 
-              <div className="mt-4 p-4 bg-white/80 backdrop-blur-sm rounded-lg">
-                <p className="text-sm text-gray-600 italic text-center">
+              <div className="mt-4 p-4 bg-card/80 backdrop-blur-sm rounded-lg">
+                <p className="text-sm text-muted-foreground italic text-center">
                   "حلول برمجية احترافية مصممة خصيصاً لخدمة القطاع الحكومي والمؤسسات الوطنية"
                 </p>
               </div>
             </div>
 
             {/* Features */}
-            <div className="p-6 bg-white rounded-xl border border-gray-200">
-              <h5 className="font-bold text-gray-900 mb-4">المزايا الرئيسية</h5>
+            <div className="p-6 bg-card rounded-xl border border-border">
+              <h5 className="font-bold text-foreground mb-4">المزايا الرئيسية</h5>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {[
                   'نموذج موحد للكيانات المؤسسية',
@@ -409,8 +410,8 @@ export function Profile() {
                   'واجهة عربية كاملة (RTL)',
                   'أمان على مستوى حكومي',
                 ].map((feature, index) => (
-                  <div key={index} className="flex items-center gap-2 text-gray-700">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
+                  <div key={index} className="flex items-center gap-2 text-foreground">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary-bright"></div>
                     <span>{feature}</span>
                   </div>
                 ))}
@@ -418,14 +419,14 @@ export function Profile() {
             </div>
 
             {/* Copyright */}
-            <div className="text-center pt-4 border-t border-gray-200">
-              <p className="text-sm text-gray-600">
+            <div className="text-center pt-4 border-t border-border">
+              <p className="text-sm text-muted-foreground">
                 © 2026 <strong>شركة ديناميك لخدمات البرمجيات</strong>
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 جميع الحقوق محفوظة - الجمهورية اليمنية
               </p>
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-muted-foreground mt-2">
                 Made with ❤️ for Yemen
               </p>
             </div>

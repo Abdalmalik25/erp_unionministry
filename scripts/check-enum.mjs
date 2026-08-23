@@ -1,0 +1,10 @@
+import pg from 'pg';
+import { readFileSync } from 'fs';
+const env = readFileSync('G:\\App25\\unionministry1\\.env','utf8').split('\n');
+env.forEach(l => { const t=l.trim(); if(!t||t.startsWith('#'))return; const i=t.indexOf('='); if(i===-1)return; const k=t.slice(0,i).trim(); const v=t.slice(i+1).trim().replace(/^['"]|['"]$/g,''); if(!process.env[k])process.env[k]=v; });
+const pool = new pg.Pool({connectionString: process.env.DATABASE_URL, ssl:{rejectUnauthorized:false}, max:1});
+const r = await pool.query("SELECT enumlabel FROM pg_enum JOIN pg_type ON pg_enum.enumtypid = pg_type.oid WHERE pg_type.typname LIKE '%entity%'");
+console.log('entity enums:', r.rows.map(x=>x.enumlabel));
+const r2 = await pool.query("SELECT udt_name FROM information_schema.columns WHERE table_name='organizational_entities' AND column_name='entity_type'");
+console.log('entity_type udt:', r2.rows);
+await pool.end();

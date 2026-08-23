@@ -1,14 +1,17 @@
 import { useEffect, useState, useCallback } from 'react';
 import { RouterProvider } from 'react-router';
-import { Toaster } from 'sonner';
+import { Toaster } from './components/ui/sonner';
+import { ThemeProvider } from 'next-themes';
 import { router } from './routes';
 import { AuthProvider } from './contexts/AuthContext';
 import { useToast, Toast } from './components/ui/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { InstallPWA } from './components/InstallPWA';
 import { registerServiceWorker } from './utils/pwa';
-import { clearExpiredCache } from './utils/indexedDB';
+import { db } from './utils/indexedDB';
 import { SplashScreen } from './components/ui/SplashScreen';
+import { OfflineIndicator, OfflineSyncBanner } from './components/OfflineIndicator';
+import { OfflineProvider } from './contexts/OfflineContext';
 
 function ToastContainer() {
   const { toasts, removeToast } = useToast();
@@ -31,16 +34,13 @@ function AppContent() {
   // PWA Setup
   useEffect(() => {
     // تسجيل Service Worker (معطل في Figma Make)
-    registerServiceWorker().catch(() => {
-      // تجاهل الأخطاء في بيئة التطوير/Preview
+    registerServiceWorker().catch((e) => {
+      console.warn('[App] Service Worker registration failed:', e);
     });
 
-    // طلب إذن الإشعارات (اختياري)
-    // requestNotificationPermission();
-
     // مسح الكاش القديم
-    clearExpiredCache().catch(() => {
-      // تجاهل الأخطأ في بيئة التطوير/Preview
+    db.clearExpiredCache().catch((e) => {
+      console.warn('[App] Cache cleanup failed:', e);
     });
   }, []);
 
@@ -56,6 +56,8 @@ function AppContent() {
         toastOptions={{ style: { fontFamily: 'inherit' } }}
       />
       <InstallPWA />
+      <OfflineIndicator />
+      <OfflineSyncBanner />
     </>
   );
 }
@@ -69,17 +71,22 @@ export default function App() {
 
   return (
     <>
-      {showSplash && <SplashScreen onComplete={handleSplashComplete} duration={3000} />}
+      {showSplash && <SplashScreen onComplete={handleSplashComplete} duration={1200} />}
       {!showSplash && (
-        <ErrorBoundary
-          onError={(error, errorInfo) => {
-            // يمكن إرسال الخطأ لخدمة تتبع مثل Sentry
-            console.error('Global Error:', error, errorInfo);
-          }}
-        >
-          <AuthProvider>
-            <AppContent />
-          </AuthProvider>
+        <ErrorBoundary>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+            storageKey="theme"
+          >
+            <AuthProvider>
+              <OfflineProvider>
+                <AppContent />
+              </OfflineProvider>
+            </AuthProvider>
+          </ThemeProvider>
         </ErrorBoundary>
       )}
     </>

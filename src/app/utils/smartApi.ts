@@ -5,7 +5,7 @@
 
 import { retryAsync } from './performance';
 
-interface RequestConfig extends RequestInit {
+interface RequestConfig extends Omit<RequestInit, 'cache'> {
   retry?: boolean;
   maxRetries?: number;
   cache?: boolean;
