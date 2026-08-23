@@ -213,6 +213,61 @@ router.get('/api/osh-inspection/criteria', async (req, res) => {
   }
 });
 
+// ===================== الجغرافيا الوطنية والتكامل عبر السجلات =====================
+router.get('/api/geography/governorates', async (_req, res) => {
+  try {
+    const r = await pool.query(`SELECT * FROM v_national_geo_rollup`);
+    res.json({ data: r.rows });
+  } catch (_err) {
+    res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
+  }
+});
+
+router.get('/api/geography/governorates/:code', async (req, res) => {
+  try {
+    const { code } = req.params;
+    const [gov, dirs, offices] = await Promise.all([
+      pool.query(
+        `SELECT g.*, 
+                (SELECT COUNT(*)::int FROM commercial_establishments e
+                  WHERE fn_normalize_gov(e.governorate) = g.name_ar) AS establishments_count,
+                (SELECT COALESCE(SUM(e.employees_count),0)::int FROM commercial_establishments e
+                  WHERE fn_normalize_gov(e.governorate) = g.name_ar) AS registered_workers
+         FROM national_governorates g WHERE g.gov_code = $1`,
+        [code]
+      ),
+      pool.query(
+        `SELECT dir_code, name_ar, is_capital FROM national_directorates
+         WHERE gov_code = $1 AND is_active ORDER BY is_capital DESC, name_ar`,
+        [code]
+      ),
+      pool.query(
+        `SELECT office_code, name_ar, office_type, address, phone
+         FROM national_ministry_offices WHERE gov_code = $1 AND is_active`,
+        [code]
+      ),
+    ]);
+    if (gov.rows.length === 0) return res.status(404).json({ error: 'المحافظة غير موجودة' });
+    res.json({ governorate: gov.rows[0], directorates: dirs.rows, offices: offices.rows });
+  } catch (_err) {
+    res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
+  }
+});
+
+// منشآت محافظة محددة مع مكتب الاختصاص (من عرض التكامل)
+router.get('/api/geography/governorates/:code/establishments', async (req, res) => {
+  try {
+    const { code } = req.params;
+    const r = await pool.query(
+      `SELECT * FROM v_establishment_geography WHERE gov_code = $1 LIMIT 200`,
+      [code]
+    );
+    res.json({ data: r.rows });
+  } catch (_err) {
+    res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
+  }
+});
+
 // ===================== تفاصيل مهنة وطنية =====================
 router.get('/api/national-occupations', async (req, res) => {
   try {
