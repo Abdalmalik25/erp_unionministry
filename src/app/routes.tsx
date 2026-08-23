@@ -50,6 +50,7 @@ const ComparativeAnalysis = lazy(() => import("./pages/ministry/ComparativeAnaly
 const LaborRecordsPage = lazy(() => import("./pages/ministry/LaborRecordsPage").then(m => ({ default: m.default })));
 const RolesGallery = lazy(() => import("./components/national/RolesGallery").then(m => ({ default: m.default })));
 const RoleDashboard = lazy(() => import("./components/national/RoleDashboard").then(m => ({ default: m.default })));
+const NationalDirectoriesManagement = lazy(() => import("./pages/ministry/NationalDirectoriesManagement").then(m => ({ default: m.NationalDirectoriesManagement })));
 
 // Organization-specific pages
 const OrgMembersManagement = lazy(() => import("./pages/organization/MembersManagement").then(m => ({ default: m.OrganizationMembersManagement })));
@@ -236,6 +237,10 @@ export const router = createBrowserRouter([
       {
         path: "labor-records/:resource",
         element: <LazyPage><LaborRecordsPage /></LazyPage>
+      },
+      {
+        path: "national-directories",
+        element: <LazyPage><NationalDirectoriesManagement /></LazyPage>
       },
       {
         path: "roles",

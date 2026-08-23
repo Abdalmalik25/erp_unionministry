@@ -8,6 +8,7 @@ import {
   ClipboardCheck, Award, BadgeCheck, GraduationCap, Scale, Globe,
   BookOpen, TrendingUp, GitBranch, GitCompare, Settings2, Download, BrainCircuit,
   Building, HeartPulse, Map, FileBadge, FileCheck2, UserCog, ListChecks, ShieldAlert, IdCard,
+  Layers,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePermissions } from '../../hooks/usePermissions';
@@ -148,6 +149,7 @@ export function RootLayout() {
       items: [
         { icon: Briefcase, label: 'استوديو توصيف المهن (ISCO-08)', path: '/ministry/professions', perm: 'occupations.view' },
         { icon: FolderTree, label: 'دليل الأنشطة الاقتصادية (ISIC-4)', path: '/ministry/isic4', perm: 'occupations.view' },
+        { icon: Layers, label: 'السجلات المعيارية والتراميز والأكواد', path: '/ministry/national-directories', perm: 'occupations.view' },
         { icon: GraduationCap, label: 'سجلات التدريب والتأهيل المهني', path: '/ministry/training-records', perm: 'training.view' },
       ],
     },
