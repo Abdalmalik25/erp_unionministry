@@ -205,5 +205,45 @@ VALUES
   ('establishment', 'LRG', 'كبيرة (250+ عامل)', 'Large', NULL, 1, 4)
 ON CONFLICT (directory_type, code) DO NOTHING;
 
+-- ---------- 7ب) مجموعات ISCO-08 الرئيسية التسع (دليل المهن) ----------
+INSERT INTO national_directories (directory_type, code, name_ar, name_en, level, sort_order)
+VALUES
+  ('occupation', 'ISCO-1', 'المديرون', 'Managers', 1, 1),
+  ('occupation', 'ISCO-2', 'المهنيون', 'Professionals', 1, 2),
+  ('occupation', 'ISCO-3', 'الفنيون والمهنيون المساعدون', 'Technicians and Associate Professionals', 1, 3),
+  ('occupation', 'ISCO-4', 'موظفو الخدمات المكتبية', 'Clerical Support Workers', 1, 4),
+  ('occupation', 'ISCO-5', 'عاملو الخدمات والبيع', 'Service and Sales Workers', 1, 5),
+  ('occupation', 'ISCO-6', 'العاملون المهرة في الزراعة والحراجة وصيد الأسماك', 'Skilled Agricultural, Forestry and Fishery Workers', 1, 6),
+  ('occupation', 'ISCO-7', 'الحرفيون والعاملون في الصناعات والبناء', 'Craft and Related Trades Workers', 1, 7),
+  ('occupation', 'ISCO-8', 'مشغلو المصانع والآلات والتجميع', 'Plant and Machine Operators and Assemblers', 1, 8),
+  ('occupation', 'ISCO-9', 'المهن الابتدائية', 'Elementary Occupations', 1, 9)
+ON CONFLICT (directory_type, code) DO NOTHING;
+
+-- ---------- 7ج) أقسام ISIC-4 (دليل الأنشطة الاقتصادية) ----------
+INSERT INTO national_directories (directory_type, code, name_ar, name_en, level, sort_order)
+VALUES
+  ('activity', 'A', 'الزراعة والحراجة وصيد الأسماك', 'Agriculture, Forestry and Fishing', 1, 1),
+  ('activity', 'B', 'التعدين واستغلال المحاجر', 'Mining and Quarrying', 1, 2),
+  ('activity', 'C', 'الصناعات التحويلية', 'Manufacturing', 1, 3),
+  ('activity', 'D', 'إمداد الكهرباء والغاز والبخار وتكييف الهواء', 'Electricity, Gas, Steam and Air Conditioning Supply', 1, 4),
+  ('activity', 'E', 'إمداد المياه وأنشطة الصرف الصحي وإدارة النفايات', 'Water Supply; Sewerage, Waste Management', 1, 5),
+  ('activity', 'F', 'التشييد والبناء', 'Construction', 1, 6),
+  ('activity', 'G', 'تجارة الجملة والتجزئة', 'Wholesale and Retail Trade', 1, 7),
+  ('activity', 'H', 'النقل والتخزين', 'Transportation and Storage', 1, 8),
+  ('activity', 'I', 'خدمات الإقامة وخدمات الطعام', 'Accommodation and Food Service Activities', 1, 9),
+  ('activity', 'J', 'المعلومات والاتصالات', 'Information and Communication', 1, 10),
+  ('activity', 'K', 'الأنشطة المالية وأنشطة التأمين', 'Financial and Insurance Activities', 1, 11),
+  ('activity', 'L', 'الأنشطة العقارية', 'Real Estate Activities', 1, 12),
+  ('activity', 'M', 'الأنشطة المهنية والعلمية والتقنية', 'Professional, Scientific and Technical Activities', 1, 13),
+  ('activity', 'N', 'أنشطة الخدمات الإدارية وخدمات الدعم', 'Administrative and Support Service Activities', 1, 14),
+  ('activity', 'O', 'الإدارة العامة والدفاع', 'Public Administration and Defence', 1, 15),
+  ('activity', 'P', 'التعليم', 'Education', 1, 16),
+  ('activity', 'Q', 'الصحة والعمل الاجتماعي', 'Human Health and Social Work Activities', 1, 17),
+  ('activity', 'R', 'الفنون والترفيه والتسلية', 'Arts, Entertainment and Recreation', 1, 18),
+  ('activity', 'S', 'أنشطة الخدمات الأخرى', 'Other Service Activities', 1, 19),
+  ('activity', 'T', 'أنشطة الأسر المعيشية كأرباب عمل', 'Activities of Households as Employers', 1, 20),
+  ('activity', 'U', 'أنشطة المنظمات والهيئات خارج الحدود الإقليمية', 'Activities of Extraterritorial Organizations and Bodies', 1, 21)
+ON CONFLICT (directory_type, code) DO NOTHING;
+
 -- ---------- 8) ملخص المنظومة ----------
 SELECT 'Enhanced national directories loaded' AS status;
