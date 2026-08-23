@@ -174,6 +174,45 @@ router.delete('/api/national-directories/:type/:code', async (req, res) => {
   }
 });
 
+// ===================== منهجية معايير التفتيش المعيارية (OSH) =====================
+router.get('/api/osh-inspection/domains', async (_req, res) => {
+  try {
+    const r = await pool.query(
+      `SELECT d.domain_code, d.name_ar, d.name_en, d.description, d.total_weight,
+              COUNT(c.id)::int AS criteria_count
+       FROM osh_inspection_domains d
+       LEFT JOIN inspection_criteria c
+         ON c.domain = d.domain_code AND c.is_active = TRUE
+       WHERE d.is_active = TRUE
+       GROUP BY d.id, d.domain_code, d.name_ar, d.name_en, d.description, d.total_weight
+       ORDER BY d.sort_order`
+    );
+    res.json({ data: r.rows });
+  } catch (_err) {
+    res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
+  }
+});
+
+router.get('/api/osh-inspection/criteria', async (req, res) => {
+  try {
+    const { domain } = req.query;
+    let where = `is_active = TRUE AND criterion_code LIKE 'OSH-%'`;
+    const params = [];
+    if (domain) { where += ` AND domain = $1`; params.push(domain); }
+    const r = await pool.query(
+      `SELECT criterion_code, title, description, domain, weight,
+              measurement_method, min_severity, legal_reference, standard_ref, corrective_action
+       FROM inspection_criteria
+       WHERE ${where}
+       ORDER BY criterion_code`,
+      params
+    );
+    res.json({ data: r.rows });
+  } catch (_err) {
+    res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
+  }
+});
+
 // ===================== تفاصيل مهنة وطنية =====================
 router.get('/api/national-occupations', async (req, res) => {
   try {
