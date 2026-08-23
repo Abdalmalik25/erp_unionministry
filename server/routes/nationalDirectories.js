@@ -268,6 +268,80 @@ router.get('/api/geography/governorates/:code/establishments', async (req, res) 
   }
 });
 
+// ===================== استيراد/تصدير عام لأي سجل =====================
+// تصدير أي جدول مسموح إلى JSON/CSV
+const EXPORTABLE_TABLES = new Set([
+  'national_directories', 'labor_roles', 'national_governorates',
+  'national_directorates', 'national_ministry_offices', 'osh_inspection_domains',
+  'inspection_criteria', 'sector_property_matrix', 'commercial_establishments',
+  'organizational_entities', 'professions', 'isic4_classifications',
+]);
+
+router.get('/api/registry/export', async (req, res) => {
+  try {
+    const { table, format = 'json' } = req.query;
+    if (!table || !EXPORTABLE_TABLES.has(String(table))) {
+      return res.status(400).json({ error: 'جدول غير صالح للتصدير' });
+    }
+    const r = await pool.query(`SELECT * FROM ${String(table)} LIMIT 5000`);
+    if (format === 'csv') {
+      const rows = r.rows;
+      if (rows.length === 0) return res.json({ data: [] });
+      const cols = Object.keys(rows[0]);
+      const csv = [
+        cols.join(','),
+        ...rows.map(row => cols.map(c => {
+          const v = row[c];
+          if (v === null || v === undefined) return '';
+          const s = String(v).replace(/"/g, '""');
+          return /[",\n]/.test(s) ? `"${s}"` : s;
+        }).join(',')),
+      ].join('\n');
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${String(table)}.csv"`);
+      return res.send('\uFEFF' + csv);
+    }
+    res.json({ data: r.rows, count: r.rows.length });
+  } catch (_err) {
+    res.status(500).json({ error: 'خطأ في التصدير' });
+  }
+});
+
+// استيراد JSON إلى أي جدول مسموح (إدراج جماعي)
+router.post('/api/registry/import', async (req, res) => {
+  try {
+    const { table, rows } = req.body || {};
+    if (!table || !EXPORTABLE_TABLES.has(String(table))) {
+      return res.status(400).json({ error: 'جدول غير صالح للاستيراد' });
+    }
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.status(400).json({ error: 'لا توجد بيانات للاستيراد' });
+    }
+    if (rows.length > 1000) {
+      return res.status(400).json({ error: 'الحد الأقصى 1000 سجل لكل دفعة' });
+    }
+    let imported = 0;
+    for (const row of rows) {
+      const cols = Object.keys(row).filter(c => c !== 'id' && c !== 'created_at' && c !== 'updated_at');
+      if (cols.length === 0) continue;
+      const placeholders = cols.map((_, i) => `$${i + 1}`).join(',');
+      const values = cols.map(c => row[c] ?? null);
+      try {
+        await pool.query(
+          `INSERT INTO ${String(table)} (${cols.join(',')}) VALUES (${placeholders})`,
+          values
+        );
+        imported++;
+      } catch (_e) {
+        // تجاهل الصفوف المكررة/المتعارضة
+      }
+    }
+    res.json({ ok: true, imported, total: rows.length });
+  } catch (_err) {
+    res.status(500).json({ error: 'خطأ في الاستيراد' });
+  }
+});
+
 // ===================== تفاصيل مهنة وطنية =====================
 router.get('/api/national-occupations', async (req, res) => {
   try {

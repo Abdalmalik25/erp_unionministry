@@ -4,7 +4,7 @@
  * المهن (ISCO-08) | الأنشطة الاقتصادية (ISIC-4) | أحجام المنشآت | الأشكال القانونية | أنواع التملك
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Plus, Search, RefreshCw, Edit, Trash2, RotateCcw, Layers, Briefcase, Building2, Scale, Landmark, Save, X, Download, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Plus, Search, RefreshCw, Edit, Trash2, RotateCcw, Layers, Briefcase, Building2, Scale, Landmark, Save, X, Download, ChevronRight, ChevronLeft, Upload } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Modal } from '../../components/ui/Modal';
 import { useConfirm } from '../../components/ui/ConfirmDialog';
@@ -236,6 +236,51 @@ export function NationalDirectoriesManagement() {
 
     const inactiveCount = (stats[activeType]?.total || 0) - (stats[activeType]?.active || 0);
 
+    // تصدير عام لأي سجل (JSON)
+    const handleRegistryExport = async () => {
+        try {
+            const r = await fetch(`/api/registry/export?table=national_directories`);
+            if (!r.ok) { toast.error('فشل التصدير العام'); return; }
+            const d = await r.json();
+            const blob = new Blob([JSON.stringify(d.data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `national_directories_${new Date().toISOString().slice(0,10)}.json`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            toast.success(`تم تصدير ${d.count} سجل عام`);
+            logAudit({ action: 'export', resource: 'registry', details: { table: 'national_directories', count: d.count } });
+        } catch { toast.error('خطأ في التصدير العام'); }
+    };
+
+    // استيراد عام لأي سجل (JSON)
+    const handleRegistryImport = async () => {
+        const input = document.createElement('input');
+        input.type = 'file'; input.accept = '.json';
+        input.onchange = async (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) return;
+            try {
+                const text = await file.text();
+                const parsed = JSON.parse(text);
+                const rows = Array.isArray(parsed) ? parsed : (parsed.data || []);
+                if (rows.length === 0) { toast.warning('لا توجد بيانات في الملف'); return; }
+                const r = await fetch('/api/registry/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ table: 'national_directories', rows }),
+                });
+                const d = await r.json();
+                if (r.ok) {
+                    toast.success(`تم استيراد ${d.imported} من ${d.total} سجل`);
+                    logAudit({ action: 'import', resource: 'registry', details: { table: 'national_directories', imported: d.imported } });
+                    loadEntries();
+                } else { toast.error(d.error || 'فشل الاستيراد'); }
+            } catch { toast.error('ملف JSON غير صالح'); }
+        };
+        input.click();
+    };
     const handleExport = () => {
         if (filtered.length === 0) {
             toast.warning('لا توجد بيانات للتصدير');
@@ -268,6 +313,12 @@ export function NationalDirectoriesManagement() {
                     <div className="flex items-center gap-2">
                         <button onClick={handleExport} className="flex items-center gap-2 px-3.5 py-2 border border-border bg-card text-foreground rounded-xl text-sm font-medium hover:bg-muted transition-colors shadow-sm">
                             <Download size={16} /> Excel
+                        </button>
+                        <button onClick={handleRegistryExport} className="flex items-center gap-2 px-3.5 py-2 border border-border bg-card text-foreground rounded-xl text-sm font-medium hover:bg-muted transition-colors shadow-sm" title="تصدير عام JSON">
+                            <Download size={16} /> تصدير JSON
+                        </button>
+                        <button onClick={handleRegistryImport} className="flex items-center gap-2 px-3.5 py-2 border border-border bg-card text-foreground rounded-xl text-sm font-medium hover:bg-muted transition-colors shadow-sm" title="استيراد عام JSON">
+                            <Upload size={16} /> استيراد
                         </button>
                         <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary-dark transition-all shadow-md shadow-primary/20">
                             <Plus size={16} /> إضافة مدخل جديد

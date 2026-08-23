@@ -125,6 +125,7 @@ import aiComplianceRouter from './routes/aiCompliance.js';
 import dynamicFieldsRouter from './routes/dynamicFields.js';
 import laborRecordsRouter from './routes/laborRecords.js';
 import nationalDirectoriesRouter from './routes/nationalDirectories.js';
+import administrationRouter from './routes/administration.js';
 
 // ===================== Automated Server-Side Mutation Audit =====================
 import { auditLog } from './middleware/shared.js';
@@ -159,6 +160,7 @@ app.use(aiComplianceRouter);
 app.use(dynamicFieldsRouter);
 app.use(laborRecordsRouter);
 app.use(nationalDirectoriesRouter);
+app.use(administrationRouter);
 
 // ===================== Dashboard (inline — uses shared pool) =====================
 import { pool, paginate, countQuery } from './middleware/shared.js';
