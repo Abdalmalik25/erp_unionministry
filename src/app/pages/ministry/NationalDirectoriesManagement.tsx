@@ -113,6 +113,17 @@ export function NationalDirectoriesManagement() {
         });
     }, [entries, activeType, searchTerm]);
 
+    // بناء الشجرة الهرمية (المستوى 1 ← المستوى 2) للعرض المتسلسل
+    const hierarchical = useMemo(() => {
+        const byParent = new Map<string, DirectoryEntry[]>();
+        filtered.forEach(e => {
+            const key = e.parent_code || '__root__';
+            if (!byParent.has(key)) byParent.set(key, []);
+            byParent.get(key)!.push(e);
+        });
+        return byParent;
+    }, [filtered]);
+
     const openCreate = () => {
         setEditingKey(null);
         setForm({ ...EMPTY_FORM, directory_type: activeType });
@@ -253,7 +264,7 @@ export function NationalDirectoriesManagement() {
             <PageHeader
                 title="السجلات المعيارية والتراميز والأكواد الوطنية"
                 subtitle="إدارة أدلة التصنيف الوطنية الموحدة: المهن ISCO-08، الأنشطة ISIC-4، أحجام المنشآت، الأشكال القانونية، وأنواع التملك — مع إضافة وتعديل كامل"
-                                actions={
+                actions={
                     <div className="flex items-center gap-2">
                         <button onClick={handleExport} className="flex items-center gap-2 px-3.5 py-2 border border-border bg-card text-foreground rounded-xl text-sm font-medium hover:bg-muted transition-colors shadow-sm">
                             <Download size={16} /> Excel
@@ -262,7 +273,8 @@ export function NationalDirectoriesManagement() {
                             <Plus size={16} /> إضافة مدخل جديد
                         </button>
                     </div>
-                }            />
+                }
+            />
 
             {/* بطاقات الإحصاءات */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -333,6 +345,7 @@ export function NationalDirectoriesManagement() {
                                     <th className="px-5 py-3.5 font-bold text-xs text-foreground">الاسم الإنجليزي</th>
                                     <th className="px-5 py-3.5 font-bold text-xs text-foreground text-center">المستوى</th>
                                     <th className="px-5 py-3.5 font-bold text-xs text-foreground text-center">الترتيب</th>
+                                    <th className="px-5 py-3.5 font-bold text-xs text-foreground text-center">الأبناء</th>
                                     <th className="px-5 py-3.5 font-bold text-xs text-foreground text-center">العمليات</th>
                                 </tr>
                             </thead>
@@ -344,6 +357,15 @@ export function NationalDirectoriesManagement() {
                                         <td className="px-5 py-3.5 text-xs text-muted-foreground font-mono" dir="ltr">{e.name_en || '—'}</td>
                                         <td className="px-5 py-3.5 text-center text-xs font-bold text-foreground">{e.level}</td>
                                         <td className="px-5 py-3.5 text-center text-xs text-muted-foreground font-mono">{e.sort_order}</td>
+                                        <td className="px-5 py-3.5 text-center">
+                                            {(hierarchical.get(e.code) || []).length > 0 ? (
+                                                <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-[10px] font-bold">
+                                                    {(hierarchical.get(e.code) || []).length}
+                                                </span>
+                                            ) : (
+                                                <span className="text-muted-foreground text-[10px]">—</span>
+                                            )}
+                                        </td>
                                         <td className="px-5 py-3.5">
                                             <div className="flex items-center justify-center gap-1.5">
                                                 <button
