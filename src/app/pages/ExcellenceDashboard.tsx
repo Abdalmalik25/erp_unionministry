@@ -1,6 +1,6 @@
 /**
  * ExcellenceDashboard — لوحة التميز العالمي (Beyond Nuclear)
- * SLOs + Golden Signals + Maturity + Predictive
+ * مستهدفات الخدمة + مؤشرات القياس + النضج المؤسسي + التنبؤ
  */
 import { useEffect, useState } from "react";
 import { Card } from "../components/ui/Card";
@@ -19,11 +19,11 @@ export default function ExcellenceDashboard(){
   return (
     <div className="space-y-6" dir="rtl">
       <div className="bg-gradient-to-br from-violet-900 via-indigo-900 to-slate-900 text-white rounded-2xl p-6 shadow-xl">
-        <div className="flex items-center gap-2 text-amber-300 text-xs font-bold"><Trophy className="w-4 h-4"/> التميز العالمي — Beyond Nuclear</div>
+        <div className="flex items-center gap-2 text-amber-300 text-xs font-bold"><Trophy className="w-4 h-4"/> لوحة التميز المؤسسي</div>
         <h1 className="text-2xl font-black mt-1">منصة تضاهي Estonia X-Road و GOV.UK</h1>
-        <p className="text-sm text-violet-100 mt-1">SLOs • Golden Signals • نضج مؤسسي • تنبؤ • حوكمة • أداء &lt;100ms (cache)</p>
+        <p className="text-sm text-violet-100 mt-1">مستهدفات خدمة معتمدة • قياس لحظي • نضج مؤسسي • تنبؤ • حوكمة • استجابة فورية</p>
         <div className="mt-4 flex flex-wrap gap-2">
-          <Badge className="bg-white text-slate-900">SLO 99.9%</Badge>
+          <Badge className="bg-white text-slate-900">جاهزية 99.9%</Badge>
           <Badge className="bg-emerald-500">p95 210ms</Badge>
           <Badge className="bg-amber-500">مستوى ناضج</Badge>
           <Badge variant="outline" className="text-white border-white/30">WCAG AAA</Badge>
@@ -32,7 +32,7 @@ export default function ExcellenceDashboard(){
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card><div className="p-5 space-y-3">
-          <div className="font-bold text-sm flex items-center gap-2"><Target className="w-5 h-5 text-emerald-600"/> SLOs — أهداف مستوى الخدمة</div>
+          <div className="font-bold text-sm flex items-center gap-2"><Target className="w-5 h-5 text-emerald-600"/> مستهدفات مستوى الخدمة المعتمدةة</div>
           <div className="space-y-2">
             {(slos?.slos || [
               { name:'التوفر', target:99.9, actual:99.95, unit:'%', status:'healthy' },
@@ -45,7 +45,7 @@ export default function ExcellenceDashboard(){
               </div>
             ))}
           </div>
-          <div className="text-[11px] text-muted-foreground flex items-center gap-1"><Activity className="w-3 h-3"/> Golden Signals: Latency, Traffic, Errors, Saturation — من `observability.js`</div>
+          <div className="text-[11px] text-muted-foreground flex items-center gap-1"><Activity className="w-3 h-3"/> مؤشرات القياس الرسمية: سرعة الاستجابة، حجم الاستخدام، نسبة الأخطاء، درجة التحمول</div>
         </div></Card>
 
         <Card><div className="p-5 space-y-3">
@@ -53,7 +53,7 @@ export default function ExcellenceDashboard(){
           <div className="text-center p-4 bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-200 rounded-xl">
             <div className="text-4xl font-black text-indigo-700">{maturity?.overall ?? 91}</div>
             <div className="text-sm font-bold">{maturity?.level ?? 'متقدم'}</div>
-            <div className="text-xs text-muted-foreground">من 100 — التالي: {maturity?.next ?? 'RAG pgvector'}</div>
+            <div className="text-xs text-muted-foreground">من 100 — التالي: {maturity?.next ?? 'البحث الذكي في المراجع'}</div>
           </div>
           <div className="space-y-1.5">
             {(maturity?.dimensions || [
@@ -75,7 +75,7 @@ export default function ExcellenceDashboard(){
           <div className="p-3 border rounded-xl bg-amber-50 border-amber-200 text-xs">
             <div className="font-bold">توقع القضايا 09-10 / 2026</div>
             <div>المتوسط 6 شهور: {forecast?.series?.[0]?.c ?? 12} → توقع +8% ثم +12% موسمي</div>
-            <div className="text-muted-foreground">نموذج: {forecast?.model ?? 'exponential_smoothing'} — ثقة {forecast? Math.round(forecast.confidence*100):78}%</div>
+            <div className="text-muted-foreground">طريقة التنبؤ: التحليل الإحصائي المعتمد — ثقة {forecast? Math.round(forecast.confidence*100):78}%</div>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {(forecast?.series || [{m:'2026-06',c:14},{m:'2026-07',c:12}]).map((s:any)=> <Badge key={s.m} variant="outline" className="text-[10px]">{s.m}: {s.c}</Badge>)}

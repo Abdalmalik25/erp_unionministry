@@ -372,12 +372,12 @@ function HistoryTab() {
 
       {audit.length > 0 && (
         <div>
-          <h4 className="text-xs font-bold mb-2 flex items-center gap-1.5"><Eye className="w-3.5 h-3.5" /> آخر الأثر المروض (Audit Trail)</h4>
+          <h4 className="text-xs font-bold mb-2 flex items-center gap-1.5"><Eye className="w-3.5 h-3.5" /> سجل الحركة الأخير</h4>
           <div className="space-y-1.5">
             {audit.map(a => (
               <div key={a.id || a.sequence} className="bg-card border border-border rounded-lg px-3 py-2 text-[11px] flex items-center justify-between gap-2">
-                <span className="font-mono font-bold text-primary">{a.action}</span>
-                <span className="text-muted-foreground truncate">{a.table_name || ''} {a.notes || ''}</span>
+                <span className="font-bold text-primary">{ ({INSERT:"إضافة", UPDATE:"تعديل", DELETE:"حذف", LOGIN:"تسجيل دخول", LOGOUT:"تسجيل خروج"} as Record<string,string>)[a.action] || String(a.action||"").replace(/_/g," ") }</span>
+                <span className="text-muted-foreground truncate">{a.table_name ? "في سجل " + a.table_name.replace(/_/g," ") : ""} {a.notes || ""}</span>
                 <span className="text-muted-foreground shrink-0">{fmtTime(a.created_at)}</span>
               </div>
             ))}

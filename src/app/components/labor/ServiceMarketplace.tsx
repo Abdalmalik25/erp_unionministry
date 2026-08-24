@@ -1,6 +1,6 @@
 /**
  * ServiceMarketplace — سوق الخدمات الذكي
- * المستخدم يقول "أريد نقل عامل" → النظام يحدد الأهلية والوثائق والرسوم والـ SLA
+ * المستخدم يقول "أريد نقل عامل" ← فيحدد النظام الأهلية والمستندات المطلوبة والرسوم ومدة الإنجاز
  */
 import { useState, useMemo } from "react";
 import { Card } from "../ui/Card";
@@ -54,7 +54,7 @@ export function ServiceMarketplace({ onSelect }: { onSelect?: (s: Service)=>void
         <div className="flex items-center gap-2">
           <Search className="w-5 h-5 text-blue-600" />
           <span className="font-bold text-sm">سوق الخدمات الذكي</span>
-          <Badge variant="outline" className="text-[10px]">Eligibility • Documents • Fees • SLA • Office</Badge>
+          <Badge variant="outline" className="text-[10px]">شروط الاستحقاق • المستندات • الرسوم • مدة الإنجاز • مكان التقديم</Badge>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2">
@@ -93,7 +93,7 @@ export function ServiceMarketplace({ onSelect }: { onSelect?: (s: Service)=>void
         </div>
 
         <div className="text-[11px] text-muted-foreground bg-blue-50 border border-blue-200 rounded-lg p-2 flex gap-2">
-          <ShieldAlert className="w-4 h-4 text-blue-600 shrink-0"/> كل خدمة تمر عبر Workflow Engine الموحد (Eligibility → Documents → Payment → Review → Decision → Appeal → Certificate → Archive) مع تتبع SLA
+          <ShieldAlert className="w-4 h-4 text-blue-600 shrink-0"/> كل خدمة تمر عبر مسار إجرائي موحد ومعتمد (استحقاق ← مستندات ← رسوم ← مراجعة → Decision → Appeal → Certificate → Archive) مع تتبع SLA
         </div>
       </div>
     </Card>

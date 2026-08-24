@@ -23,7 +23,7 @@ export function ComplianceScoreCard({ score = 73, breakdown, reasons }: Props) {
             <Shield className="w-5 h-5 text-blue-600" />
             <span className="font-bold text-sm">مؤشر الالتزام — دعم قرار فقط</span>
           </div>
-          <Badge variant="outline" className="text-[10px]">Explainable • Audit Trail</Badge>
+          <Badge variant="outline" className="text-[10px]">مبرهن • موثق في السجل الرسمي</Badge>
         </div>
 
         <div className="flex items-center gap-6">
@@ -60,7 +60,7 @@ export function ComplianceScoreCard({ score = 73, breakdown, reasons }: Props) {
         </div>
 
         <div className="text-[11px] text-muted-foreground bg-amber-50 border border-amber-200 rounded-lg p-2">
-          ⚖️ الأساس القانوني لكل قاعدة يُعرض عند النقر — النسخة والفعالية وتاريخ المعاملة محفوظة (Time-Machine)
+          ⚖️ الأساس القانوني لكل قاعدة يُعرض عند النقر — النسخة والفعالية وتاريخ المعاملة محفوظة (استعراض تاريخي كامل)
         </div>
       </div>
     </Card>

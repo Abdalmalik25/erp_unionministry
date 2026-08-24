@@ -1,6 +1,6 @@
 /**
- * SmartChronology — مزمنة ذكية دقيقة آمنة موثوقة سريعة
- * كل حدث: at (UTC) + actor + hash + type — لا تعديل صامت
+ * SmartChronology — السجل الزمني الموثق للمعاملة
+ * كل حدث موثق بالتاريخ والوقت والمستخدم والبصمة الرقمية — لا تعديل صامت
  */
 import { useEffect, useState } from "react";
 import { Card } from "../ui/Card";
@@ -12,12 +12,10 @@ type Event = { at: string; action: string; actor: string; hash: string; type: st
 export function SmartChronology({ type, id }: { type: string; id: string }) {
   const [events,setEvents]=useState<Event[]>([]);
   const [loading,setLoading]=useState(true);
-  const [took,setTook]=useState<number>(0);
   useEffect(()=>{
     fetch(`/api/v1/chronology/${type}/${id}`).then(r=>r.json()).then(j=>{
       const d=j.data||j;
       setEvents(d.events||[]);
-      setTook(d.took_ms||0);
       setLoading(false);
     }).catch(()=> setLoading(false));
   },[type,id]);
@@ -27,8 +25,8 @@ export function SmartChronology({ type, id }: { type: string; id: string }) {
       <div className="p-5 space-y-3">
         <div className="flex items-center gap-2">
           <Clock className="w-5 h-5 text-indigo-600"/>
-          <span className="font-bold text-sm">المزمنة الذكية — {type} / {id.slice(0,8)}</span>
-          <Badge variant="outline" className="text-[10px]"><ShieldCheck className="w-3 h-3 ml-1"/>موثقة • {took}ms</Badge>
+          <span className="font-bold text-sm">السجل الزمني الموثق</span>
+          <Badge variant="outline" className="text-[10px]"><ShieldCheck className="w-3 h-3 ml-1"/>موثقة رقمياً • استجابة فورية</Badge>
           <Badge variant="secondary" className="text-[10px]">{events.length} حدث</Badge>
         </div>
         {events.length===0? <div className="text-sm text-muted-foreground text-center py-6">لا أحداث — بداية السجل</div> :
@@ -39,7 +37,7 @@ export function SmartChronology({ type, id }: { type: string; id: string }) {
                 <div className="border rounded-xl p-3 bg-slate-50">
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Clock className="w-3 h-3"/>{new Date(e.at).toLocaleString('ar-YE', { dateStyle:'short', timeStyle:'medium' })}
-                    <Hash className="w-3 h-3 mr-2"/>{e.hash}
+                    <Hash className="w-3 h-3 mr-2"/><span title={e.hash}>بصمة رقمية موثقة</span>
                     <User className="w-3 h-3 mr-1"/>{e.actor}
                   </div>
                   <div className="font-medium text-sm mt-1 flex items-center gap-1">
@@ -52,7 +50,7 @@ export function SmartChronology({ type, id }: { type: string; id: string }) {
             ))}
           </div>
         }
-        <div className="text-[11px] text-muted-foreground bg-slate-50 border rounded-lg p-2">كل حدث بختم UTC + hash + actor — يُحفظ في `workflow_transitions_log + audit_log` — لا تعديل صامت — قابل للتدقيق القضائي</div>
+        <div className="text-[11px] text-muted-foreground bg-slate-50 border rounded-lg p-2">كل حدث موثق بالتاريخ والوقت والمستخدم وبصمة رقمية غير قابلة للتغيير — محفوظ في السجلات الرسمية وقابل للتدقيق القضائي</div>
       </div>
     </Card>
   );

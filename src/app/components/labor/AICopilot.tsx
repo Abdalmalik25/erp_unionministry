@@ -1,6 +1,6 @@
 /**
- * AICopilot — مساعد وطني مع RAG قانوني وحوكمة صارمة
- * AI Assists — Law Governs — Human Decides
+ * AICopilot — المساعد الذكي الوطني للعمل مع الاستناد للمراجع القانونية
+ * يساند النظام القرار — والقانون يحكم — والإنسان يقرر
  */
 import { useState } from "react";
 import { Card } from "../ui/Card";
@@ -28,7 +28,7 @@ export function AICopilot() {
       });
     } else if (q.includes('عقد') || q.includes('أجنبي')) {
       setAns({
-        answer: 'عقد العمل الأجنبي يتطلب تصريح عمل ساري ومصادقة. يُحفظ العقد مهيكلاً مع التحقق القانوني والـ hash.',
+        answer: 'عقد العمل الأجنبي يتطلب تصريح عمل ساري ومصادقة. يُحفظ العقد مهيكلاً مع التحقق القانوني والبصمة الرقمية الموثقة.',
         sources: [{ title:'قانون العمل 5/1995', article:'مادة 15', version:'1995' }],
         confidence: 0.78,
       });
@@ -45,8 +45,8 @@ export function AICopilot() {
       <div className="p-5 space-y-4">
         <div className="flex items-center gap-2">
           <BrainCircuit className="w-5 h-5 text-indigo-600"/>
-          <span className="font-bold text-sm">المساعد الوطني للعمل — Labor AI Copilot</span>
-          <Badge variant="outline" className="text-[10px]">RAG • Governed • Human-in-loop</Badge>
+          <span className="font-bold text-sm">المساعد الذكي الوطني للعمل</span>
+          <Badge variant="outline" className="text-[10px]">مرجعي • خاضع للحوكمة • بإشراف بشري</Badge>
         </div>
         <div className="flex gap-2">
           <input value={q} onChange={e=> setQ(e.target.value)} onKeyDown={e=> e.key==='Enter' && ask()} placeholder="اسأل: ما إجراءات نقل عامل؟ كيف أبلغ عن إصابة؟" className="flex-1 border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"/>
@@ -70,12 +70,12 @@ export function AICopilot() {
               </div>
             )}
             <div className="mt-3 flex flex-wrap gap-1.5">
-              <Badge variant="secondary" className="text-[10px]">Model: labor-copilot-v1</Badge>
-              <Badge variant="outline" className="text-[10px]">Task: legal_qa</Badge>
-              <Badge variant="outline" className="text-[10px]">Human Review: مطلوب للقرارات الحساسة</Badge>
+              <Badge variant="secondary" className="text-[10px]">الإصدار الرسمي الأول</Badge>
+              <Badge variant="outline" className="text-[10px]">استشارة نظامية</Badge>
+              <Badge variant="outline" className="text-[10px]">مراجعة بشرية للقرارات الحساسة</Badge>
             </div>
             {!ans.insufficient && <div className="text-[11px] text-muted-foreground mt-2">⚖️ الإجابة تظهر المصدر والمادة والنسخة وتاريخ الفعالية — لا قرار نهائي آلي</div>}
-            {ans.insufficient && <div className="text-[11px] text-amber-700 mt-2">INSUFFICIENT_LEGAL_BASIS — لا إجابة قانونية حاسمة بدون مصدر موثق</div>}
+            {ans.insufficient && <div className="text-[11px] text-amber-700 mt-2">لا توجد إجابة حاسمة دون مرجع نظامي موثق — سيُحال السؤال إلى المختصين</div>}
           </div>
         )}
 
@@ -86,7 +86,7 @@ export function AICopilot() {
         </div>
 
         <div className="text-[11px] text-muted-foreground bg-slate-50 border rounded-lg p-2">
-          AI Governance: كل استدعاء يُسجل (Model/Version/Input/Sources/Output/Confidence/User/Timestamp/HumanReview/FinalDecision) — لا توليد قرار غير قابل للمراجعة
+          ضمانات الحوكمة: كل استفسار يُسجل كاملاً في سجل الحركة الرسمي — لا يصدر أي قرار آلي غير قابل للمراجعة
         </div>
       </div>
     </Card>

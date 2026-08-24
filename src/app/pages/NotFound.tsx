@@ -11,7 +11,7 @@ export function NotFound() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 flex items-center justify-center p-4" dir="rtl">
       <div className="max-w-md w-full text-center">
         <div className="bg-[#0f1c31]/90 backdrop-blur-md border border-slate-800/80 rounded-2xl shadow-2xl shadow-black/40 p-8">
-          <div className="text-7xl font-black bg-gradient-to-b from-amber-400 to-amber-600 bg-clip-text text-transparent mb-4">404</div>
+          <div className="text-7xl font-black bg-gradient-to-b from-amber-400 to-amber-600 bg-clip-text text-transparent mb-4">غير موجود</div>
           <h1 className="text-xl font-bold text-white mb-2">الصفحة غير موجودة</h1>
           <p className="text-sm text-slate-400 mb-6 leading-relaxed">
             الرابط الذي تحاول الوصول إليه غير متاح أو تم نقله.

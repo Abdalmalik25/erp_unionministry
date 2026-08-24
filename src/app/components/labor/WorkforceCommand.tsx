@@ -67,7 +67,7 @@ export function WorkforceCommand({ total, yemeni, expat, byOccupation, expiringC
         </div>
 
         <div className="flex items-center gap-2 text-[11px] text-muted-foreground bg-slate-50 border rounded-lg p-2">
-          <AlertCircle className="w-3 h-3"/> البيانات الشخصية (هوية/راتب) معزولة ومقنّعة حسب الصلاحية — RBAC + Jurisdiction
+          <AlertCircle className="w-3 h-3"/> البيانات الشخصية (هوية/راتب) محمية ومعروضة حسب الصلاحية والنطاق المصرح به فقط
         </div>
       </div>
     </Card>

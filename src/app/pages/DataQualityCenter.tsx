@@ -27,9 +27,9 @@ export default function DataQualityCenter(){
   return (
     <div className="space-y-6" dir="rtl">
       <div className="bg-gradient-to-br from-slate-900 to-emerald-900 text-white rounded-2xl p-6">
-        <div className="flex items-center gap-2 text-emerald-300 text-xs font-bold"><ShieldCheck className="w-4 h-4"/> مركز جودة البيانات — Data Quality Center</div>
+        <div className="flex items-center gap-2 text-emerald-300 text-xs font-bold"><ShieldCheck className="w-4 h-4"/> مركز جودة البيانات الوطني</div>
         <h1 className="text-2xl font-black mt-1">نظافة البيانات = ثقة القرار</h1>
-        <p className="text-sm text-emerald-100 mt-1">كشف التكرار • الأيتام • الأكواد غير الصالحة • التعارض التاريخي — كل نتيجة → Case للتنظيف</p>
+        <p className="text-sm text-emerald-100 mt-1">كشف السجلات المكررة والمعزولة والأكواد غير الصحيحة والتعارضات التاريخية — كل نتيجة تُحوّل تلقائياً إلى معاملة معالجة موثقة</p>
         <div className="mt-4 flex gap-2">
           <Button onClick={scan} disabled={scanning} className="bg-white text-slate-900 hover:bg-slate-100"><Search className="w-4 h-4 ml-1"/>{scanning?'جاري الفحص...':'فحص شامل الآن'}</Button>
           <Badge className="bg-white/15 text-white border-white/20">{findings.length} نتيجة مفتوحة</Badge>
@@ -37,9 +37,9 @@ export default function DataQualityCenter(){
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 text-xs">
-        <Card><div className="p-4 text-center"><Users className="w-6 h-6 mx-auto text-indigo-600"/><div className="font-bold">تكرار الأشخاص</div><div className="text-muted-foreground">national_id مكرر — ONE PERSON ONE IDENTITY</div></div></Card>
-        <Card><div className="p-4 text-center"><Building2 className="w-6 h-6 mx-auto text-blue-600"/><div className="font-bold">تكرار المنشآت</div><div className="text-muted-foreground">entity_number + السجل</div></div></Card>
-        <Card><div className="p-4 text-center"><FileWarning className="w-6 h-6 mx-auto text-amber-600"/><div className="font-bold">أيتام وعقود بأكواد غير صالحة</div><div className="text-muted-foreground">orphan_contract / invalid_code</div></div></Card>
+        <Card><div className="p-4 text-center"><Users className="w-6 h-6 mx-auto text-indigo-600"/><div className="font-bold">تكرار الأشخاص</div><div className="text-muted-foreground">رقم واحد لكل شخص — هوية وطنية موحدة</div></div></Card>
+        <Card><div className="p-4 text-center"><Building2 className="w-6 h-6 mx-auto text-blue-600"/><div className="font-bold">تكرار المنشآت</div><div className="text-muted-foreground">رقم الكيان + السجل الرسمي</div></div></Card>
+        <Card><div className="p-4 text-center"><FileWarning className="w-6 h-6 mx-auto text-amber-600"/><div className="font-bold">سجلات معزولة وأكواد غير صحيحة</div><div className="text-muted-foreground">عقود بلا مرجع أو برمز غير مطابق</div></div></Card>
       </div>
 
       <Card>
@@ -49,8 +49,8 @@ export default function DataQualityCenter(){
             <div className="space-y-2">
               {findings.slice(0,20).map((f:any)=>(
                 <div key={f.id} className="flex items-center justify-between p-3 border rounded-xl">
-                  <div><div className="font-medium text-sm">{f.check_type}</div><div className="text-xs text-muted-foreground truncate max-w-[420px]">{JSON.stringify(f.details||{}).slice(0,140)}</div></div>
-                  <Badge variant={f.severity==='critical'?'destructive':f.severity==='warning'?'default':'secondary'}>{f.severity}</Badge>
+                  <div><div className="font-medium text-sm">{ ({duplicate_person:'تكرار سجل شخص', duplicate_establishment:'تكرار سجل منشأة', orphan_contract:'عقد بمرجع ناقص', invalid_code:'رمز غير صحيح'} as Record<string,string>)[f.check_type] || 'نتيجة فحص' }</div><div className="text-xs text-muted-foreground truncate max-w-[420px]">{f.description || 'يوصى بالمعالجة من قبل أمين البيانات'}</div></div>
+                  <Badge variant={f.severity==='critical'?'destructive':f.severity==='warning'?'default':'secondary'}>{ ({critical:'بالغة الأهمية', warning:'تنبيه', info:'للعلم'} as Record<string,string>)[f.severity] || f.severity }</Badge>
                 </div>
               ))}
             </div>

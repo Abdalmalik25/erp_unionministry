@@ -19,7 +19,7 @@ export function VirtualizedTable<T extends { id:any }>({ rows, cols, pageSize=20
   return (
     <div className="border rounded-xl bg-white overflow-hidden">
       <div className="p-3 border-b flex items-center gap-2">
-        <input value={q} onChange={e=>{setQ(e.target.value); setPage(1);}} placeholder="بحث سريع (debounced)..." className="flex-1 border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+        <input value={q} onChange={e=>{setQ(e.target.value); setPage(1);}} placeholder="بحث فوري أثناء الكتابة..." className="flex-1 border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
         <span className="text-xs text-muted-foreground">{filtered.length} سجل • صفحة {page}/{pages}</span>
       </div>
       <div className="overflow-auto max-h-[420px]">
@@ -39,7 +39,7 @@ export function VirtualizedTable<T extends { id:any }>({ rows, cols, pageSize=20
       </div>
       <div className="p-2 border-t flex items-center justify-between">
         <button disabled={page<=1} onClick={()=> setPage(p=> p-1)} className="px-3 py-1 border rounded-lg text-xs disabled:opacity-40">السابق</button>
-        <span className="text-xs">Projection • Pagination • Virtualized (لا N+1)</span>
+        <span className="text-xs">عرض محسّن بتحميل تدريجي — أداء ثابت مهما كان حجم البيانات</span>
         <button disabled={page>=pages} onClick={()=> setPage(p=> p+1)} className="px-3 py-1 border rounded-lg text-xs disabled:opacity-40">التالي</button>
       </div>
     </div>

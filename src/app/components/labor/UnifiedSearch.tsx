@@ -1,5 +1,5 @@
 /**
- * UnifiedSearch — بحث وطني موحد مع CorrelationId وتتبع
+ * UnifiedSearch — البحث الوطني الموحد
  */
 import { useState, useEffect, useRef } from "react";
 import { Search, Building2, Users, GitBranch, Scale, BookOpen, Clock } from "lucide-react";
@@ -37,8 +37,8 @@ export function UnifiedSearch({ onPick }: { onPick?: (h:Hit)=>void }) {
       <div className="flex items-center gap-2">
         <Search className="w-5 h-5 text-blue-600"/>
         <span className="font-bold text-sm">البحث الوطني الموحد</span>
-        <Badge variant="outline" className="text-[10px]">CorrelationId • Audit</Badge>
-        {meta && <span className="text-[11px] text-muted-foreground">— {meta.took}ms • {meta.correlationId}</span>}
+        <Badge variant="outline" className="text-[10px]">بحث موثق ومسجل</Badge>
+        {meta && <span className="text-[11px] text-muted-foreground">— استجابة فورية ({meta.took} من الثانية)</span>}
       </div>
       <div className="relative">
         <Search className="absolute right-3 top-3 w-4 h-4 text-slate-400"/>
@@ -54,9 +54,9 @@ export function UnifiedSearch({ onPick }: { onPick?: (h:Hit)=>void }) {
                 <Icon className="w-4 h-4 text-slate-500 shrink-0"/>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate">{h.title}</div>
-                  <div className="text-xs text-muted-foreground truncate">{h.subtitle || h.type}</div>
+                  <div className="text-xs text-muted-foreground truncate">{h.subtitle || ''}</div>
                 </div>
-                <Badge variant="outline" className="text-[10px]">{h.type}</Badge>
+                <Badge variant="outline" className="text-[10px]">{ {establishment:'منشأة', worker:'عامل', union:'نقابة', case:'قضية', legal:'مرجع نظامي'}[h.type] || h.type }</Badge>
                 {h.status && <Badge variant="secondary" className="text-[10px]">{h.status}</Badge>}
               </button>
             );
@@ -64,7 +64,7 @@ export function UnifiedSearch({ onPick }: { onPick?: (h:Hit)=>void }) {
         </div>
       )}
       {q.length>=2 && hits.length===0 && !loading && <div className="text-center text-xs text-muted-foreground py-4">لا نتائج — جرّب كلمة أخرى أو غيّر النطاق</div>}
-      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><Clock className="w-3 h-3"/> بحث موحد عبر جميع السجلات مع تتبع CorrelationId وتسجيل تدقيقي</div>
+      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><Clock className="w-3 h-3"/> بحث موحد عبر جميع السجلات الوطنية — كل عملية بحث موثقة في سجل الحركة</div>
     </div>
   );
 }

@@ -39,7 +39,7 @@ export default function MinistryWorkspace() {
           <div>
             <div className="text-amber-300 text-xs font-bold flex items-center gap-1"><ClipboardCheck className="w-4 h-4"/> مساحة عمل الموظف — Ministry Workspace</div>
             <h1 className="text-2xl font-black">أهلاً {user?.name}</h1>
-            <p className="text-sm text-slate-200">مهامي • قضاياي • موافقاتي • تنبيهات SLA • مراسلات • تفتيش — كل شيء في مكان واحد</p>
+            <p className="text-sm text-slate-200">مهامي • قضاياي • موافقاتي • تنبيهات مهل الإنجاز • مراسلات • تفتيش — كل شيء في مكان واحد</p>
           </div>
           <div className="flex gap-2"><Button variant="secondary" size="sm"><Bell className="w-4 h-4 ml-1"/>التنبيهات الذكية</Button><Button size="sm" className="bg-amber-500 hover:bg-amber-600">بدء معاملة</Button></div>
         </div>
@@ -89,11 +89,11 @@ export default function MinistryWorkspace() {
                   <div key={c.id||c.case_number} className="p-3 border rounded-xl flex items-center justify-between">
                     <div>
                       <div className="font-medium text-sm">{c.subject || c.case_number}</div>
-                      <div className="text-xs text-muted-foreground">{c.case_type} • {c.case_number} • {c.status}</div>
+                      <div className="text-xs text-muted-foreground">{c.case_type} • {c.case_number}</div>
                     </div>
                     <div className="flex gap-1.5">
-                      <Badge variant={c.priority==='urgent'?'destructive':c.priority==='high'?'default':'secondary'}>{c.priority}</Badge>
-                      <Badge variant={c.sla_status==='overdue'?'destructive':c.sla_status==='at_risk'?'default':'outline'}>{c.sla_status}</Badge>
+                      <Badge variant={c.priority==='urgent'?'destructive':c.priority==='high'?'default':'secondary'}>{ ({urgent:'عاجلة', high:'عالية', medium:'متوسطة', low:'منخفضة'} as Record<string,string>)[c.priority] || c.priority }</Badge>
+                      <Badge variant={c.sla_status==='overdue'?'destructive':c.sla_status==='at_risk'?'default':'outline'}>{ ({on_track:'داخل المهلة', at_risk:'قارب الانتهاء', overdue:'تجاوز المهلة'} as Record<string,string>)[c.sla_status] || c.sla_status }</Badge>
                     </div>
                   </div>
                 ))}
@@ -108,13 +108,13 @@ export default function MinistryWorkspace() {
 
           <Card>
             <div className="p-5 space-y-3">
-              <div className="flex items-center gap-2 font-bold text-sm"><ClipboardCheck className="w-5 h-5 text-emerald-600"/> تفتيش — Risk-Based</div>
+              <div className="flex items-center gap-2 font-bold text-sm"><ClipboardCheck className="w-5 h-5 text-emerald-600"/> التفتيش المبني على المخاطر</div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                 <div className="p-3 border rounded-xl"><div className="font-bold">مخاطرة عالية</div><div>منشأة — 3 مخالفات سابقة + شكوى</div><Badge className="mt-2 bg-rose-600">أولوية 1</Badge></div>
                 <div className="p-3 border rounded-xl"><div className="font-bold">متوسطة</div><div>تفتيش دوري مجدول</div><Badge variant="secondary" className="mt-2">أولوية 2</Badge></div>
                 <div className="p-3 border rounded-xl"><div className="font-bold">منخفضة</div><div>التزام 92 — زيارة توعية</div><Badge variant="outline" className="mt-2">أولوية 3</Badge></div>
               </div>
-              <div className="text-[11px] text-muted-foreground">Risk ≠ حكم قانوني — للترتيب فقط ما لم ينص القانون خلاف ذلك • الأدلة تُرفع مع Hash</div>
+              <div className="text-[11px] text-muted-foreground">درجة المخاطرة للترتيب والتخطيط فقط وليست حكماً قانونياً • الأدلة تُرفع ببصمة رقمية موثقة</div>
             </div>
           </Card>
         </div>
@@ -123,9 +123,9 @@ export default function MinistryWorkspace() {
           <Card><div className="p-5 space-y-3">
             <div className="font-bold text-sm flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-amber-600"/> تنبيهات SLA</div>
             <div className="space-y-2 text-sm">
-              <div className="p-2.5 border rounded-xl bg-amber-50 border-amber-200 flex justify-between"><span>شكوى 041 — باقي 2 يوم</span><Badge variant="default">at_risk</Badge></div>
-              <div className="p-2.5 border rounded-xl bg-rose-50 border-rose-200 flex justify-between"><span>اعتراض 033 — متأخر</span><Badge variant="destructive">overdue</Badge></div>
-              <div className="p-2.5 border rounded-xl bg-emerald-50 border-emerald-200 flex justify-between"><span>تفتيش — يلتزم بالموعد</span><Badge variant="outline">on_track</Badge></div>
+              <div className="p-2.5 border rounded-xl bg-amber-50 border-amber-200 flex justify-between"><span>شكوى 041 — باقي 2 يوم</span><Badge variant="default">قارب الانتهاء</Badge></div>
+              <div className="p-2.5 border rounded-xl bg-rose-50 border-rose-200 flex justify-between"><span>اعتراض 033 — متأخر</span><Badge variant="destructive">تجاوز المهلة</Badge></div>
+              <div className="p-2.5 border rounded-xl bg-emerald-50 border-emerald-200 flex justify-between"><span>تفتيش — يلتزم بالموعد</span><Badge variant="outline">داخل المهلة</Badge></div>
             </div>
           </div></Card>
 

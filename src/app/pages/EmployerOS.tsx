@@ -259,7 +259,7 @@ export default function EmployerOS() {
                 <div className="p-5 space-y-3">
                   <div className="flex items-center gap-2 font-bold text-sm"><Scale className="w-5 h-5 text-indigo-600"/> نزاعاتي وقضاياي</div>
                   {cases.length===0 ? (
-                    <div className="text-xs text-muted-foreground">لا توجد قضايا مفتوحة — سيظهر هنا أي شكوى/نزاع/اعتراض مع الـ SLA والتنبيه قبل التأخر</div>
+                    <div className="text-xs text-muted-foreground">لا توجد قضايا مفتوحة — ستظهر هنا أي شكوى أو نزاع أو اعتراض مع مهلة الإنجاز والتنبيه قبل التأخر</div>
                   ) : cases.slice(0,3).map((c:any)=><div key={c.id} className="border rounded-xl p-3 text-sm"><div className="font-medium">{c.subject||c.case_number}</div><div className="text-xs text-muted-foreground">{c.status} • {c.sla_status}</div></div>)}
                 </div>
               </Card>
@@ -390,7 +390,7 @@ export default function EmployerOS() {
       />
 
       <div className="text-[11px] text-muted-foreground text-center border-t pt-3">
-        🔒 Zero Trust • RBAC/ABAC + Jurisdiction • كل إجراء يُسجل مع before/after وIP وEvidence Hash • الأداء: pagination + caching • Offline Field Mode للمفتش • مزمنة دقيقة 100%
+        حماية قصوى بصلاحيات دقيقة حسب الدور والنطاق • كل إجراء موثق بالتفاصيل الكاملة وببصمة رقمية • أداء فوري مع حفظ تلقائي • يعمل دون اتصال في الزيارات الميدانية
       </div>
     </div>
   );

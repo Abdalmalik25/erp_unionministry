@@ -81,12 +81,24 @@ async function softDelete(table, id, userId) {
 }
 
 async function auditLog(action, resource, userId, details = {}) {
+  const c = await pool.connect();
   try {
-    await pool.query(
+    // توحيد الفعل: أحرف كبيرة + شرطات سفلية (متطلب قيد القاعدة)
+    const act = String(action || 'ACTION').trim().toUpperCase().replace(/\s+/g, '_');
+    await c.query('BEGIN');
+    // قفل استشاري على مستوى المعاملة: يجعل قراءة-كتابة المشغّل (seq+prev) ذرية أمام التزامن
+    await c.query('SELECT pg_advisory_xact_lock($1)', [918273461]);
+    // السلسلة (prev_hash/row_hash/sequence) يولدها المشغّل trg_audit_hash في قاعدة البيانات —
+    // لا يحسبها التطبيق إطلاقاً؛ أي محاولة تزوير القيم هنا ستُستبدل داخل القاعدة
+    await c.query(
       `INSERT INTO audit_log (action, table_name, actor_id, notes, created_at) VALUES ($1, $2, $3, $4, NOW())`,
-      [action, resource, userId || null, JSON.stringify(details)]
+      [act, resource, userId || null, JSON.stringify(details)]
     );
-  } catch (e) { console.error('[Audit] Write failed:', e.message); }
+    await c.query('COMMIT');
+  } catch (e) {
+    try { await c.query('ROLLBACK'); } catch { /* الاتصال ميت */ }
+    console.error('[Audit] Write failed:', e.message);
+  } finally { c.release(); }
 }
 
 // Column whitelist validation

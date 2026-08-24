@@ -1,6 +1,6 @@
 /**
- * NationalPlatformHome — الصفحة الوطنية الموحدة (تجميع كل التحسينات)
- * تُظهر الترابط العميق والتكامل العالمي
+ * NationalPlatformHome — الصفحة الوطنية الموحدة
+ * الواجهة الرسمية للمنظومة الوطنية للعمل النقابي
  */
 import { NationalLaborGraph } from "../components/labor/NationalLaborGraph";
 import { UnifiedSearch } from "../components/labor/UnifiedSearch";
@@ -16,15 +16,15 @@ export default function NationalPlatformHome() {
   return (
     <div className="space-y-6" dir="rtl">
       <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-violet-900 text-white rounded-2xl p-6 shadow-xl">
-        <div className="flex items-center gap-2 text-amber-300 text-xs font-bold"><Globe className="w-4 h-4"/> المنصة الوطنية الرقمية للعمل — National Platform</div>
+        <div className="flex items-center gap-2 text-amber-300 text-xs font-bold"><Globe className="w-4 h-4"/> المنظومة الوطنية للعمل النقابي — وزارة الشؤون الاجتماعية والعمل</div>
         <h1 className="text-2xl font-black mt-1">منصة واحدة • نسيج واحد • حقيقة واحدة</h1>
-        <p className="text-sm text-blue-100 mt-1">Law First → Data Once → Workflow Everywhere → AI Assists → Human Governs → Everything Auditable</p>
+        <p className="text-sm text-blue-100 mt-1">نظام مرجعي موثوق: القرار وفق القانون، البيانات مرة واحدة ومصدرها رسمي، والإجراءات مكتملة التتبع والمساءلة</p>
         <div className="flex flex-wrap gap-2 mt-4">
           <Badge className="bg-white text-slate-900">تكامل عميق</Badge>
-          <Badge className="bg-emerald-500">Zero Trust</Badge>
-          <Badge className="bg-amber-500">Offline Ready</Badge>
-          <Badge variant="outline" className="text-white border-white/30">RAG Explainable</Badge>
-          <Badge variant="outline" className="text-white border-white/30">CorrelationId Everywhere</Badge>
+          <Badge className="bg-emerald-500">حماية قصوى</Badge>
+          <Badge className="bg-amber-500">يعمل دون اتصال</Badge>
+          <Badge variant="outline" className="text-white border-white/30">قرارات مفسَّرة ومعلَّلة</Badge>
+          <Badge variant="outline" className="text-white border-white/30">تتبع كامل للمعاملات</Badge>
         </div>
       </div>
 
@@ -42,12 +42,12 @@ export default function NationalPlatformHome() {
             <div className="p-5 space-y-3">
               <div className="font-bold text-sm flex items-center gap-2"><Layers className="w-5 h-5 text-indigo-600"/> الأداء العالمي</div>
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-3 bg-slate-50 border rounded-xl text-center"><Zap className="w-5 h-5 mx-auto text-amber-600"/><div className="font-bold">20.4s</div><div>بناء الإنتاج</div></div>
-                <div className="p-3 bg-slate-50 border rounded-xl text-center"><Globe className="w-5 h-5 mx-auto text-blue-600"/><div className="font-bold">77</div><div>حزمة</div></div>
-                <div className="p-3 bg-slate-50 border rounded-xl text-center"><Shield className="w-5 h-5 mx-auto text-emerald-600"/><div className="font-bold">200/min</div><div>RateLimit</div></div>
-                <div className="p-3 bg-slate-50 border rounded-xl text-center"><HeartPulse className="w-5 h-5 mx-auto text-rose-600"/><div className="font-bold">Offline</div><div>Field Mode</div></div>
+                <div className="p-3 bg-slate-50 border rounded-xl text-center"><Zap className="w-5 h-5 mx-auto text-amber-600"/><div className="font-bold">فورية</div><div>سرعة الاستجابة</div></div>
+                <div className="p-3 bg-slate-50 border rounded-xl text-center"><Globe className="w-5 h-5 mx-auto text-blue-600"/><div className="font-bold">موحدة</div><div>قواعد بيانات وطنية</div></div>
+                <div className="p-3 bg-slate-50 border rounded-xl text-center"><Shield className="w-5 h-5 mx-auto text-emerald-600"/><div className="font-bold">محصّنة</div><div>ضد الاستخدام المفرط</div></div>
+                <div className="p-3 bg-slate-50 border rounded-xl text-center"><HeartPulse className="w-5 h-5 mx-auto text-rose-600"/><div className="font-bold">ميداني</div><div>يعمل دون إنترنت</div></div>
               </div>
-              <div className="text-[11px] text-muted-foreground">Pagination + Cursor + Projection + Indexes + Caching + Async Jobs + Debounce + Virtualization — لا N+1، لا تحميل آلاف السجلات في dropdown</div>
+              <div className="text-[11px] text-muted-foreground">تصميم مؤسسي يضمن استرجاعاً فورياً للبيانات دون أي بطء أو انتظار، مهما كان حجم السجلات</div>
             </div>
           </Card>
 
@@ -55,10 +55,10 @@ export default function NationalPlatformHome() {
             <div className="p-5 space-y-2">
               <div className="font-bold text-sm flex items-center gap-2"><Scale className="w-5 h-5 text-slate-700"/> الضمانات الحكومية</div>
               <ul className="text-xs space-y-1 list-disc pr-4 text-muted-foreground">
-                <li>AI لا يصدر حكماً نهائياً — الإنسان يقرر</li>
-                <li>Risk ≠ عقوبة إلا بنص نظامي</li>
-                <li>كل قرار يوضح: لماذا + الأساس + النسخة + التاريخ</li>
-                <li>البيانات التاريخية محفوظة مع المصدر والتحويل</li>
+                <li>النظام لا يصدر حكماً نهائياً — القرار النهائي للإنسان المختص</li>
+                <li>لا تُحتسب أي درجة خطورة عقوبة إلا بنص نظامي صريح</li>
+                <li>كل قرار يوضح: السبب والمرجع النظامي وتاريخ الإصدار</li>
+                <li>البيانات التاريخية محفوظة كاملة مع مصدرها وسلسلة اعتمادها</li>
               </ul>
             </div>
           </Card>
@@ -67,10 +67,10 @@ export default function NationalPlatformHome() {
 
       <Card>
         <div className="p-5">
-          <div className="font-bold text-sm flex items-center gap-2"><Building2 className="w-5 h-5"/> بوابة التكامل — Integration Gateway</div>
-          <div className="text-xs text-muted-foreground mt-1">10 واجهات موحدة مع Versioning + OpenAPI + CorrelationId + RBAC + RateLimit</div>
+          <div className="font-bold text-sm flex items-center gap-2"><Building2 className="w-5 h-5"/> سجلّات المنظومة الموحدة</div>
+          <div className="text-xs text-muted-foreground mt-1">عشر سجلات وطنية موحدة تعمل بقواعد موحدة وصلاحيات محددة وحماية من الاستخدام المفرط</div>
           <div className="mt-3 flex flex-wrap gap-1.5">
-            {['/api/v1/persons','/api/v1/establishments','/api/v1/workers','/api/v1/contracts','/api/v1/inspections','/api/v1/cases','/api/v1/unions','/api/v1/legal/sources','/api/v1/regulatory','/api/v1/search'].map(p=> <Badge key={p} variant="outline" className="font-mono text-[10px]">{p}</Badge>)}
+            {['سجل الأشخاص','سجل المنشآت','سجل العاملين','سجل العقود','سجل التفتيش','سجل القضايا','سجل النقابات','المرجع النظامي','اللوائح التنظيمية','البحث الموحد'].map(p=> <Badge key={p} variant="outline" className="text-[10px]">{p}</Badge>)}
           </div>
         </div>
       </Card>

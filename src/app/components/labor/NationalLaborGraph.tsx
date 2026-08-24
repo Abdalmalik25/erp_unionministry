@@ -38,7 +38,7 @@ export function NationalLaborGraph({ onSelect }: { onSelect?: (n:Node)=>void }) 
                 <Icon className="w-5 h-5 mx-auto text-slate-600 group-hover:text-indigo-600"/>
                 <div className="text-xs font-bold mt-1">{n.label}</div>
                 <div className="text-[11px] text-muted-foreground">{n.count}</div>
-                <div className="text-[10px] font-mono text-slate-400">{n.id}</div>
+                <div className="text-[10px] text-slate-400">{ {persons:"الأشخاص", establishments:"المنشآت", workers:"العاملون", contracts:"العقود", inspections:"التفتيش", cases:"القضايا", unions:"النقابات"}[n.id] || n.id }</div>
               </button>
             );
           })}

@@ -1,5 +1,5 @@
 /**
- * WorkerPassport — جواز العمل (My Labor Identity)
+ * WorkerPassport — جواز العمل الرقمي للمواطن
  */
 import { useEffect, useState } from "react";
 import { Card } from "../components/ui/Card";
@@ -28,7 +28,7 @@ export default function WorkerPassport() {
           <div className="flex gap-4 items-center">
             <div className="w-16 h-16 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center"><IdCard className="w-8 h-8"/></div>
             <div>
-              <div className="text-amber-300 text-xs font-bold flex items-center gap-1"><ShieldCheck className="w-4 h-4"/> جواز العمل الرقمي — My Labor Passport</div>
+              <div className="text-amber-300 text-xs font-bold flex items-center gap-1"><ShieldCheck className="w-4 h-4"/> جواز العمل الرقمي</div>
               <h1 className="text-2xl font-black">{user?.name || 'العامل'}</h1>
               <div className="text-sm text-emerald-100">الهوية المهنية • العقود • المهارات • اللياقة • التدريب • الإصابات • النزاعات — سجل واحد موثق</div>
             </div>
@@ -50,10 +50,10 @@ export default function WorkerPassport() {
         <div className="xl:col-span-2 space-y-6">
           <Card>
             <div className="p-5 space-y-3">
-              <div className="flex items-center gap-2 font-bold text-sm"><Briefcase className="w-5 h-5 text-blue-600"/> سجل الوظائف والعقود (Timeline)</div>
+              <div className="flex items-center gap-2 font-bold text-sm"><Briefcase className="w-5 h-5 text-blue-600"/> سجل الوظائف والعقود الزمني</div>
               <div className="relative border-r-2 border-slate-200 pr-4 space-y-4">
                 {[
-                  { id:'c1', title:'عقد عمل — فني صيانة', org:'الشركة اليمنية للصناعة', period:'2024/03/01 — حتى الآن', status:'نشط • موثق رقمياً', hash:'a3f1…9c2e' },
+                  { id:'c1', title:'عقد عمل — فني صيانة', org:'الشركة اليمنية للصناعة', period:'2024/03/01 — حتى الآن', status:'نشط • موثق رقمياً', hash:'' },
                   { id:'c2', title:'عقد عمل — فني', org:'مصنع الأمل', period:'2021/06/15 — 2023/12/31', status:'منتهي • تم الإخلاء', hash:'7b2e…1a9f' },
                   { id:'c3', title:'تدريب مهني — الكهرباء الصناعية', org:'معهد التدريب المهني', period:'2020', status:'شهادة', hash:'—' },
                 ].map(c=>(
@@ -64,7 +64,7 @@ export default function WorkerPassport() {
                       <div className="text-xs text-muted-foreground">{c.org} • {c.period}</div>
                       <div className="flex items-center gap-2 mt-1">
                         <Badge variant="outline" className="text-[10px]">{c.status}</Badge>
-                        <span className="text-[10px] font-mono text-slate-500">hash: {c.hash}</span>
+                        <span className="text-[10px] text-slate-500">{c.hash ? 'موسوم ببصمة رقمية موثقة' : ''}</span>
                       </div>
                     </div>
                   </div>
@@ -104,7 +104,7 @@ export default function WorkerPassport() {
 
           <Card><div className="p-5 space-y-3">
             <div className="flex items-center gap-2 font-bold text-sm"><Scale className="w-5 h-5 text-amber-600"/> شكاواي ونزاعاتي</div>
-            {cases.length===0 ? <div className="text-xs text-muted-foreground">لا توجد شكاوى — يمكنك تقديم بلاغ/شكوى وسيُنشأ Case مع CaseNumber وSLA وتتبع</div> : cases.slice(0,3).map((c:any)=><div key={c.id} className="border rounded-xl p-3 text-sm flex justify-between"><span>{c.subject||c.case_number}</span><Badge>{c.status}</Badge></div>)}
+            {cases.length===0 ? <div className="text-xs text-muted-foreground">لا توجد شكاوى — يمكنك تقديم بلاغ أو شكوى وستحصل على رقم مرجعي مع مهلة إنجاز وتتبع كامل</div> : cases.slice(0,3).map((c:any)=><div key={c.id} className="border rounded-xl p-3 text-sm flex justify-between"><span>{c.subject||c.case_number}</span><Badge>{c.status}</Badge></div>)}
             <div className="flex gap-2"><Button size="sm">تقديم شكوى</Button><Button size="sm" variant="outline">الإبلاغ عن مخالفة</Button><Button size="sm" variant="outline">الإبلاغ عن إصابة</Button></div>
           </div></Card>
         </div>
@@ -114,7 +114,7 @@ export default function WorkerPassport() {
             <div className="font-bold text-sm">وثائقي</div>
             <div className="space-y-2 text-xs">
               {[
-                { n:'عقد العمل الحالي', s:'موثق', d:'hash a3f1…9c2e' },
+                { n:'عقد العمل الحالي', s:'موثق', d:'ببصمة رقمية رسمية' },
                 { n:'شهادة اللياقة', s:'قاربت الانتهاء', d:'22 يوم' },
                 { n:'شهادة خبرة — مصنع الأمل', s:'معتمدة', d:'2024/01/10' },
                 { n:'بطاقة تدريب سلامة', s:'سارية', d:'حتى 2026/06' },
@@ -125,13 +125,13 @@ export default function WorkerPassport() {
                 </div>
               ))}
             </div>
-            <Button size="sm" variant="outline" className="w-full"><FileText className="w-4 h-4 ml-1"/>رفع وثيقة (مع Hash)</Button>
+            <Button size="sm" variant="outline" className="w-full"><FileText className="w-4 h-4 ml-1"/>رفع وثيقة رسمية</Button>
           </div></Card>
 
           <Card><div className="p-5 space-y-2">
             <div className="font-bold text-sm">الخصوصية والتحكم</div>
-            <div className="text-xs text-muted-foreground">بياناتك الشخصية معزولة — لا يراها إلا المخولون حسب Jurisdiction والغرض. كل وصول يُسجل تدقيقياً.</div>
-            <div className="text-[11px] bg-slate-50 border rounded-lg p-2">Public • Restricted • Personal • Sensitive Employment • Confidential Case — فصل تام</div>
+            <div className="text-xs text-muted-foreground">بياناتك الشخصية محمية بالكامل — لا يطّلع عليها إلا المخولون رسمياً وللغرض الرسمي فقط. كل وصول يُسجل تدقيقياً.</div>
+            <div className="text-[11px] bg-slate-50 border rounded-lg p-2">تصنيفات السرية المعتمدة: عام • مقيّد • خاص • حساس • سري — فصل تام</div>
           </div></Card>
           <SmartChronology type="person" id={user?.id || '00000000-0000-0000-0000-000000000000'} />
           <InteractionHub />

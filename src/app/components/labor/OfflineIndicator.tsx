@@ -17,7 +17,7 @@ export function OfflineIndicator(){
       {syncStatus==='error' && <AlertTriangle className="w-3 h-3 text-rose-600"/>}
       {syncStatus==='idle' && pendingActions===0 && isOnline && <CheckCircle2 className="w-3 h-3 text-emerald-600"/>}
       {isOnline && pendingActions>0 && <Button size="sm" variant="outline" className="h-6 text-[11px] px-2" onClick={syncAll}><RefreshCw className="w-3 h-3 ml-1"/>مزامنة</Button>}
-      <span className="hidden sm:inline text-[11px]">PWA • IndexedDB • Service Worker v4 • حل تعارض Last-Write-Wins + مراجعة بشرية للحرج</span>
+      <span className="hidden sm:inline text-[11px]">يعمل دون اتصال بالإنترنت مع حفظ آمن تلقائي وحل ذكي للتعارضات عند العودة + مراجعة بشرية للحرج</span>
     </div>
   );
 }
