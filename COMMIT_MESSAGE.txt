@@ -1,7 +1,0 @@
-feat: UnionSphere Enterprise 2.0.0 - Complete operational system upgrade
-- Add enterprise operations manager with health checks
-- Implement encrypted backup system (90 days retention)
-- Fix sync system with priority levels
-- Add enterprise error handler with recovery
-- Update security middleware headers
-- Add commercial establishments full types
