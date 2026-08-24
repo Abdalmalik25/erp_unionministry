@@ -1,5 +1,5 @@
 -- ============================================
--- UnionSphere Seed Data - البيانات الابتدائية
+-- بيانات المنظومة الوطنية الابتدائية
 -- UnionSphere Enterprise Platform - Yemen Ministry of Social Affairs
 -- ============================================
 

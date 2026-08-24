@@ -1,6 +1,6 @@
 /**
  * BoardMembersManagement — إدارة أعضاء المجالس
- * منصة UnionSphere | وزارة الشؤون الاجتماعية والعمل
+ * المنظومة الوطنية للعمل النقابي | وزارة الشؤون الاجتماعية والعمل
  */
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Plus, Search, Filter, Edit2, Trash2, CheckCircle, X, ChevronRight, ChevronLeft, Users, Calendar, Mail, Phone, Download, } from 'lucide-react';

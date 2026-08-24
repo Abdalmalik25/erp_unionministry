@@ -1,6 +1,6 @@
 /**
  * Simple Select Component - قائمة منسدلة بسيطة
- * UnionSphere Enterprise
+ * المنظومة الوطنية للعمل النقابي — وزارة الشؤون الاجتماعية والعمل
  */
 
 import { forwardRef } from 'react';

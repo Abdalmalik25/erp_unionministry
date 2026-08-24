@@ -1,6 +1,6 @@
 /**
  * ReductionRequestsManagement — إدارة طلبات تخفيض العمالة
- * منصة UnionSphere | وزارة الشؤون الاجتماعية والعمل
+ * المنظومة الوطنية للعمل النقابي | وزارة الشؤون الاجتماعية والعمل
  */
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Plus, Search, Eye, Edit2, Trash2, RefreshCw, CheckCircle, ChevronRight, ChevronLeft, X, Clock, ChevronDown, FileText, AlertTriangle, Loader2, } from 'lucide-react';

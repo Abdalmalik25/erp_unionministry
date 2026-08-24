@@ -1,6 +1,6 @@
 /**
  * Device Fingerprint - بصمة الجهاز للمصادقة الأمنية
- * UnionSphere Enterprise - الأمان الحكومي
+ * الأمان الحكومي — وزارة الشؤون الاجتماعية والعمل
  */
 // ============================================
 // أنواع البيانات
@@ -77,7 +77,7 @@ function getCanvasFingerprint(): string {
         // رسم نص مع تأثيرات
         ctx.textBaseline = 'top';
         ctx.font = '14px Arial';
-        ctx.fillText('UnionSphere Security Test 🎯', 2, 2);
+        ctx.fillText('MOSAL Security Test 🎯', 2, 2);
         ctx.fillStyle = '#1E3A8A';
         ctx.fillRect(0, 0, 10, 10);
         ctx.strokeStyle = 'rgba(100, 0, 0, 0.5)';

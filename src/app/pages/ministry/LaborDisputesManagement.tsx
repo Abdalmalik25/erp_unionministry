@@ -1,6 +1,6 @@
 /**
  * LaborDisputesManagement — إدارة النزاعات العمالية
- * منصة UnionSphere | وزارة الشؤون الاجتماعية والعمل
+ * المنظومة الوطنية للعمل النقابي | وزارة الشؤون الاجتماعية والعمل
  */
 
 import { useState, useMemo, useCallback, useEffect } from 'react';

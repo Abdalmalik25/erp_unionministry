@@ -34,9 +34,9 @@
   "exclude": [
     "node_modules",
     "supabase/functions",
+    "scripts/archive",
     "**/*.test.ts",
     "**/*.test.tsx",
-    "**/test.setup.ts",
-    "src/app/components/field/FieldInspectionPro.tsx"
+    "**/test.setup.ts"
   ]
 }

@@ -1,6 +1,6 @@
 /**
  * ComplianceAlertsManagement — إدارة تنبيهات الامتثال
- * منصة UnionSphere | وزارة الشؤون الاجتماعية والعمل
+ * المنظومة الوطنية للعمل النقابي | وزارة الشؤون الاجتماعية والعمل
  */
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Search, Eye, Trash2, Plus, RefreshCw, CheckCircle, X, Clock, AlertTriangle, Bell, Download, } from 'lucide-react';

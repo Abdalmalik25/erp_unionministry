@@ -13,7 +13,7 @@ router.get('/api/health', async (_req, res) => {
     const latency = Date.now() - startTime;
     res.json({
       status: 'healthy',
-      service: 'UnionSphere Enterprise Ministry Core API',
+      service: 'National Labor Platform Core API',
       version: '2.5.0',
       database: {
         status: 'connected',

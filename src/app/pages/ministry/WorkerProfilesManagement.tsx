@@ -1,6 +1,6 @@
 /**
  * WorkerProfilesManagement — إدارة ملفات العمال
- * منصة UnionSphere | وزارة الشؤون الاجتماعية والعمل
+ * المنظومة الوطنية للعمل النقابي | وزارة الشؤون الاجتماعية والعمل
  */
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Search, Eye, Edit2, Trash2, Plus, RefreshCw, X, Download, } from 'lucide-react';

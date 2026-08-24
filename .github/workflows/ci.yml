@@ -1,17 +1,25 @@
 name: CI — National Labor Platform
-on: [push, pull_request]
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
 jobs:
   quality:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
-        with: { node-version: '20', cache: 'pnpm' }
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run lint || true
-      - run: pnpm run type-check || true
-      - run: pnpm run build
-      - run: pnpm run test || echo "no tests yet — TD-030 pending"
-      - name: Security audit
-        run: pnpm audit --audit-level=high || true
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Type check (strict)
+        run: npm run type-check
+      - name: Tests
+        run: npm test
+      - name: Build
+        run: npm run build
+      - name: Security audit (advisory)
+        run: npm audit --audit-level=critical || echo "::warning::audit findings present"

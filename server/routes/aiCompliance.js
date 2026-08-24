@@ -171,7 +171,7 @@ router.get('/api/ai/labor-market-insights', async (_req, res) => {
     ]);
 
     res.json({
-      engine_version: 'UnionSphere AI-LaborBrain v2.5',
+      engine_version: 'MOSAL AI-LaborBrain v2.5',
       analysis_period: '2026-Q3',
       macro_indicators: {
         total_standard_professions: professionsCount.rows[0]?.count || 3607,

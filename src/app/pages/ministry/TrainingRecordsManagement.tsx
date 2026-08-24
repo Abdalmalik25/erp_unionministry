@@ -1,6 +1,6 @@
 /**
 * TrainingRecordsManagement — إدارة سجلات التدريب
-* منصة UnionSphere | وزارة الشؤون الاجتماعية والعمل
+* المنظومة الوطنية للعمل النقابي | وزارة الشؤون الاجتماعية والعمل
 */
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Search, Edit2, Trash2, Plus, RefreshCw, X, ChevronRight, ChevronLeft, Download, } from 'lucide-react';
