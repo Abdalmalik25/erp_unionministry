@@ -17,7 +17,7 @@ let deferredPrompt: BeforeInstallPromptEvent | null = null;
  */
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (!('serviceWorker' in navigator)) {
-    console.warn('[PWA] Service Worker not supported');
+    if (import.meta.env.DEV) console.warn('[PWA] Service Worker not supported');
     return null;
   }
 
@@ -37,7 +37,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
     // التحقق من وجود الملف أولاً
     const checkResponse = await fetch('/sw.js', { method: 'HEAD' });
     if (!checkResponse.ok || !checkResponse.headers.get('content-type')?.includes('javascript')) {
-      console.warn('[PWA] Service Worker file not found or incorrect MIME type');
+      if (import.meta.env.DEV) console.warn('[PWA] Service Worker file not found or incorrect MIME type');
       return null;
     }
 
@@ -45,7 +45,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
       scope: '/',
     });
 
-    console.log('[PWA] Service Worker registered:', registration.scope);
+    if (import.meta.env.DEV) console.log('[PWA] Service Worker registered:', registration.scope);
 
     // الاستماع للتحديثات
     registration.addEventListener('updatefound', () => {
@@ -63,7 +63,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
 
     return registration;
   } catch (error) {
-    console.error('[PWA] Service Worker registration failed:', error);
+    if (import.meta.env.DEV) console.error('[PWA] Service Worker registration failed:', error);
     return null;
   }
 }
@@ -83,7 +83,7 @@ export async function unregisterServiceWorker(): Promise<boolean> {
     }
     return false;
   } catch (error) {
-    console.error('[PWA] Service Worker unregistration failed:', error);
+    if (import.meta.env.DEV) console.error('[PWA] Service Worker unregistration failed:', error);
     return false;
   }
 }
@@ -107,14 +107,14 @@ export function setupInstallPrompt() {
   window.addEventListener('beforeinstallprompt', (e: Event) => {
     e.preventDefault();
     deferredPrompt = e as BeforeInstallPromptEvent;
-    console.log('[PWA] Install prompt ready');
+    if (import.meta.env.DEV) console.log('[PWA] Install prompt ready');
 
     // إظهار زر التثبيت
     window.dispatchEvent(new CustomEvent('pwa-installable'));
   });
 
   window.addEventListener('appinstalled', () => {
-    console.log('[PWA] App installed');
+    if (import.meta.env.DEV) console.log('[PWA] App installed');
     deferredPrompt = null;
     toast.success('تم تثبيت التطبيق بنجاح!');
   });
@@ -125,7 +125,7 @@ export function setupInstallPrompt() {
  */
 export async function showInstallPrompt(): Promise<boolean> {
   if (!deferredPrompt) {
-    console.warn('[PWA] Install prompt not available');
+    if (import.meta.env.DEV) console.warn('[PWA] Install prompt not available');
     return false;
   }
 
@@ -133,7 +133,7 @@ export async function showInstallPrompt(): Promise<boolean> {
     await deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
 
-    console.log('[PWA] Install outcome:', outcome);
+    if (import.meta.env.DEV) console.log('[PWA] Install outcome:', outcome);
 
     if (outcome === 'accepted') {
       toast.success('شكراً لتثبيت التطبيق!');
@@ -143,7 +143,7 @@ export async function showInstallPrompt(): Promise<boolean> {
       return false;
     }
   } catch (error) {
-    console.error('[PWA] Install prompt error:', error);
+    if (import.meta.env.DEV) console.error('[PWA] Install prompt error:', error);
     return false;
   } finally {
     deferredPrompt = null;
@@ -172,7 +172,7 @@ export function isPWAInstalled(): boolean {
  */
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
   if (!('Notification' in window)) {
-    console.warn('[PWA] Notifications not supported');
+    if (import.meta.env.DEV) console.warn('[PWA] Notifications not supported');
     return 'denied';
   }
 
@@ -200,7 +200,7 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
  */
 export async function subscribeToPushNotifications(): Promise<PushSubscription | null> {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    console.warn('[PWA] Push notifications not supported');
+    if (import.meta.env.DEV) console.warn('[PWA] Push notifications not supported');
     return null;
   }
 
@@ -215,14 +215,14 @@ export async function subscribeToPushNotifications(): Promise<PushSubscription |
       ),
     });
 
-    console.log('[PWA] Push subscription:', subscription);
+    if (import.meta.env.DEV) console.log('[PWA] Push subscription:', subscription);
 
     // إرسال الاشتراك للخادم
     await sendSubscriptionToServer(subscription);
 
     return subscription;
   } catch (error) {
-    console.error('[PWA] Push subscription error:', error);
+    if (import.meta.env.DEV) console.error('[PWA] Push subscription error:', error);
     return null;
   }
 }
@@ -241,13 +241,13 @@ export async function unsubscribeFromPushNotifications(): Promise<boolean> {
 
     if (subscription) {
       await subscription.unsubscribe();
-      console.log('[PWA] Unsubscribed from push');
+      if (import.meta.env.DEV) console.log('[PWA] Unsubscribed from push');
       return true;
     }
 
     return false;
   } catch (error) {
-    console.error('[PWA] Unsubscribe error:', error);
+    if (import.meta.env.DEV) console.error('[PWA] Unsubscribe error:', error);
     return false;
   }
 }
@@ -257,16 +257,16 @@ export async function unsubscribeFromPushNotifications(): Promise<boolean> {
  */
 export async function requestBackgroundSync(tag: string): Promise<void> {
   if (!('serviceWorker' in navigator) || !('sync' in navigator.serviceWorker)) {
-    console.warn('[PWA] Background sync not supported');
+    if (import.meta.env.DEV) console.warn('[PWA] Background sync not supported');
     return;
   }
 
   try {
     const registration = await navigator.serviceWorker.ready;
     await (registration as any).sync.register(tag);
-    console.log('[PWA] Background sync registered:', tag);
+    if (import.meta.env.DEV) console.log('[PWA] Background sync registered:', tag);
   } catch (error) {
-    console.error('[PWA] Background sync error:', error);
+    if (import.meta.env.DEV) console.error('[PWA] Background sync error:', error);
   }
 }
 
@@ -295,7 +295,7 @@ async function sendSubscriptionToServer(subscription: PushSubscription): Promise
       body: JSON.stringify(subscription),
     });
   } catch (error) {
-    console.error('[PWA] Failed to send subscription to server:', error);
+    if (import.meta.env.DEV) console.error('[PWA] Failed to send subscription to server:', error);
   }
 }
 
@@ -310,10 +310,10 @@ export async function clearCache(): Promise<void> {
   try {
     const cacheNames = await caches.keys();
     await Promise.all(cacheNames.map((name) => caches.delete(name)));
-    console.log('[PWA] Cache cleared');
+    if (import.meta.env.DEV) console.log('[PWA] Cache cleared');
     toast.success('تم مسح الذاكرة المؤقتة');
   } catch (error) {
-    console.error('[PWA] Clear cache error:', error);
+    if (import.meta.env.DEV) console.error('[PWA] Clear cache error:', error);
     toast.error('فشل مسح الذاكرة المؤقتة');
   }
 }
@@ -345,7 +345,7 @@ export async function getCacheSize(): Promise<number> {
 
     return totalSize;
   } catch (error) {
-    console.error('[PWA] Get cache size error:', error);
+    if (import.meta.env.DEV) console.error('[PWA] Get cache size error:', error);
     return 0;
   }
 }

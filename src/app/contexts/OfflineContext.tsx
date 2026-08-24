@@ -39,9 +39,9 @@ export function OfflineProvider({ children }: {
     useEffect(() => {
         initDB().then(() => {
             setIsOfflineReady(true);
-            console.log('[Offline] IndexedDB initialized');
+            if (import.meta.env.DEV) console.log('[Offline] IndexedDB initialized');
         }).catch((error) => {
-            console.error('[Offline] Failed to initialize IndexedDB:', error);
+            if (import.meta.env.DEV) console.error('[Offline] Failed to initialize IndexedDB:', error);
             toast.error('فشل تهيئة قاعدة البيانات المحلية');
         });
     }, []);
@@ -91,7 +91,7 @@ export function OfflineProvider({ children }: {
             }
         }
         catch (error) {
-            console.error('[Offline] Failed to save union:', error);
+            if (import.meta.env.DEV) console.error('[Offline] Failed to save union:', error);
             toast.error('فشل حفظ البيانات محلياً');
             throw error;
         }
@@ -111,7 +111,7 @@ export function OfflineProvider({ children }: {
             }
         }
         catch (error) {
-            console.error('[Offline] Failed to save member:', error);
+            if (import.meta.env.DEV) console.error('[Offline] Failed to save member:', error);
             toast.error('فشل حفظ البيانات محلياً');
             throw error;
         }
@@ -131,7 +131,7 @@ export function OfflineProvider({ children }: {
             }
         }
         catch (error) {
-            console.error('[Offline] Failed to save activity:', error);
+            if (import.meta.env.DEV) console.error('[Offline] Failed to save activity:', error);
             toast.error('فشل حفظ البيانات محلياً');
             throw error;
         }
@@ -151,7 +151,7 @@ export function OfflineProvider({ children }: {
             }
         }
         catch (error) {
-            console.error('[Offline] Failed to save document:', error);
+            if (import.meta.env.DEV) console.error('[Offline] Failed to save document:', error);
             toast.error('فشل حفظ البيانات محلياً');
             throw error;
         }
@@ -162,7 +162,7 @@ export function OfflineProvider({ children }: {
             return await db.getAll('unions');
         }
         catch (error) {
-            console.error('[Offline] Failed to get unions:', error);
+            if (import.meta.env.DEV) console.error('[Offline] Failed to get unions:', error);
             return [];
         }
     }, []);
@@ -171,7 +171,7 @@ export function OfflineProvider({ children }: {
             return await db.getAll('members');
         }
         catch (error) {
-            console.error('[Offline] Failed to get members:', error);
+            if (import.meta.env.DEV) console.error('[Offline] Failed to get members:', error);
             return [];
         }
     }, []);
@@ -180,7 +180,7 @@ export function OfflineProvider({ children }: {
             return await db.getAll('activities');
         }
         catch (error) {
-            console.error('[Offline] Failed to get activities:', error);
+            if (import.meta.env.DEV) console.error('[Offline] Failed to get activities:', error);
             return [];
         }
     }, []);
@@ -189,7 +189,7 @@ export function OfflineProvider({ children }: {
             return await db.getAll('documents');
         }
         catch (error) {
-            console.error('[Offline] Failed to get documents:', error);
+            if (import.meta.env.DEV) console.error('[Offline] Failed to get documents:', error);
             return [];
         }
     }, []);
@@ -205,7 +205,7 @@ export function OfflineProvider({ children }: {
             setSyncStatus('idle');
         }
         catch (error) {
-            console.error('[Offline] Sync failed:', error);
+            if (import.meta.env.DEV) console.error('[Offline] Sync failed:', error);
             toast.error('فشلت عملية المزامنة');
             setSyncStatus('error');
         }
@@ -217,7 +217,7 @@ export function OfflineProvider({ children }: {
             toast.success('تم مسح الذاكرة المؤقتة');
         }
         catch (error) {
-            console.error('[Offline] Clear cache failed:', error);
+            if (import.meta.env.DEV) console.error('[Offline] Clear cache failed:', error);
             toast.error('فشل مسح الذاكرة المؤقتة');
         }
     }, []);
@@ -229,11 +229,11 @@ export function OfflineProvider({ children }: {
         setSyncStatus('syncing');
         try {
             // لا توجد قناة مزامنة خارجية — تُنفذ العمليات عند توافر الخدمة المختصة
-            console.info(`[Offline] ${pendingActions} عملية معلقة بانتظار التزامن`);
+            if (import.meta.env.DEV) console.info(`[Offline] ${pendingActions} عملية معلقة بانتظار التزامن`);
             setSyncStatus('idle');
         }
         catch (error) {
-            console.error('[Offline] Auto-sync failed:', error);
+            if (import.meta.env.DEV) console.error('[Offline] Auto-sync failed:', error);
             setSyncStatus('error');
         }
     }, [isOnline, pendingActions]);

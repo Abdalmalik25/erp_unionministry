@@ -27,14 +27,15 @@ const getPort = (): number => {
 const CSP_META = [
   "default-src 'self'",
   "script-src 'self' 'wasm-unsafe-eval'",
-  "style-src 'self' https://fonts.googleapis.com",
+  // 'unsafe-inline' للأنماط فقط: مكوّنات الواجهة (Radix) تضيف أنماطاً داخلية لا يمكن تجزئتها ثابتةً — الأنماط لا تنفّذ شيفرة
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' data: https://fonts.gstatic.com",
   "img-src 'self' data: blob:",
   "media-src 'self'",
   "object-src 'none'",
   "connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com",
   "worker-src 'self' blob:",
-  "frame-ancestors 'none'",
+  // frame-ancestors لا تعمل داخل <meta> — تُفرض عبر ترويسة الاستجابة في الخادم/vercel.json
   "base-uri 'self'",
   "form-action 'self'",
   "upgrade-insecure-requests",
