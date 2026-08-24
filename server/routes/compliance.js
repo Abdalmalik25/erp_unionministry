@@ -129,7 +129,7 @@ router.get('/api/inspections', async (req, res) => {
     );
     res.json({ data: r.rows, total: total.rows[0].count, page, limit });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' });
   }
 });
 
@@ -154,7 +154,7 @@ router.post('/api/inspections', async (req, res) => {
     );
     res.status(201).json({ success: true, data: r.rows[0] });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' });
   }
 });
 
@@ -234,7 +234,7 @@ router.get('/api/risk-assessments', async (req, res) => {
       [...params, limit, offset]
     );
     res.json({ data: r.rows, total: total.rows[0].count, page, limit });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.post('/api/risk-assessments', async (req, res) => {
@@ -248,7 +248,7 @@ router.post('/api/risk-assessments', async (req, res) => {
       fields.map(c => d[c])
     );
     res.status(201).json({ success: true, data: r.rows[0] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.put('/api/risk-assessments/:id', async (req, res) => {
@@ -262,7 +262,7 @@ router.put('/api/risk-assessments/:id', async (req, res) => {
     const r = await pool.query(`UPDATE risk_assessments SET ${cols.join(', ')} WHERE id = $${vals.length} RETURNING *`, vals);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, data: r.rows[0] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.delete('/api/risk-assessments/:id', async (req, res) => {
@@ -270,7 +270,7 @@ router.delete('/api/risk-assessments/:id', async (req, res) => {
     const r = await pool.query('UPDATE risk_assessments SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 
@@ -304,7 +304,7 @@ router.get('/api/compliance-matrices', async (req, res) => {
       [...params, limit, offset]
     );
     res.json({ data: r.rows, total: total.rows[0].count, page, limit });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.post('/api/compliance-matrices', async (req, res) => {
@@ -318,7 +318,7 @@ router.post('/api/compliance-matrices', async (req, res) => {
       fields.map(c => d[c])
     );
     res.status(201).json({ success: true, data: r.rows[0] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.put('/api/compliance-matrices/:id', async (req, res) => {
@@ -332,7 +332,7 @@ router.put('/api/compliance-matrices/:id', async (req, res) => {
     const r = await pool.query(`UPDATE compliance_matrices SET ${cols.join(', ')} WHERE id = $${vals.length} RETURNING *`, vals);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, data: r.rows[0] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.delete('/api/compliance-matrices/:id', async (req, res) => {
@@ -340,7 +340,7 @@ router.delete('/api/compliance-matrices/:id', async (req, res) => {
     const r = await pool.query('UPDATE compliance_matrices SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 
@@ -371,7 +371,7 @@ router.get('/api/maturity-assessments', async (req, res) => {
       [...params, limit, offset]
     );
     res.json({ data: r.rows, total: total.rows[0].count, page, limit });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.post('/api/maturity-assessments', async (req, res) => {
@@ -385,7 +385,7 @@ router.post('/api/maturity-assessments', async (req, res) => {
       fields.map(c => d[c])
     );
     res.status(201).json({ success: true, data: r.rows[0] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.put('/api/maturity-assessments/:id', async (req, res) => {
@@ -399,7 +399,7 @@ router.put('/api/maturity-assessments/:id', async (req, res) => {
     const r = await pool.query(`UPDATE maturity_assessments SET ${cols.join(', ')} WHERE id = $${vals.length} RETURNING *`, vals);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, data: r.rows[0] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.delete('/api/maturity-assessments/:id', async (req, res) => {
@@ -407,7 +407,7 @@ router.delete('/api/maturity-assessments/:id', async (req, res) => {
     const r = await pool.query('UPDATE maturity_assessments SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 

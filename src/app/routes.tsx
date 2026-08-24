@@ -6,13 +6,13 @@ import { DashboardSkeleton } from "./components/ui/LoadingSkeleton";
 
 // Eager Loading للصفحات الأساسية
 import { Login } from "./pages/Login";
-import { CreateDemoUsers } from "./pages/CreateDemoUsers";
 
 // Lazy Loading لباقي الصفحات
 const MinistryDashboard = lazy(() => import("./pages/ministry/DashboardNewEnhanced").then(m => ({ default: m.DashboardNewEnhanced })));
 const CommercialEstablishmentsManagement = lazy(() => import("./pages/ministry/CommercialEstablishmentsManagement").then(m => ({ default: m.CommercialEstablishmentsManagement })));
 const OrganizationDashboard = lazy(() => import("./pages/organization/Dashboard").then(m => ({ default: m.OrganizationDashboard })));
 const UnionsManagement = lazy(() => import("./pages/ministry/UnionsManagementNew").then(m => ({ default: m.UnionsManagementNew })));
+const AccountAdministration = lazy(() => import("./pages/ministry/AccountAdministration").then(m => ({ default: m.AccountAdministration })));
 const MembersManagement = lazy(() => import("./pages/ministry/MembersManagementNew").then(m => ({ default: m.MembersManagement })));
 const ElectionsManagement = lazy(() => import("./pages/ministry/ElectionsManagement"));
 const ActivitiesManagement = lazy(() => import("./pages/ministry/ActivitiesManagement"));
@@ -52,6 +52,17 @@ const RolesGallery = lazy(() => import("./components/national/RolesGallery").the
 const RoleDashboard = lazy(() => import("./components/national/RoleDashboard").then(m => ({ default: m.default })));
 const NationalDirectoriesManagement = lazy(() => import("./pages/ministry/NationalDirectoriesManagement").then(m => ({ default: m.NationalDirectoriesManagement })));
 const SystemAdministration = lazy(() => import("./pages/ministry/SystemAdministration").then(m => ({ default: m.SystemAdministration })));
+const RegulatoryRulesManagement = lazy(() => import("./pages/ministry/RegulatoryRulesManagement").then(m => ({ default: m.RegulatoryRulesManagement })));
+const EmployerOS = lazy(() => import("./pages/EmployerOS").then(m => ({ default: m.default })));
+const WorkerPassport = lazy(() => import("./pages/WorkerPassport").then(m => ({ default: m.default })));
+const MinistryWorkspace = lazy(() => import("./pages/MinistryWorkspace").then(m => ({ default: m.default })));
+const NationalPlatformHome = lazy(() => import("./pages/NationalPlatformHome").then(m => ({ default: m.default })));
+const ServiceCatalogAdmin = lazy(() => import("./pages/ministry/ServiceCatalogAdmin").then(m => ({ default: m.default })));
+const ExcellenceDashboard = lazy(() => import("./pages/ExcellenceDashboard").then(m => ({ default: m.default })));
+const DataQualityCenter = lazy(() => import("./pages/DataQualityCenter").then(m => ({ default: m.default })));
+const ExternalIntegrations = lazy(() => import("./pages/ExternalIntegrations").then(m => ({ default: m.default })));
+const ProductionReadiness = lazy(() => import("./pages/ProductionReadiness").then(m => ({ default: m.default })));
+const IntelligenceCenter = lazy(() => import("./pages/IntelligenceCenter").then(m => ({ default: m.default })));
 
 // Organization-specific pages
 const OrgMembersManagement = lazy(() => import("./pages/organization/MembersManagement").then(m => ({ default: m.OrganizationMembersManagement })));
@@ -82,6 +93,15 @@ function OrganizationRoutes() {
   );
 }
 
+// Role-specific Portal Wrapper (بوابات أصحاب العمل والعاملين)
+function PortalRoutes({ requiredRoles }: { requiredRoles: string[] }) {
+  return (
+    <ProtectedRoute requiredRoles={requiredRoles}>
+      <RootLayout />
+    </ProtectedRoute>
+  );
+}
+
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -96,16 +116,16 @@ export const router = createBrowserRouter([
         element: <LazyPage><MinistryDashboard /></LazyPage>
       },
       {
-        path: "enterprise",
-        element: <LazyPage><CommercialEstablishmentsManagement /></LazyPage>
-      },
-      {
         path: "commercial",
         element: <LazyPage><CommercialEstablishmentsManagement /></LazyPage>
       },
       {
         path: "unions",
         element: <LazyPage><UnionsManagement /></LazyPage>
+      },
+      {
+        path: "accounts",
+        element: <LazyPage><AccountAdministration /></LazyPage>
       },
       {
         path: "members",
@@ -248,6 +268,50 @@ export const router = createBrowserRouter([
         element: <LazyPage><SystemAdministration /></LazyPage>
       },
       {
+        path: "regulatory-rules",
+        element: <LazyPage><RegulatoryRulesManagement /></LazyPage>
+      },
+      {
+        path: "employer-os",
+        element: <LazyPage><EmployerOS /></LazyPage>
+      },
+      {
+        path: "worker-passport",
+        element: <LazyPage><WorkerPassport /></LazyPage>
+      },
+      {
+        path: "workspace",
+        element: <LazyPage><MinistryWorkspace /></LazyPage>
+      },
+      {
+        path: "national-platform",
+        element: <LazyPage><NationalPlatformHome /></LazyPage>
+      },
+      {
+        path: "service-catalog",
+        element: <LazyPage><ServiceCatalogAdmin /></LazyPage>
+      },
+      {
+        path: "excellence",
+        element: <LazyPage><ExcellenceDashboard /></LazyPage>
+      },
+      {
+        path: "data-quality",
+        element: <LazyPage><DataQualityCenter /></LazyPage>
+      },
+      {
+        path: "integrations",
+        element: <LazyPage><ExternalIntegrations /></LazyPage>
+      },
+      {
+        path: "production-readiness",
+        element: <LazyPage><ProductionReadiness /></LazyPage>
+      },
+      {
+        path: "intelligence",
+        element: <LazyPage><IntelligenceCenter /></LazyPage>
+      },
+      {
         path: "roles",
         element: <LazyPage><RolesGallery /></LazyPage>
       },
@@ -291,10 +355,56 @@ export const router = createBrowserRouter([
       },
     ],
   },
-  // مسار تطويري فقط: يُفعَّل حين VITE_ENABLE_DEMO_MODE=true
-  ...(import.meta.env.VITE_ENABLE_DEMO_MODE === 'true'
-    ? [{ path: '/create-demo-users', Component: CreateDemoUsers }]
-    : []),
+  // بوابة أصحاب العمل والمنشآت — Employer Portal
+  {
+    path: "/employer",
+    element: <PortalRoutes requiredRoles={['employer_owner']} />,
+    children: [
+      {
+        index: true,
+        element: <LazyPage><EmployerOS /></LazyPage>
+      },
+      {
+        path: "members",
+        element: <LazyPage><OrgMembersManagement /></LazyPage>
+      },
+      {
+        path: "activities",
+        element: <LazyPage><OrgActivitiesManagement /></LazyPage>
+      },
+      {
+        path: "documents",
+        element: <LazyPage><OrgDocumentsManagement /></LazyPage>
+      },
+      {
+        path: "services",
+        element: <LazyPage><OrgServicesManagement /></LazyPage>
+      },
+      {
+        path: "profile",
+        element: <LazyPage><Profile /></LazyPage>
+      },
+    ],
+  },
+  // بوابة العاملين — جواز العمل الرقمي
+  {
+    path: "/worker",
+    element: <PortalRoutes requiredRoles={['worker']} />,
+    children: [
+      {
+        index: true,
+        element: <LazyPage><WorkerPassport /></LazyPage>
+      },
+      {
+        path: "services",
+        element: <LazyPage><OrgServicesManagement /></LazyPage>
+      },
+      {
+        path: "profile",
+        element: <LazyPage><Profile /></LazyPage>
+      },
+    ],
+  },
   {
     path: "*",
     element: <LazyPage><NotFound /></LazyPage>,

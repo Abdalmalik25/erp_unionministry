@@ -15,6 +15,8 @@ interface WorkerProfile {
     member_id: string;
     current_enterprise_id?: string;
     current_occupation_id?: string;
+    national_number?: string;
+    worker_name?: string;
     employment_status: string;
     employment_start_date?: string;
     employment_end_date?: string;
@@ -72,6 +74,8 @@ export default function WorkerProfilesManagement() {
             return profiles;
         const q = searchQuery.toLowerCase();
         return profiles.filter(p => p.member_id?.toLowerCase().includes(q) ||
+            p.national_number?.toLowerCase().includes(q) ||
+            p.worker_name?.toLowerCase().includes(q) ||
             p.social_insurance_number?.toLowerCase().includes(q) ||
             p.current_salary_grade?.toLowerCase().includes(q));
     }, [profiles, searchQuery]);
@@ -160,6 +164,7 @@ export default function WorkerProfilesManagement() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-4 py-3 text-right font-medium text-gray-600">الرقم</th>
+                <th className="px-4 py-3 text-right font-medium text-gray-600">الرقم الوطني للعامل</th>
                 <th className="px-4 py-3 text-right font-medium text-gray-600">مدة الخبرة</th>
                 <th className="px-4 py-3 text-right font-medium text-gray-600">نوع العقد</th>
                 <th className="px-4 py-3 text-center font-medium text-gray-600">درجة الامتثال</th>
@@ -173,6 +178,10 @@ export default function WorkerProfilesManagement() {
                 const score = Number(p.compliance_score) || 0;
                 return (<tr key={p.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-mono text-xs">{p.member_id?.slice(0, 8)}</td>
+                    <td className="px-4 py-3 text-xs">
+                      <span className="font-mono font-bold text-gold-dark" dir="ltr">{p.national_number || '—'}</span>
+                      {p.worker_name && <span className="block text-[10px] text-muted-foreground mt-0.5">{p.worker_name}</span>}
+                    </td>
                     <td className="px-4 py-3">{p.total_experience_years || 0} سنة</td>
                     <td className="px-4 py-3 text-xs">{p.contract_type || '-'}</td>
                     <td className="px-4 py-3 text-center">
@@ -207,6 +216,8 @@ export default function WorkerProfilesManagement() {
             <div className="space-y-3 text-sm">
               <div className="flex justify-between"><span className="text-gray-500">رقم العضوية:</span><span className="font-mono">{selectedProfile.member_id}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">الحالة:</span><span className={`px-2 py-0.5 rounded-full text-xs ${STATUS_CONFIG[selectedProfile.employment_status]?.color}`}>{STATUS_CONFIG[selectedProfile.employment_status]?.label}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">الرقم الوطني للعامل:</span><span className="font-mono font-bold text-gold-dark" dir="ltr">{selectedProfile.national_number || '—'}</span></div>
+              {selectedProfile.worker_name && <div className="flex justify-between"><span className="text-gray-500">اسم العامل:</span><span>{selectedProfile.worker_name}</span></div>}
               <div className="flex justify-between"><span className="text-gray-500">نوع العقد:</span><span>{selectedProfile.contract_type || '-'}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">مدة الخبرة:</span><span>{selectedProfile.total_experience_years || 0} سنة</span></div>
               <div className="flex justify-between"><span className="text-gray-500">درجة الامتثال:</span><span className="font-bold">{Number(selectedProfile.compliance_score) || 0}%</span></div>

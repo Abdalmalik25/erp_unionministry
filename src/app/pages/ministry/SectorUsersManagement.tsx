@@ -409,7 +409,7 @@ export function SectorUsersManagement() {
                           {roleInfo.label}
                         </span>
                         <div className="text-[11px] text-muted-foreground mt-0.5">
-                          {u.user_type === 'ministry' ? '🏛️ قطاع العمل والوزارة' : '🏢 منظمة / نقابة / منشأة'}
+                          {u.user_type === 'ministry' ? 'الوزارة — قطاع العمل' : 'منظمة / نقابة / منشأة'}
                         </div>
                       </td>
 

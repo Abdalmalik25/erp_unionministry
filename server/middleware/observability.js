@@ -1,0 +1,67 @@
+// server/middleware/observability.js — Structured logging + metrics + tracing
+// TD-020, TD-032, TD-034 payoff
+
+const metrics = {
+  requests: 0,
+  errors: 0,
+  byRoute: new Map(),
+  latencies: [],
+};
+
+export function structuredLogger(req, res, next) {
+  const start = Date.now();
+  const cid = req.audit?.correlationId || req.headers['x-correlation-id'] || `cid-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
+  req.correlationId = cid;
+  res.setHeader('x-correlation-id', cid);
+  res.setHeader('x-request-id', cid);
+
+  const originalSend = res.send;
+  res.send = function(body) {
+    const dur = Date.now()-start;
+    metrics.requests++;
+    metrics.latencies.push(dur);
+    if (metrics.latencies.length>1000) metrics.latencies.shift();
+    const key = `${req.method} ${req.path}`;
+    metrics.byRoute.set(key, (metrics.byRoute.get(key)||0)+1);
+    if (res.statusCode>=400) metrics.errors++;
+
+    const log = {
+      timestamp: new Date().toISOString(),
+      level: res.statusCode>=500?'error':res.statusCode>=400?'warn':'info',
+      method: req.method,
+      path: req.path,
+      status: res.statusCode,
+      duration_ms: dur,
+      correlationId: cid,
+      user: req.user?.id || 'anonymous',
+      role: req.user?.role,
+      ip: req.ip,
+      // PII masked
+    };
+    if (res.statusCode>=500) console.error(JSON.stringify(log));
+    else if (process.env.LOG_LEVEL==='debug') console.log(JSON.stringify(log));
+    return originalSend.call(this, body);
+  };
+  next();
+}
+
+export function metricsEndpoint(_req,res){
+  const avg = metrics.latencies.length? Math.round(metrics.latencies.reduce((a,b)=>a+b,0)/metrics.latencies.length):0;
+  const p95 = [...metrics.latencies].sort((a,b)=>a-b)[Math.floor(metrics.latencies.length*0.95)] || 0;
+  res.json({
+    uptime_s: Math.round(process.uptime()),
+    requests: metrics.requests,
+    errors: metrics.errors,
+    error_rate: metrics.requests? +(metrics.errors/metrics.requests).toFixed(4):0,
+    avg_latency_ms: avg,
+    p95_latency_ms: p95,
+    byRoute: Object.fromEntries(metrics.byRoute),
+    timestamp: new Date().toISOString(),
+  });
+}
+
+export function errorHandler(err, _req, res, _next){
+  console.error(JSON.stringify({ level:'error', message: err.message, stack: err.stack?.slice(0,2000), timestamp: new Date().toISOString() }));
+  // Generic to client — TD-012 fix
+  res.status(500).json({ error:'خطأ داخلي — تم تسجيل الحادثة', code:'INTERNAL_ERROR', correlationId: _req.correlationId });
+}

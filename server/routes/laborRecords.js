@@ -1,129 +1,179 @@
-// server/routes/laborRecords.js — سجلات قطاع شؤون العمل الناقصة
-// مصنع CRUD عام يولّد مسارات GET/POST/PUT/DELETE/restore لكل سجل جديد
-// وفق "المتطلبات الإضافية للنظام" (برنامج قطاع شؤون العمل)
+// server/routes/laborRecords.js — سجلات قطاع شؤون العمل
+// مصنع CRUD عام مبني على النموذج المرجعي الشخصي-المركزي (persons):
+// كل مسار kebab-case (/api/ministry-employees) والجدول يُشتق بتحويل الشرطة.
+// يدعم: دمج persons للعرض، إنشاء/ربط الشخص تلقائياً، توليد الأرقام التسلسلية، soft-delete موحد.
 import { pool, paginate, countQuery, softDeleteFilter, auditLog } from '../middleware/shared.js';
 import express from 'express';
 
 const router = express.Router();
 
-// ---------- تعريفات السجلات: الأعمدة المسموحة + حقول البحث + الفلاتر ----------
+// ---------- تعريفات السجلات (البنية الحقيقية في القاعدة) ----------
 const RECORDS = {
-  directorates: {
-    columns: ['code', 'name_ar', 'governorate', 'notes', 'metadata'],
+  'directorates': {
+    columns: ['code', 'name_ar', 'governorate', 'notes'],
     search: ['name_ar', 'code', 'governorate'],
     filters: ['governorate'],
-    required: ['name_ar', 'governorate'],
+    required: ['name_ar'],
   },
-  ministry_offices: {
-    columns: ['office_code', 'office_name', 'office_level', 'parent_office_id', 'governorate',
-      'directorate_id', 'jurisdiction', 'address', 'phone', 'email', 'manager_name',
-      'manager_phone', 'employees_count', 'status', 'notes', 'metadata'],
-    search: ['office_name', 'office_code', 'manager_name', 'jurisdiction'],
-    filters: ['governorate', 'office_level', 'status'],
-    required: ['office_name'],
+  'ministry-offices': {
+    columns: ['office_code', 'name_ar', 'name_en', 'office_type', 'parent_office_id',
+      'governorate', 'directorate', 'address', 'phone', 'manager_person_id', 'is_active'],
+    search: ['name_ar', 'office_code', 'directorate'],
+    filters: ['governorate', 'office_type'],
+    required: ['name_ar'],
   },
-  inspectors: {
-    columns: ['inspector_code', 'full_name', 'national_id', 'gender', 'job_title', 'specialization',
-      'inspector_level', 'office_id', 'employment_source', 'phone', 'email', 'appointment_date',
-      'is_osh_certified', 'osh_cert_date', 'last_evaluation_score', 'status', 'notes', 'metadata'],
-    search: ['full_name', 'inspector_code', 'national_id', 'specialization'],
-    filters: ['office_id', 'status', 'inspector_level', 'employment_source'],
-    required: ['full_name'],
+  'inspectors': {
+    personFk: 'person_id',
+    requiredPerson: true,
+    autoCodes: [{ column: 'inspector_number', prefix: 'INS-', pad: 5 }],
+    columns: ['inspector_number', 'person_id', 'office_id', 'specialization', 'governorate', 'is_active'],
+    search: ['inspector_number', 'specialization', 'p.full_name_ar'],
+    filters: ['office_id', 'specialization', 'governorate'],
+    required: [],
   },
-  ministry_employees: {
-    columns: ['employee_code', 'full_name', 'national_id', 'gender', 'job_title', 'department',
-      'office_id', 'employment_type', 'job_description_ref', 'qualification', 'hire_date',
-      'phone', 'email', 'status', 'notes', 'metadata'],
-    search: ['full_name', 'employee_code', 'national_id', 'job_title', 'department'],
-    filters: ['office_id', 'status', 'employment_type'],
-    required: ['full_name'],
+  'ministry-employees': {
+    personFk: 'person_id',
+    requiredPerson: true,
+    autoCodes: [
+      { column: 'employee_number', prefix: 'EMP-', pad: 6 },
+      { column: 'national_number', prefix: 'ME-', pad: 6 },
+    ],
+    columns: ['employee_number', 'national_number', 'person_id', 'office_id', 'position', 'department', 'is_active'],
+    search: ['employee_number', 'national_number', 'position', 'department', 'p.full_name_ar'],
+    filters: ['office_id', 'department'],
+    required: [],
   },
-  inspection_criteria: {
+  'inspection-criteria': {
+    autoCodes: [{ column: 'criteria_code', prefix: 'CRIT-', pad: 4 }],
     columns: ['criteria_code', 'title_ar', 'description', 'sector', 'establishment_type',
       'activity_isic4', 'inspection_kind', 'applies_to', 'frequency_months', 'weight',
-      'is_mandatory', 'legal_reference', 'status', 'notes', 'metadata'],
+      'is_mandatory', 'legal_reference', 'status'],
     search: ['title_ar', 'criteria_code', 'legal_reference'],
     filters: ['sector', 'establishment_type', 'inspection_kind', 'applies_to', 'status'],
     required: ['title_ar'],
   },
-  work_injuries: {
-    columns: ['injury_number', 'case_type', 'worker_name', 'worker_national_id', 'enterprise_name',
-      'commercial_register', 'governorate', 'injury_date', 'report_date', 'severity', 'body_part',
-      'cause_description', 'location', 'lost_work_days', 'medical_facility', 'medical_status',
-      'insurance_claimed', 'claim_number', 'compensation_amount', 'committee_decision', 'status',
-      'notes', 'metadata'],
-    search: ['injury_number', 'worker_name', 'worker_national_id', 'enterprise_name'],
-    filters: ['status', 'severity', 'case_type', 'governorate'],
-    required: ['worker_name', 'injury_date'],
+  'work-injuries': {
+    personFk: 'worker_person_id',
+    requiredPerson: true,
+    autoCodes: [{ column: 'injury_number', prefix: 'INJ-', pad: 6 }],
+    columns: ['injury_number', 'worker_person_id', 'establishment_id', 'injury_date',
+      'injury_type', 'severity', 'location', 'description', 'medical_report_url', 'status'],
+    search: ['injury_number', 'location', 'description', 'p.full_name_ar'],
+    filters: ['status', 'severity', 'injury_type'],
+    required: ['injury_date'],
   },
-  insurance_records: {
-    columns: ['policy_number', 'insurance_type', 'insured_name', 'insured_national_id',
+  'insurance-records': {
+    personFk: 'insured_person_id',
+    autoCodes: [{ column: 'policy_number', prefix: 'POL-', pad: 6 }],
+    columns: ['policy_number', 'insurance_type', 'insured_person_id', 'insured_national_id',
       'enterprise_name', 'provider_name', 'coverage_start', 'coverage_end', 'premium_amount',
-      'coverage_amount', 'beneficiaries_count', 'linked_injury_id', 'status', 'notes', 'metadata'],
-    search: ['policy_number', 'insured_name', 'enterprise_name', 'provider_name'],
+      'coverage_amount', 'beneficiaries_count', 'status'],
+    search: ['policy_number', 'provider_name', 'enterprise_name', 'p.full_name_ar'],
     filters: ['insurance_type', 'status'],
-    required: ['insured_name'],
+    required: [],
   },
-  irregular_workers: {
-    columns: ['registration_number', 'full_name', 'national_id', 'gender', 'birth_date',
-      'nationality', 'governorate', 'directorate_id', 'district', 'phone', 'activity_type',
+  'irregular-workers': {
+    personFk: 'person_id',
+    autoCodes: [{ column: 'registration_number', prefix: 'IRW-', pad: 6 }],
+    columns: ['registration_number', 'person_id', 'full_name', 'national_id', 'gender',
+      'birth_date', 'nationality', 'governorate', 'district', 'phone', 'activity_type',
       'workplace_description', 'daily_income', 'monthly_income', 'has_insurance',
-      'has_fitness_certificate', 'registered_via', 'registered_at', 'regularization_path',
-      'status', 'notes', 'metadata'],
+      'has_fitness_certificate', 'registered_via', 'regularization_path', 'status'],
     search: ['full_name', 'registration_number', 'national_id', 'activity_type'],
     filters: ['governorate', 'status', 'activity_type'],
     required: ['full_name'],
   },
-  health_fitness_certificates: {
-    columns: ['certificate_number', 'worker_name', 'worker_national_id', 'enterprise_name',
-      'occupation', 'exam_date', 'exam_center', 'fitness_result', 'restrictions',
-      'initial_screening', 'expiry_date', 'doctor_name', 'status', 'notes', 'metadata'],
-    search: ['certificate_number', 'worker_name', 'worker_national_id', 'enterprise_name'],
-    filters: ['status', 'fitness_result'],
-    required: ['worker_name'],
+  'health-fitness-certificates': {
+    personFk: 'worker_person_id',
+    requiredPerson: true,
+    autoCodes: [{ column: 'certificate_number', prefix: 'FIT-', pad: 6 }],
+    columns: ['certificate_number', 'worker_person_id', 'issue_date', 'expiry_date',
+      'issuing_authority', 'medical_center', 'fitness_result', 'restrictions',
+      'document_url', 'document_hash'],
+    search: ['certificate_number', 'medical_center', 'issuing_authority', 'p.full_name_ar'],
+    filters: ['fitness_result'],
+    required: [],
   },
-  experience_certificates: {
-    columns: ['certificate_number', 'worker_name', 'worker_national_id', 'occupation',
-      'occupation_code', 'enterprise_name', 'experience_years', 'experience_level', 'issued_by',
-      'issue_date', 'verified_by', 'verification_date', 'is_verified', 'status', 'notes', 'metadata'],
-    search: ['certificate_number', 'worker_name', 'worker_national_id', 'occupation', 'enterprise_name'],
+  'experience-certificates': {
+    personFk: 'person_id',
+    requiredPerson: true,
+    autoCodes: [{ column: 'certificate_number', prefix: 'EXP-', pad: 6 }],
+    columns: ['certificate_number', 'person_id', 'occupation', 'occupation_code',
+      'enterprise_name', 'experience_years', 'experience_level', 'issued_by',
+      'issue_date', 'is_verified', 'status'],
+    search: ['certificate_number', 'occupation', 'enterprise_name', 'p.full_name_ar'],
     filters: ['status', 'experience_level'],
-    required: ['worker_name'],
+    required: [],
   },
   'work-procedures': {
-    columns: ['procedure_code', 'procedure_name', 'procedure_type', 'worker_name', 'worker_national_id',
-      'enterprise_name', 'occupation', 'start_date', 'end_date', 'reference_number', 'approved_by',
-      'approval_date', 'legal_basis', 'description', 'status', 'notes', 'metadata'],
-    search: ['procedure_name', 'procedure_code', 'worker_name', 'worker_national_id', 'enterprise_name'],
+    personFk: 'person_id',
+    autoCodes: [{ column: 'procedure_code', prefix: 'PRC-', pad: 5 }],
+    columns: ['procedure_code', 'procedure_name', 'procedure_type', 'person_id',
+      'worker_national_id', 'enterprise_name', 'start_date', 'end_date', 'reference_number',
+      'approved_by', 'approval_date', 'legal_basis', 'description', 'status'],
+    search: ['procedure_name', 'procedure_code', 'enterprise_name', 'reference_number', 'p.full_name_ar'],
     filters: ['status', 'procedure_type'],
-    required: ['procedure_name', 'worker_name'],
+    required: ['procedure_name'],
   },
 };
+
+const PERSON_SELECT = ', p.full_name_ar AS person_name, p.national_id AS person_national_id';
+const PERSON_JOIN = def => def.personFk ? ` LEFT JOIN persons p ON p.id = t.${def.personFk}` : '';
+
+// ---------- مساعدات ----------
+async function ensurePerson(d) {
+  if (d.person_id) return d.person_id;
+  const name = d.person_full_name;
+  if (!name || !String(name).trim()) return null;
+  const nid = d.person_national_id ? String(d.person_national_id).trim() : null;
+  if (nid) {
+    const ex = await pool.query(
+      `SELECT id FROM persons WHERE national_id = $1 AND deleted_at IS NULL`, [nid]);
+    if (ex.rows.length) return ex.rows[0].id;
+  }
+  const r = await pool.query(
+    `INSERT INTO persons (full_name_ar, national_id, phone) VALUES ($1,$2,$3) RETURNING id`,
+    [String(name).trim(), nid, d.person_phone || null]);
+  return r.rows[0].id;
+}
+
+async function nextCode(table, column, prefix, pad) {
+  const r = await pool.query(
+    `SELECT COALESCE(MAX(NULLIF(regexp_replace(${column}, '\\D', '', 'g'), '')::bigint), 0) AS mx
+     FROM ${table} WHERE ${column} LIKE $1`,
+    [prefix + '%']
+  );
+  const n = Number(r.rows[0].mx || 0) + 1;
+  return prefix + String(n).padStart(pad, '0');
+}
 
 // ---------- مصنع CRUD عام ----------
 function registerRecord(resource, def) {
   const table = resource.replace(/-/g, '_');
 
-  // GET list — بحث + فلاتر + ترقيم صفحات + soft-delete
+  // GET list — بحث + فلاتر + ترقيم صفحات + soft-delete + دمج بيانات الشخص
   router.get(`/api/${resource}`, async (req, res) => {
     try {
       const { limit, page, offset, includeDeleted } = paginate(req);
       const params = [];
       let idx = 1;
       let where = '1=1';
-      where += softDeleteFilter(table, includeDeleted);
+      where += softDeleteFilter(table, includeDeleted, 't');
       for (const f of def.filters) {
-        if (req.query[f]) { where += ` AND ${f} = $${idx++}`; params.push(req.query[f]); }
+        if (req.query[f] !== undefined && req.query[f] !== '') {
+          where += ` AND t.${f} = $${idx++}`; params.push(req.query[f]);
+        }
       }
       if (req.query.search) {
         const like = `%${req.query.search}%`;
-        where += ` AND (${def.search.map(c => `${c} ILIKE $${idx}`).join(' OR ')})`;
+        where += ` AND (${def.search.map(col => `${col}::text ILIKE $${idx}`).join(' OR ')})`;
         params.push(like); idx++;
       }
-      const { sql: countSql, params: countParams } = countQuery(table, where, params);
+      const { sql: countSql, params: countParams } = countQuery(`${table} t${def.personFk ? PERSON_JOIN(def) : ''}`, where, params);
       const total = await pool.query(countSql, countParams);
       const r = await pool.query(
-        `SELECT * FROM ${table} WHERE ${where} ORDER BY created_at DESC LIMIT $${idx++} OFFSET $${idx++}`,
+        `SELECT t.*${def.personFk ? PERSON_SELECT : ''} FROM ${table} t${PERSON_JOIN(def)}
+         WHERE ${where} ORDER BY t.created_at DESC LIMIT $${idx++} OFFSET $${idx++}`,
         [...params, limit, offset]
       );
       res.json({ data: r.rows, total: total.rows[0].count, page, limit });
@@ -136,29 +186,43 @@ function registerRecord(resource, def) {
   // GET one
   router.get(`/api/${resource}/:id`, async (req, res) => {
     try {
-      const r = await pool.query(`SELECT * FROM ${table} WHERE id = $1`, [req.params.id]);
+      const r = await pool.query(
+        `SELECT t.*${def.personFk ? PERSON_SELECT : ''} FROM ${table} t${PERSON_JOIN(def)} WHERE t.id = $1`,
+        [req.params.id]
+      );
       if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
       res.json(r.rows[0]);
     } catch (err) {
+      console.error(`[${resource}] get error:`, err.message);
       res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
     }
   });
 
-  // POST create — مع توليد رقم تسلسلي تلقائي عند غيابه
+  // POST create — تحقق + ربط/إنشاء الشخص + توليد الأرقام التسلسلية تلقائياً
   router.post(`/api/${resource}`, async (req, res) => {
     try {
-      const d = req.body;
+      const d = { ...req.body };
       for (const reqField of def.required) {
         if (!d[reqField] || (typeof d[reqField] === 'string' && !d[reqField].trim())) {
           return res.status(400).json({ error: `الحقل المطلوب مفقود: ${reqField}` });
         }
       }
-      const fields = def.columns.filter(c => d[c] !== undefined);
+      if (def.personFk) {
+        const pid = await ensurePerson(d);
+        if (!pid && def.requiredPerson) {
+          return res.status(400).json({ error: 'مطلوب إدخال بيانات الشخص (الاسم على الأقل)' });
+        }
+        if (pid) d[def.personFk] = pid;
+      }
+      for (const ac of def.autoCodes || []) {
+        if (!d[ac.column]) d[ac.column] = await nextCode(table, ac.column, ac.prefix, ac.pad);
+      }
+      const fields = def.columns.filter(col => d[col] !== undefined);
       if (fields.length === 0) return res.status(400).json({ error: 'لا توجد حقول للإدخال' });
       const placeholders = fields.map((_, i) => `$${i + 1}`);
       fields.push('created_at', 'updated_at');
       placeholders.push('NOW()', 'NOW()');
-      const values = fields.slice(0, -2).map(c => d[c]);
+      const values = fields.slice(0, -2).map(col => d[col]);
       const r = await pool.query(
         `INSERT INTO ${table} (${fields.join(',')}) VALUES (${placeholders.join(',')}) RETURNING *`,
         values
@@ -166,8 +230,9 @@ function registerRecord(resource, def) {
       auditLog('create', table, req.user?.id || req.headers['x-user-id'], { id: r.rows[0].id }).catch(() => {});
       res.status(201).json({ success: true, record: r.rows[0] });
     } catch (err) {
-      if (err.code === '23505') return res.status(409).json({ error: 'الرقم التسلسلي مستخدم مسبقاً' });
+      if (err.code === '23505') return res.status(409).json({ error: 'القيمة مستخدمة مسبقاً (تكرار رقم تسلسلي)' });
       if (err.code === '23514') return res.status(400).json({ error: 'قيمة غير مطابقة لقيود الحقل: ' + err.detail });
+      if (err.code === '23503') return res.status(400).json({ error: 'مرجع غير موجود (شخص/مكتب/منشأة)' });
       console.error(`[${resource}] create error:`, err.message);
       res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
     }
@@ -176,13 +241,15 @@ function registerRecord(resource, def) {
   // PUT update
   router.put(`/api/${resource}/:id`, async (req, res) => {
     try {
+      const d = { ...req.body };
+      delete d[def.personFk]; // ربط الشخص لا يتغير بعد الإنشاء
       const fields = [];
       const values = [];
       let idx = 1;
       for (const col of def.columns) {
-        if (req.body[col] !== undefined) {
+        if (d[col] !== undefined) {
           fields.push(`${col} = $${idx++}`);
-          values.push(req.body[col]);
+          values.push(d[col]);
         }
       }
       if (fields.length === 0) return res.status(400).json({ error: 'لا توجد حقول للتحديث' });
@@ -196,7 +263,7 @@ function registerRecord(resource, def) {
       auditLog('update', table, req.user?.id || req.headers['x-user-id'], { id: req.params.id }).catch(() => {});
       res.json({ success: true, record: r.rows[0] });
     } catch (err) {
-      if (err.code === '23505') return res.status(409).json({ error: 'الرقم التسلسلي مستخدم مسبقاً' });
+      if (err.code === '23505') return res.status(409).json({ error: 'القيمة مستخدمة مسبقاً (تكرار رقم تسلسلي)' });
       if (err.code === '23514') return res.status(400).json({ error: 'قيمة غير مطابقة لقيود الحقل: ' + err.detail });
       console.error(`[${resource}] update error:`, err.message);
       res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
@@ -229,44 +296,30 @@ function registerRecord(resource, def) {
       if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
       res.json({ success: true });
     } catch (err) {
+      console.error(`[${resource}] restore error:`, err.message);
       res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
     }
   });
 }
 
-Object.entries(RECORDS).forEach(([resource, def]) => registerRecord(resource, def));
-
-// ---------- مسارات تحليلية مساندة ----------
-
-// إحصاءات سريعة لكل السجلات الجديدة (للوحة القيادة)
-router.get('/api/labor-records/stats', async (_req, res) => {
-  try {
-    const tables = Object.keys(RECORDS);
-    const queries = tables.map(t =>
-      pool.query(`SELECT COUNT(*)::int AS count FROM ${t} WHERE deleted_at IS NULL`)
-    );
-    const results = await Promise.all(queries);
-    const stats = {};
-    tables.forEach((t, i) => { stats[t] = results[i].rows[0].count; });
-    res.json(stats);
-  } catch (err) {
-    res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
-  }
-});
+// ---------- مسارات تحليلية مساندة (قبل المصنع لتجنب ظل :id) ----------
 
 // شهادات اللياقة الصحية القريبة من الانتهاء (تنبيهات استباقية)
 router.get('/api/health-fitness-certificates/expiring', async (req, res) => {
   try {
     const days = Math.min(365, parseInt(req.query.days) || 30);
     const r = await pool.query(
-      `SELECT * FROM health_fitness_certificates
-       WHERE deleted_at IS NULL AND expiry_date IS NOT NULL
-         AND expiry_date BETWEEN CURRENT_DATE AND CURRENT_DATE + ($1 || ' days')::interval
-       ORDER BY expiry_date ASC`,
+      `SELECT hfc.*, p.full_name_ar AS person_name
+       FROM health_fitness_certificates hfc
+       LEFT JOIN persons p ON p.id = hfc.worker_person_id
+       WHERE hfc.deleted_at IS NULL AND hfc.expiry_date IS NOT NULL
+         AND hfc.expiry_date BETWEEN CURRENT_DATE AND CURRENT_DATE + ($1 || ' days')::interval
+       ORDER BY hfc.expiry_date ASC`,
       [days]
     );
     res.json({ data: r.rows });
   } catch (err) {
+    console.error('fitness expiring error:', err.message);
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
 });
@@ -287,6 +340,25 @@ router.get('/api/inspection-criteria/for-establishment', async (req, res) => {
     );
     res.json({ data: r.rows });
   } catch (err) {
+    console.error('criteria for-establishment error:', err.message);
+    res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
+  }
+});
+
+Object.entries(RECORDS).forEach(([resource, def]) => registerRecord(resource, def));
+
+// إحصاءات سريعة لكل السجلات (للوحة القيادة) — المفاتيح بأسماء الجداول
+router.get('/api/labor-records/stats', async (_req, res) => {
+  try {
+    const entries = Object.keys(RECORDS).map(resource => [resource, resource.replace(/-/g, '_')]);
+    const results = await Promise.all(entries.map(([, table]) =>
+      pool.query(`SELECT COUNT(*)::int AS count FROM ${table} WHERE deleted_at IS NULL`)
+    ));
+    const stats = {};
+    entries.forEach(([, table], i) => { stats[table] = results[i].rows[0].count; });
+    res.json(stats);
+  } catch (err) {
+    console.error('labor stats error:', err.message);
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
 });

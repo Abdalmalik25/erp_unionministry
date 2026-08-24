@@ -8,6 +8,7 @@ import { FileCheck, Plus, Search, Download, Edit, Trash2, Eye, X } from 'lucide-
 import { toast } from '../../components/ui/Toast';
 import { logAudit } from '../../utils/security';
 import { exportReportToExcel } from '../../components/enterprise/PrintExportManager';
+import { fetchList } from '../../utils/api';
 
 interface ServiceRequest {
   id: string;
@@ -43,12 +44,8 @@ export function OrganizationServicesManagement() {
   const fetchServices = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await fetch('/api/service-requests');
-      if (r.ok) {
-        const data = await r.json();
-        setServices(Array.isArray(data) ? data : data.data || data.requests || []);
-        logAudit({ action: 'view', resource: 'organization_services' });
-      }
+      setServices(await fetchList('/api/service-requests', undefined, ['requests']));
+      logAudit({ action: 'view', resource: 'organization_services' });
     } catch { toast.error('خطأ في تحميل الطلبات'); }
     finally { setLoading(false); }
   }, []);

@@ -1,3 +1,4 @@
+import '../lib/loadEnv.js';
 import express from 'express';
 import { pool } from '../middleware/shared.js';
 import { validateFieldDefinition, DEFINITION_REQUIRED_KEYS } from '../lib/dynamicFieldsValidation.mjs';
@@ -27,7 +28,7 @@ router.get('/api/custom-field-definitions', async (req, res) => {
     );
     res.json({ data: r.rows, total: r.rows.length });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' });
   }
 });
 
@@ -64,7 +65,7 @@ router.post('/api/custom-field-definitions', requireDefManager, async (req, res)
     if (e.message && e.message.includes('uq_cfd_entity_key')) {
       return res.status(409).json({ error: 'مفتاح الحقل مكرر لنفس نوع الكيان' });
     }
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' });
   }
 });
 
@@ -95,7 +96,7 @@ router.put('/api/custom-field-definitions/:id', requireDefManager, async (req, r
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, data: r.rows[0] });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' });
   }
 });
 
@@ -105,7 +106,7 @@ router.delete('/api/custom-field-definitions/:id', requireDefManager, async (req
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' });
   }
 });
 

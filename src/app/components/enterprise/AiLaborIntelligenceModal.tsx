@@ -3,15 +3,17 @@
  * وزارة الشؤون الاجتماعية والعمل — قطاع العمل
  */
 import { useState, useEffect } from 'react';
-import { Sparkles, ShieldCheck, TrendingUp, CheckCircle2, X, RefreshCw, BrainCircuit } from 'lucide-react';
+import { Sparkles, ShieldCheck, CheckCircle2, X, RefreshCw, BrainCircuit } from 'lucide-react';
 import { fetchLaborMarketInsights, LaborMarketInsights } from '../../utils/aiRiskEngine';
+import { usePolicy } from '../../hooks/usePolicy';
 interface Props {
     isOpen: boolean;
     onClose: () => void;
 }
 export function AiLaborIntelligenceModal({ isOpen, onClose }: Props) {
-    const [insights, setInsights] = useState<LaborMarketInsights | null>(null);
-    const [loading, setLoading] = useState(true);
+const [insights, setInsights] = useState<LaborMarketInsights | null>(null);
+const [loading, setLoading] = useState(true);
+const policy = usePolicy();
     const loadData = async () => {
         setLoading(true);
         const data = await fetchLaborMarketInsights();
@@ -60,13 +62,8 @@ export function AiLaborIntelligenceModal({ isOpen, onClose }: Props) {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
                 <div className="p-4 rounded-2xl bg-card border border-border space-y-1">
                   <span className="text-xs text-muted-foreground font-semibold">مؤشر اليمننة الوطني</span>
-                  <div className="flex items-baseline justify-between">
-                    <h4 className="text-2xl font-black text-emerald-600">{insights.macro_indicators.national_yemenization_index}%</h4>
-                    <span className="text-[11px] text-emerald-600 font-bold flex items-center gap-0.5">
-                      <TrendingUp size={13}/> +2.1%
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">المستهدف القانوني: 80%</p>
+                  <h4 className="text-2xl font-black text-emerald-600">{insights.macro_indicators.national_yemenization_index}%</h4>
+                  <p className="text-[11px] text-muted-foreground">المستهدف القانوني: {policy.yemenizationMinRatio}%</p>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-card border border-border space-y-1">

@@ -4,7 +4,7 @@
  * مفتاح الخريطة هو «الدور» (role) وليس نوع المستخدم.
  */
 
-import { useCallback, ReactNode } from 'react';
+import { useCallback, useMemo, ReactNode } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 // ============================================================
@@ -64,7 +64,9 @@ export const ROLE_META: Record<string, RoleMeta> = {
   compliance_officer: { label: 'مسؤول الامتثال', userType: 'ministry', color: 'emerald', description: 'الامتثال وتقييم المخاطر وتصاريح العمل' },
   registry_officer: { label: 'موظف السجل الوطني', userType: 'ministry', color: 'sky', description: 'سجل المنشآت والنقابات والمنظمات والأعضاء والمهن' },
   reports_viewer: { label: 'محلل البيانات والذكاء', userType: 'ministry', color: 'slate', description: 'عرض التقارير والمؤشرات والتحليلات فقط' },
-  union_president: { label: 'رئيس النقابة أو منظمة / المنشأة', userType: 'organization', color: 'violet', description: 'صلاحيات الإشراف على النقابة أو منظمة أو المنشأة' },
+  union_president: { label: 'رئيس النقابة أو منظمة', userType: 'organization', color: 'violet', description: 'صلاحيات الإشراف على النقابة أو المنظمة العمالية' },
+  employer_owner: { label: 'صاحب عمل / منشأة', userType: 'organization', color: 'blue', description: 'إدارة المنشأة والعاملين والامتثال والخدمات الحكومية والرسوم' },
+  worker: { label: 'عامل — الجواز المهني الرقمي', userType: 'organization', color: 'cyan', description: 'جواز العمل والعقود والأجور واللياقة والتدريب والشكاوى' },
   hr_officer: { label: 'مسؤول موارد بشرية', userType: 'organization', color: 'sky', description: 'إدارة الأعضاء والملفات والأنشطة' },
   financial_officer: { label: 'مسؤول مالي', userType: 'organization', color: 'emerald', description: 'إدارة الرسوم والخدمات المالية' },
 };
@@ -163,6 +165,29 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'reports:export', 'profile:view',
   ],
 
+  employer_owner: [
+    ...VIEW_ALL,
+    'members:view', 'members:create', 'members:edit', 'members:export',
+    'workerProfiles:view', 'workerProfiles:create', 'workerProfiles:edit', 'workerProfiles:delete',
+    'documents:view', 'documents:upload',
+    'services:view', 'services:request',
+    'fees:view', 'fees:create', 'fees:edit',
+    'dispatches:view', 'dispatches:create', 'dispatches:edit',
+    'reduction:view', 'reduction:create', 'reduction:edit',
+    'violations:view', 'inspections:view', 'compliance:view', 'risk:view',
+    'training:view', 'training:create',
+    'reports:export', 'profile:view',
+  ],
+
+  worker: [
+    'dashboard:view', 'profile:view',
+    'workerProfiles:view',
+    'services:view', 'services:request',
+    'laborDisputes:view', 'laborDisputes:create',
+    'training:view', 'documents:view', 'notifications:view',
+    'evaluation:view', 'licenses:view',
+  ],
+
   hr_officer: [
     ...VIEW_ALL,
     'members:view', 'members:create', 'members:edit', 'members:delete', 'members:export',
@@ -185,6 +210,39 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
 };
 
 // ============================================================
+// توحيد مفاتيح الصلاحيات (نقطة/نقطتان) + مرادفات الواجهة
+// تضمن أن أي صياغة للمفتاح في القوائم ('commercial.view')
+// تطابق مفتاح النظام ('commercial:view')
+// ============================================================
+
+const PERMISSION_ALIASES: Record<string, string> = {
+  'view.dashboard': 'dashboard:view',
+  'system.audit.view': 'audit:view',
+  'system.users.manage': 'users:view',
+  'licenses.expat.view': 'expatriate:view',
+  'workers.dispatch.view': 'dispatches:view',
+  'workers.reduction.view': 'reduction:view',
+  'unions.view': 'entities:view',
+  'disputes.view': 'laborDisputes:view',
+  'inspections.cert.view': 'evaluation:view',
+};
+
+export function normalizePermission(key: string): string {
+  return key.trim().replace(/\./g, ':');
+}
+
+export function resolvePermissionKey(key: string): string {
+  return normalizePermission(PERMISSION_ALIASES[key] ?? key);
+}
+
+/** فحص صلاحية نقدي قابل للاختبار — يُستخدم من قبل الـ Hook واختبارات الوحدة */
+export function hasPermission(userPermissions: readonly string[], permission: string): boolean {
+  if (userPermissions.includes('admin:all')) return true;
+  const target = resolvePermissionKey(permission);
+  return userPermissions.some(p => normalizePermission(p) === target);
+}
+
+// ============================================================
 // Hook
 // ============================================================
 
@@ -195,11 +253,15 @@ export function usePermissions() {
     ? (ROLE_PERMISSIONS[user.role] || ROLE_PERMISSIONS.reports_viewer)
     : [];
 
+  const normalizedUserPermissions = useMemo(
+    () => new Set(userPermissions.map(normalizePermission)),
+    [userPermissions]
+  );
+
   const can = useCallback((permission: string): boolean => {
     if (!user) return false;
-    if (userPermissions.includes('admin:all')) return true;
-    return userPermissions.includes(permission);
-  }, [user, userPermissions]);
+    return hasPermission(userPermissions, permission);
+  }, [user, userPermissions, normalizedUserPermissions]);
 
   const canAny = useCallback((...permissions: string[]): boolean => {
     return permissions.some(p => can(p));

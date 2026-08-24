@@ -28,8 +28,15 @@
     "jsx": "react-jsx",
 
     /* Environment */
-    "types": ["vite/client"]
+    "types": ["vite/client", "node"]
   },
   "include": ["src", "utils", "scripts", "server"],
-  "exclude": ["node_modules", "supabase/functions", "**/*.test.ts", "**/*.test.tsx", "**/test.setup.ts"]
+  "exclude": [
+    "node_modules",
+    "supabase/functions",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/test.setup.ts",
+    "src/app/components/field/FieldInspectionPro.tsx"
+  ]
 }

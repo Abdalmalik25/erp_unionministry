@@ -41,7 +41,7 @@ router.get('/api/legal-references', async (req, res) => {
       const total = await pool.query(`SELECT COUNT(*)::int FROM international_standards`);
       res.json({ data: r.rows, total: total.rows[0].count, page: +page, limit: +limit });
     }
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.post('/api/legal-references', async (req, res) => {
@@ -58,7 +58,7 @@ router.post('/api/legal-references', async (req, res) => {
       fields.map(c => d[c])
     );
     res.status(201).json({ success: true, data: r.rows[0] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.put('/api/legal-references/:id', async (req, res) => {
@@ -75,7 +75,7 @@ router.put('/api/legal-references/:id', async (req, res) => {
     const r = await pool.query(`UPDATE ${table} SET ${cols.join(', ')} WHERE id = $${vals.length} RETURNING *`, vals);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, data: r.rows[0] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.delete('/api/legal-references/:id', async (req, res) => {
@@ -85,7 +85,7 @@ router.delete('/api/legal-references/:id', async (req, res) => {
     const r = await pool.query(`UPDATE ${table} SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id`, [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 // ===================== LABOR DISPUTES =====================
@@ -120,7 +120,7 @@ router.get('/api/labor-disputes', async (req, res) => {
       [...params, limit, offset]
     )).rows;
     res.json({ data: rows, total: total.rows[0].count, page, limit });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.post('/api/labor-disputes', async (req, res) => {
@@ -135,7 +135,7 @@ router.post('/api/labor-disputes', async (req, res) => {
       `INSERT INTO labor_disputes (${fields.join(',')}) VALUES (${placeholders.join(',')}) RETURNING *`, values
     );
     res.status(201).json({ success: true, data: r.rows[0] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.put('/api/labor-disputes/:id', async (req, res) => {
@@ -149,7 +149,7 @@ router.put('/api/labor-disputes/:id', async (req, res) => {
     const r = await pool.query(`UPDATE labor_disputes SET ${cols.join(', ')} WHERE id = $${idx} RETURNING *`, vals);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, data: r.rows[0] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.delete('/api/labor-disputes/:id', async (req, res) => {
@@ -157,7 +157,7 @@ router.delete('/api/labor-disputes/:id', async (req, res) => {
     const r = await pool.query('UPDATE labor_disputes SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 // ===================== EXPATRIATE LICENSES =====================
@@ -192,7 +192,7 @@ router.get('/api/expatriate-licenses', async (req, res) => {
       [...params, limit, offset]
     )).rows;
     res.json({ data: rows, total: total.rows[0].count, page, limit });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.post('/api/expatriate-licenses', async (req, res) => {
@@ -208,7 +208,7 @@ router.post('/api/expatriate-licenses', async (req, res) => {
       `INSERT INTO expatriate_licenses (${fields.join(',')}) VALUES (${placeholders.join(',')}) RETURNING *`, values
     );
     res.status(201).json({ success: true, data: r.rows[0] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.put('/api/expatriate-licenses/:id', async (req, res) => {
@@ -222,7 +222,7 @@ router.put('/api/expatriate-licenses/:id', async (req, res) => {
     const r = await pool.query(`UPDATE expatriate_licenses SET ${cols.join(', ')} WHERE id = $${idx} RETURNING *`, vals);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, data: r.rows[0] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.delete('/api/expatriate-licenses/:id', async (req, res) => {
@@ -230,7 +230,7 @@ router.delete('/api/expatriate-licenses/:id', async (req, res) => {
     const r = await pool.query('UPDATE expatriate_licenses SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 // ===================== Evaluation Certificates =====================
@@ -265,7 +265,7 @@ router.get('/api/evaluation-certificates', async (req, res) => {
     );
     res.json({ data: r.rows, total: total.rows[0].count, page, limit });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' });
   }
 });
 
@@ -313,7 +313,7 @@ router.post('/api/evaluation-certificates', async (req, res) => {
     );
     res.status(201).json({ success: true, data: r.rows[0] });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' });
   }
 });
 

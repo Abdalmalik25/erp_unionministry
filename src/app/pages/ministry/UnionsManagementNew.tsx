@@ -4,9 +4,10 @@
  */
 
 import  { useState, useEffect, useCallback } from 'react';
-import { Search, Plus, Edit, Trash2, Eye, Download, RefreshCw, X, Building2, MapPin, Phone, Mail, Hash, Calendar } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Eye, Download, RefreshCw, X, Building2, MapPin, Phone, Mail, Hash, Calendar, BadgeCheck } from 'lucide-react';
 import { toast } from '../../components/ui/Toast';
 import { logAudit } from '../../utils/security';
+import { fetchList } from '../../utils/api';
 import { PermissionGate } from '../../hooks/usePermissions';
 import { exportReportToExcel } from '../../components/enterprise/PrintExportManager';
 
@@ -16,6 +17,7 @@ interface Entity {
   entity_type: string;
   unified_code: string;
   registration_number: string;
+  national_number?: string;
   governorate: string;
   status: string;
   member_count?: number;
@@ -62,12 +64,8 @@ export function UnionsManagementNew() {
   const fetchUnions = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await fetch('/api/entities');
-      if (r.ok) {
-        const data = await r.json();
-        setUnions(Array.isArray(data) ? data : data.data || []);
-        logAudit({ action: 'view', resource: 'entities' });
-      }
+      setUnions(await fetchList('/api/entities'));
+      logAudit({ action: 'view', resource: 'entities' });
     } catch { toast.error('خطأ في تحميل البيانات'); }
     finally { setLoading(false); }
   }, []);
@@ -139,7 +137,7 @@ export function UnionsManagementNew() {
 
   const filteredUnions = unions.filter(u => {
     const q = searchTerm.toLowerCase();
-    const matchSearch = !q || u.entity_name?.toLowerCase().includes(q) || u.unified_code?.toLowerCase().includes(q) || u.registration_number?.toLowerCase().includes(q) || u.president_name?.toLowerCase().includes(q);
+    const matchSearch = !q || u.entity_name?.toLowerCase().includes(q) || u.unified_code?.toLowerCase().includes(q) || u.registration_number?.toLowerCase().includes(q) || u.national_number?.toLowerCase().includes(q) || u.president_name?.toLowerCase().includes(q);
     const matchType = filterType === 'الكل' || u.entity_type === filterType;
     const matchProvince = filterProvince === 'الكل' || u.governorate === filterProvince;
     const matchStatus = filterStatus === 'الكل' || u.status === filterStatus;
@@ -246,7 +244,10 @@ export function UnionsManagementNew() {
               ) : filteredUnions.map(u => (
                 <tr key={u.entity_id} className="hover:bg-accent transition-colors cursor-pointer" onClick={() => setSelectedEntity(u)}>
                   <td className="px-4 py-3 text-sm font-mono text-heading">{u.unified_code}</td>
-                  <td className="px-4 py-3 text-sm font-semibold text-heading">{u.entity_name}</td>
+                  <td className="px-4 py-3 text-sm font-semibold text-heading">
+                    {u.entity_name}
+                    <span className="block text-[10px] font-mono text-gold-dark mt-0.5" dir="ltr">{u.national_number || '—'}</span>
+                  </td>
                   <td className="px-4 py-3 text-sm text-muted-foreground">{TYPE_MAP[u.entity_type] || u.entity_type}</td>
                   <td className="px-4 py-3 text-sm text-muted-foreground">{u.president_name || '—'}</td>
                   <td className="px-4 py-3 text-sm text-muted-foreground">
@@ -313,6 +314,7 @@ export function UnionsManagementNew() {
                 <h4 className="text-sm font-bold text-heading mb-3 pb-2 border-b border-border">المعلومات الأساسية</h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[
+                    { label: 'الرقم الوطني', value: selectedEntity.national_number, icon: BadgeCheck },
                     { label: 'الرمز الموحد', value: selectedEntity.unified_code, icon: Hash },
                     { label: 'رقم التسجيل', value: selectedEntity.registration_number, icon: Hash },
                     { label: 'المحافظة', value: selectedEntity.governorate, icon: MapPin },

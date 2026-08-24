@@ -19,7 +19,7 @@ router.get('/api/ai/risk-matrix/:id', async (req, res) => {
 
     // Fetch entity data
     const entityQuery = await pool.query(
-      `SELECT * FROM organizational_entities WHERE (id::text = $1 OR establishment_id = $1) AND deleted_at IS NULL LIMIT 1`,
+      `SELECT * FROM organizational_entities WHERE (entity_id::text = $1 OR establishment_id = $1) AND deleted_at IS NULL LIMIT 1`,
       [id]
     );
 

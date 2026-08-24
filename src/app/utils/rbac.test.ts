@@ -1,13 +1,19 @@
 /**
- * RBAC Tests - اختبارات التحكم القائمة على الدور
- * تغطية الصلاحيات، segregation of duties، metadata validation
+ * RBAC Tests — اختبارات التحكم القائم على الدور
+ * تغطية الصلاحيات، الفصل بين المهام، وصحة البيانات التعريفية للأدوار
+ * مصدر الحقيقة الوحيد: hooks/usePermissions.tsx
  */
 
 import { describe, it, expect } from 'vitest';
-import { ROLE_PERMISSIONS, ROLE_META } from '../constants/roles';
+import {
+  ROLE_PERMISSIONS,
+  ROLE_META,
+  ROLE_LIST,
+  hasPermission,
+} from '../hooks/usePermissions';
 
 describe('ROLE_PERMISSIONS structure', () => {
-  it('should have all expected roles defined', () => {
+  it('يجب تعريف جميع أدوار المنظومة الأربعة عشر', () => {
     const expectedRoles = [
       'ministry_admin',
       'supervisory_director',
@@ -17,6 +23,8 @@ describe('ROLE_PERMISSIONS structure', () => {
       'registry_officer',
       'reports_viewer',
       'union_president',
+      'employer_owner',
+      'worker',
       'hr_officer',
       'financial_officer',
     ];
@@ -24,77 +32,96 @@ describe('ROLE_PERMISSIONS structure', () => {
     for (const role of expectedRoles) {
       expect(ROLE_PERMISSIONS).toHaveProperty(role);
     }
+    expect(ROLE_LIST.length).toBe(Object.keys(ROLE_META).length);
   });
 
-  it('each role should have permissions array', () => {
-    const roles = ['ministry_admin', 'labor_inspector', 'reports_viewer'];
-    for (const role of roles) {
+  it('كل دور يملك مصفوفة صلاحيات غير فارغة', () => {
+    for (const role of Object.keys(ROLE_PERMISSIONS)) {
       expect(ROLE_PERMISSIONS[role]).toBeInstanceOf(Array);
       expect(ROLE_PERMISSIONS[role].length).toBeGreaterThan(0);
+    }
+  });
+
+  it('كل دور في ROLE_META له صلاحيات والعكس', () => {
+    for (const role of Object.keys(ROLE_META)) {
+      expect(ROLE_PERMISSIONS[role], `صلاحيات مفقودة للدور ${role}`).toBeDefined();
+    }
+    for (const role of Object.keys(ROLE_PERMISSIONS)) {
+      expect(ROLE_META[role], `بيانات تعريفية مفقودة للدور ${role}`).toBeDefined();
     }
   });
 });
 
 describe('ROLE_META structure', () => {
-  it('each role meta should have label and color', () => {
-    const roles = Object.keys(ROLE_META);
-    for (const role of roles) {
-      expect(ROLE_META[role]).toHaveProperty('label');
-      expect(ROLE_META[role]).toHaveProperty('color');
-      expect(typeof ROLE_META[role].label).toBe('string');
-      expect(typeof ROLE_META[role].color).toBe('string');
+  it('لكل دور تسمية ولون ونوع مستخدم ووصف', () => {
+    for (const role of Object.keys(ROLE_META)) {
+      const meta = ROLE_META[role];
+      expect(meta).toHaveProperty('label');
+      expect(meta).toHaveProperty('color');
+      expect(meta).toHaveProperty('userType');
+      expect(meta).toHaveProperty('description');
+      expect(typeof meta.label).toBe('string');
+      expect(typeof meta.color).toBe('string');
     }
   });
 
-  it('labels should be localized Arabic', () => {
-    const roles = Object.keys(ROLE_META);
-    for (const role of roles) {
-      expect(ROLE_META[role].label.length).toBeGreaterThan(0);
+  it('التسميات معرّبة بالكامل — لا أجنبية ولا محارف مشوهة', () => {
+    for (const role of Object.keys(ROLE_META)) {
+      const label = ROLE_META[role].label;
+      expect(label.length).toBeGreaterThan(0);
+      // يجب أن تحتوي حروفاً عربية
+      expect(label, `تسمية ${role} غير عربية: ${label}`).toMatch(/[\u0600-\u06FF]/);
+      // لا محارف كورية/يابانية/صينية أو لاتينية متبقية من مشاريع أخرى
+      expect(label, `تسمية ${role} تحوي محارف أجنبية: ${label}`).not.toMatch(/[\uac00-\ud7af\u3040-\u30ff\u4e00-\u9fff]/);
+      expect(label, `تسمية ${role} تحوي أحجاماً لاتينية: ${label}`).not.toMatch(/[A-Za-z]/);
     }
   });
 });
 
 describe('permission segregation', () => {
-  it('labor_inspector should not have user management permissions', () => {
+  it('مفتش العمل لا يملك صلاحيات إدارة المستخدمين', () => {
     const inspectorPerms = ROLE_PERMISSIONS.labor_inspector;
     const hasUserManagement = inspectorPerms.some(
-      (p: string) => p.includes('user:') || p.includes('manage:users')
+      (p) => p.startsWith('users:') || p.includes('users:manage')
     );
     expect(hasUserManagement).toBe(false);
   });
 
-  it('labor_inspector should have inspection permissions', () => {
+  it('مفتش العمل يملك صلاحيات التفتيش والمخالفات', () => {
     const inspectorPerms = ROLE_PERMISSIONS.labor_inspector;
     const hasInspectionPerms = inspectorPerms.some(
-      (p: string) => p.includes('inspection') || p.includes('violation')
+      (p) => p.includes('inspections') || p.includes('violations')
     );
     expect(hasInspectionPerms).toBe(true);
   });
 
-it('ministry_admin should have all permissions', () => {
-    const adminPerms = ROLE_PERMISSIONS.ministry_admin;
-    // Check that wildcard permission exists (first element should be '*all')
-    expect(adminPerms[0]).toBe('*all');
-    // Also verify it contains the wildcard using includes
-    expect(adminPerms).toContain('*all');
+  it('العامل لا يملك صلاحيات إدارية وزارية', () => {
+    const workerPerms = ROLE_PERMISSIONS.worker;
+    expect(workerPerms).not.toContain('admin:all');
+    expect(workerPerms.some((p) => p.startsWith('users:'))).toBe(false);
   });
 });
 
-describe('can() method logic', () => {
-  it('should check single permission', () => {
-    const permissions: string[] = ['entities:read', 'entities:write'];
-    const hasPermission = (perms: string[], perm: string) =>
-      perms.includes(perm) || perms.includes('*:all');
-    expect(hasPermission(permissions, 'entities:read')).toBe(true);
-    expect(hasPermission(permissions, 'entities:write')).toBe(true);
-    expect(hasPermission(permissions, 'users:read')).toBe(false);
+describe('ministry_admin wildcard', () => {
+  it('مدير الوزارة يملك الصلاحية الشاملة admin:all', () => {
+    const adminPerms = ROLE_PERMISSIONS.ministry_admin;
+    expect(adminPerms).toContain('admin:all');
   });
 
-  it('should check any permission', () => {
-    const permissions: string[] = ['entities:read', 'entities:write'];
-    const canAny = (perms: string[], permsToCheck: string[]) =>
-      permsToCheck.some((p) => perms.includes(p) || perms.includes('*:all'));
-    expect(canAny(permissions, ['entities:read'])).toBe(true);
-    expect(canAny(permissions, ['users:read'])).toBe(false);
+  it('hasPermission يتجاوز كل فحص عند وجود admin:all', () => {
+    expect(hasPermission(['admin:all'], 'anything:at:all')).toBe(true);
+  });
+});
+
+describe('hasPermission logic', () => {
+  it('يفحص صلاحية مفردة بدقة', () => {
+    const permissions = ['entities:view', 'entities:create'];
+    expect(hasPermission(permissions, 'entities:view')).toBe(true);
+    expect(hasPermission(permissions, 'entities:edit')).toBe(false);
+    expect(hasPermission(permissions, 'users:view')).toBe(false);
+  });
+
+  it('يوحّد النقاط والنقطتين عبر normalizePermission', () => {
+    expect(hasPermission(['entities:view'], 'entities.view')).toBe(true);
   });
 });

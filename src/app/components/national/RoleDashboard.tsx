@@ -17,13 +17,13 @@ interface RoleStats {
 
 const FALLBACK_STATS: Record<string, RoleStats[]> = {
     employer: [
-        { label: 'منشآت مسجلة', value: 5152, icon: Building2, color: 'text-blue-600' },
+        { label: 'منشآت مسجلة', value: 0, icon: Building2, color: 'text-blue-600' },
         { label: 'طلبات تقليص', value: 0, icon: TrendingUp, color: 'text-indigo-600' },
         { label: 'تراخيص وافدة', value: 0, icon: FileText, color: 'text-teal-600' },
         { label: 'إصابات عمل', value: 0, icon: ShieldCheck, color: 'text-rose-600' },
     ],
     worker: [
-        { label: 'ملفات عمال', value: 12599, icon: Users, color: 'text-green-600' },
+        { label: 'ملفات عمال', value: 0, icon: Users, color: 'text-green-600' },
         { label: 'شهادات لياقة', value: 0, icon: FileText, color: 'text-emerald-600' },
         { label: 'شهادات خبرة', value: 0, icon: FileText, color: 'text-teal-600' },
         { label: 'نزاعات نشطة', value: 0, icon: ShieldCheck, color: 'text-amber-600' },
@@ -34,8 +34,8 @@ const FALLBACK_STATS: Record<string, RoleStats[]> = {
         { label: 'شهادات كفاءة', value: 0, icon: FileText, color: 'text-emerald-600' },
     ],
     registration_office: [
-        { label: 'منشآت مقيدة', value: 5152, icon: Building2, color: 'text-teal-600' },
-        { label: 'عمال مقيدون', value: 12599, icon: Users, color: 'text-green-600' },
+        { label: 'منشآت مقيدة', value: 0, icon: Building2, color: 'text-teal-600' },
+        { label: 'عمال مقيدون', value: 0, icon: Users, color: 'text-green-600' },
         { label: 'عمالة غير منتظمة', value: 0, icon: Activity, color: 'text-amber-600' },
     ],
     union: [
@@ -50,7 +50,7 @@ const FALLBACK_STATS: Record<string, RoleStats[]> = {
         { label: 'مراجع قانونية', value: 0, icon: FileText, color: 'text-slate-600' },
     ],
     decision_maker: [
-        { label: 'كيانات إجمالاً', value: 5152, icon: Building2, color: 'text-rose-600' },
+        { label: 'كيانات إجمالاً', value: 0, icon: Building2, color: 'text-rose-600' },
         { label: 'تنبيهات امتثال', value: 0, icon: ShieldCheck, color: 'text-red-600' },
         { label: 'تقييمات مخاطر', value: 0, icon: TrendingUp, color: 'text-orange-600' },
         { label: 'مخالفات', value: 0, icon: FileText, color: 'text-rose-600' },
@@ -83,14 +83,14 @@ export default function RoleDashboard() {
         try {
             // جلب المؤشرات الحية من السجلات المرتبطة بالدور
             const endpoints: Record<string, string[]> = {
-                employer: ['/api/commercial?limit=1', '/api/reduction-requests?limit=1', '/api/expatriate-licenses?limit=1', '/api/labor-records/work-injuries?limit=1'],
-                worker: ['/api/worker-profiles?limit=1', '/api/labor-records/health-fitness-certificates?limit=1', '/api/labor-records/experience-certificates?limit=1', '/api/labor-disputes?limit=1'],
+                employer: ['/api/commercial?limit=1', '/api/reduction-requests?limit=1', '/api/expatriate-licenses?limit=1', '/api/work-injuries?limit=1'],
+                worker: ['/api/worker-profiles?limit=1', '/api/health-fitness-certificates?limit=1', '/api/experience-certificates?limit=1', '/api/labor-disputes?limit=1'],
                 job_seeker: ['/api/professions?limit=1', '/api/training-records?limit=1', '/api/evaluation-certificates?limit=1'],
-                registration_office: ['/api/commercial?limit=1', '/api/worker-profiles?limit=1', '/api/labor-records/irregular-workers?limit=1'],
+                registration_office: ['/api/commercial?limit=1', '/api/worker-profiles?limit=1', '/api/irregular-workers?limit=1'],
                 union: ['/api/entities?limit=1', '/api/members?limit=1', '/api/elections?limit=1', '/api/activities?limit=1'],
-                ministry_staff: ['/api/labor-records/ministry-employees?limit=1', '/api/labor-records/ministry-offices?limit=1', '/api/legal-references?limit=1'],
+                ministry_staff: ['/api/ministry-employees?limit=1', '/api/ministry-offices?limit=1', '/api/legal-references?limit=1'],
                 decision_maker: ['/api/commercial?limit=1', '/api/compliance-alerts?limit=1', '/api/risk-assessments?limit=1', '/api/violations?limit=1'],
-                inspector: ['/api/inspections?limit=1', '/api/labor-records/inspection-criteria?limit=1', '/api/violations?limit=1'],
+                inspector: ['/api/inspections?limit=1', '/api/inspection-criteria?limit=1', '/api/violations?limit=1'],
                 trainer: ['/api/training-records?limit=1', '/api/evaluation-certificates?limit=1'],
             };
             const urls = endpoints[role.key] || [];

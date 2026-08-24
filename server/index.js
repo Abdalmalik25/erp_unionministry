@@ -2,37 +2,19 @@
 // All routes are in server/routes/*.js modules
 // Shared utilities in server/middleware/shared.js
 
-import { readFileSync } from 'fs';
+// تحميل البيئة أولاً — يُنفذ قبل أي وحدة تقرأ process.env (ترتيب ESM)
+import './lib/loadEnv.js';
+import express from 'express';
+import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Load .env from project root BEFORE any other imports (critical for DB pool)
-const envPath = join(__dirname, '..', '.env');
-try {
-  const envContent = readFileSync(envPath, 'utf8');
-  envContent.split('\n').forEach(line => {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) return;
-    const idx = trimmed.indexOf('=');
-    if (idx === -1) return;
-    const key = trimmed.slice(0, idx).trim();
-    const val = trimmed.slice(idx + 1).trim().replace(/^["']|["']$/g, '');
-    if (!process.env[key]) process.env[key] = val;
-  });
-} catch (e) {
-  console.warn('[Server] Could not load .env:', e.message);
-}
-
-import express from 'express';
-import cors from 'cors';
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-// ===================== Core Middleware =====================
+// ===================== Core Middleware — Nuclear Hardening =====================
 app.use(cors({
   origin: process.env.CORS_ORIGIN
     ? process.env.CORS_ORIGIN.split(',')
@@ -40,21 +22,61 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
+// Security hardening (sanitization + CSRF + MFA) — TD-006/022/028/029
+import { sanitizeBody, csrfMiddleware, requireMFA } from './middleware/security.js';
+import { sanitizeQuery } from './middleware/validation.js';
+import { structuredLogger, metricsEndpoint, errorHandler } from './middleware/observability.js';
+app.use(sanitizeQuery);
+app.use(sanitizeBody);
+app.use(csrfMiddleware);
+app.use(requireMFA);
+app.use(structuredLogger);
+
+// ===================== Response Compression (dependency-free gzip) =====================
+import zlib from 'zlib';
+app.use((req, res, next) => {
+  const accept = String(req.headers['accept-encoding'] || '');
+  if (!/\bgzip\b/.test(accept)) return next();
+  const chunks = [];
+  const origWrite = res.write.bind(res);
+  const origEnd = res.end.bind(res);
+  res.write = function (chunk, ...args) {
+    if (chunk) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    return true;
+  };
+  res.end = function (chunk, ...args) {
+    if (chunk) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    const ctype = String(res.getHeader('Content-Type') || '');
+    const buf = Buffer.concat(chunks);
+    // Skip tiny payloads, already-encoded streams, and SSE
+    if (buf.length < 1024 || ctype.includes('event-stream') || res.getHeader('Content-Encoding')) {
+      return origEnd(buf, ...args);
+    }
+    zlib.gzip(buf, { level: 6 }, (err, zipped) => {
+      if (err || zipped.length >= buf.length) return origEnd(buf, ...args);
+      res.setHeader('Content-Encoding', 'gzip');
+      res.setHeader('Content-Length', String(zipped.length));
+      origEnd(zipped);
+    });
+  };
+  next();
+});
 
 // ===================== Standardized API Response =====================
 app.use((_req, res, next) => {
   // Wrap res.json to standardize format
   const originalJson = res.json;
   res.json = function (data) {
+    const isError = res.statusCode >= 400;
     const standardized = {
-      success: true,
-      data: data,
+      success: !isError,
+      data: isError ? null : data,
       meta: {
         timestamp: new Date().toISOString(),
-        path: req.path,
-        method: req.method,
+        path: _req.path,
+        method: _req.method,
       },
-      errors: null,
+      errors: isError ? (typeof data === 'object' && data !== null ? data : { message: String(data) }) : null,
     };
     return originalJson.call(this, standardized);
   };
@@ -67,12 +89,23 @@ app.use((_req, res, next) => {
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  res.setHeader('Content-Security-Policy', "default-src 'self'");
+  // سياسة المحتوى للواجهة تأتي من meta مفصلة في index.html (تسمح بخطوط Google الرسمية)
+  // أما API فلا تحتاج CSP — نمنع التفسير كصفحة فقط
+  if (_req.path.startsWith('/api')) {
+    res.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
+  }
   next();
 });
 
 // ===================== Rate Limiting =====================
 const rateLimitMap = new Map();
+// تنظيف دوري لسجل المحدد — يمنع تضخم الذاكرة على المدى الطويل
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of rateLimitMap) {
+    if (now - entry.start > 60000) rateLimitMap.delete(ip);
+  }
+}, 120000).unref();
 app.use('/api', (req, res, next) => {
   const ip = req.ip || req.connection?.remoteAddress || 'unknown';
   const now = Date.now();
@@ -86,22 +119,84 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
-// ===================== Auth Middleware (optional) =====================
-// يُلحق req.user عند وجود رمز صالح دون منع بقية المسارات (لتفادي كسر الواجهات الحالية)
+// ===================== Brute-Force Guard (login) =====================
+// 8 محاولات لكل 5 دقائق لكل زوج IP+بريد — حماية من تخمين كلمات المرور
+const loginGuard = new Map();
+app.use('/api/auth/login', (req, res, next) => {
+  if (req.method !== 'POST') return next();
+  const ip = req.ip || req.connection?.remoteAddress || 'unknown';
+  const email = String(req.body?.email || '').toLowerCase().trim();
+  const key = `${ip}|${email}`;
+  const now = Date.now();
+  let entry = loginGuard.get(key);
+  if (!entry || now - entry.start > 5 * 60 * 1000) {
+    entry = { start: now, count: 0 };
+    loginGuard.set(key, entry);
+  }
+  entry.count++;
+  if (loginGuard.size > 5000) loginGuard.clear(); // حماية من تضخم الذاكرة
+  if (entry.count > 8) {
+    return res.status(429).json({ error: 'تم تجاوز عدد محاولات الدخول — أعد المحاولة بعد 5 دقائق', code: 'LOGIN_RATE_LIMITED' });
+  }
+  next();
+});
+
+// ===================== Cache-Control للقواميس الرسمية =====================
+// بيانات مرجعية نادر التغير — تُخزن مؤقتاً 5 دقائق لتسريع التنقل
+app.use((req, res, next) => {
+  if (req.method === 'GET') {
+    const dictPaths = ['/api/geography/governorates', '/api/isic4', '/api/national-directories', '/api/national-occupations', '/api/sector-properties'];
+    if (dictPaths.some(p => req.path.startsWith(p))) {
+      res.setHeader('Cache-Control', 'public, max-age=300');
+      res.setHeader('Vary', 'Accept-Encoding');
+    }
+  }
+  next();
+});
+
+// ===================== Auth Middleware (enforced) =====================
 import { verifyToken } from './middleware/auth.js';
+import { auditContext } from './middleware/rbac.js';
 const AUTH_ENABLED = process.env.ENABLE_AUTH === 'true';
+
+// P0 Gate: fail-closed in production — never allow unauthenticated sensitive APIs
+if (process.env.NODE_ENV === 'production' && !AUTH_ENABLED) {
+  console.error('[SECURITY] FATAL: ENABLE_AUTH=false in production — refusing to start (P0 Gate fail-closed)');
+  process.exit(1);
+}
 
 app.use((req, res, next) => {
   req.user = null;
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const payload = verifyToken(authHeader.slice(7));
+    // Verify issuer/audience/algorithm restriction
     if (payload) {
-      req.user = { id: payload.sub, email: payload.email, role: payload.role, userType: payload.userType, organizationId: payload.organizationId };
+      if (payload.iss && payload.iss !== 'national-labor-platform') {
+        return res.status(401).json({ error: 'جهة إصدار غير صالحة', code: 'INVALID_ISSUER' });
+      }
+      req.user = { id: payload.sub, email: payload.email, role: payload.role, userType: payload.userType, organizationId: payload.organizationId, governorate: payload.governorate, directorate: payload.directorate, sid: payload.sid };
     }
+  }
+  // Enforce auth for all /api except health, auth/login, public dictionaries
+  const publicPaths = ['/api/health','/api/auth/login','/api/auth/me','/api/isic4','/api/geography/governorates'];
+  // مسارات البوابة العامة المقيدة بالطريقة — شاشة الدخول وطلبات فتح الحسابات
+  const PUBLIC_GET = ['/api/system/branding', '/api/system/policy', '/api/establishments/lookup'];
+  const PUBLIC_POST = ['/api/account-requests'];
+  const isPublic = publicPaths.some(p => req.path === p || req.path.startsWith(p + '/')) || req.path.startsWith('/api/v1/legal/sources')
+    || (req.method === 'GET' && PUBLIC_GET.includes(req.path))
+    || (req.method === 'POST' && PUBLIC_POST.includes(req.path));
+  if (AUTH_ENABLED && !isPublic && req.path.startsWith('/api') && !req.user) {
+    return res.status(401).json({ error: 'غير مصرح — يرجى تسجيل الدخول', code: 'UNAUTHORIZED' });
+  }
+  // In production with AUTH_ENABLED, also fail-closed for sensitive writes even if flag misconfigured
+  if (!AUTH_ENABLED && process.env.NODE_ENV === 'production' && req.path.startsWith('/api/v1/') && ['POST','PUT','DELETE','PATCH'].includes(req.method)) {
+    return res.status(401).json({ error: 'الإنتاج يتطلب مصادقة — P0 Gate', code: 'P0_FAIL_CLOSED' });
   }
   next();
 });
+
+app.use(auditContext);
 
 // مانع صلاحيات بسيط للطرق المحمية
 export function requireRole(...roles) {
@@ -114,6 +209,8 @@ export function requireRole(...roles) {
 
 // ===================== Route Modules =====================
 import entitiesRouter from './routes/entities.js';
+import registrationRouter from './routes/registration.js';
+import accountsRouter from './routes/accounts.js';
 import workersRouter from './routes/workers.js';
 import occupationsRouter from './routes/occupations.js';
 import complianceRouter from './routes/compliance.js';
@@ -126,6 +223,17 @@ import dynamicFieldsRouter from './routes/dynamicFields.js';
 import laborRecordsRouter from './routes/laborRecords.js';
 import nationalDirectoriesRouter from './routes/nationalDirectories.js';
 import administrationRouter from './routes/administration.js';
+import regulatoryRouter from './routes/regulatory.js';
+import workflowRouter from './routes/workflow.js';
+import contractsRouter from './routes/contracts.js';
+import integrationRouter from './routes/integration.js';
+import serviceCatalogRouter from './routes/serviceCatalog.js';
+import paymentsRouter from './routes/payments.js';
+import excellenceRouter from './routes/excellence.js';
+import dataQualityRouter from './routes/dataQuality.js';
+import chronologyRouter from './routes/chronology.js';
+import externalIntegrationsRouter from './routes/externalIntegrations.js';
+import intelligenceRouter from './routes/intelligence.js';
 
 // ===================== Automated Server-Side Mutation Audit =====================
 import { auditLog } from './middleware/shared.js';
@@ -149,6 +257,8 @@ app.use((req, res, next) => {
 });
 
 app.use(entitiesRouter);
+app.use(registrationRouter);
+app.use(accountsRouter);
 app.use(workersRouter);
 app.use(occupationsRouter);
 app.use(complianceRouter);
@@ -161,6 +271,17 @@ app.use(dynamicFieldsRouter);
 app.use(laborRecordsRouter);
 app.use(nationalDirectoriesRouter);
 app.use(administrationRouter);
+app.use(regulatoryRouter);
+app.use(workflowRouter);
+app.use(contractsRouter);
+app.use(integrationRouter);
+app.use(serviceCatalogRouter);
+app.use(paymentsRouter);
+app.use(excellenceRouter);
+app.use(dataQualityRouter);
+app.use(chronologyRouter);
+app.use(externalIntegrationsRouter);
+app.use(intelligenceRouter);
 
 // ===================== Dashboard (inline — uses shared pool) =====================
 import { pool, paginate, countQuery } from './middleware/shared.js';
@@ -180,8 +301,8 @@ app.get('/api/dashboard/stats', async (_req, res) => {
         (SELECT COUNT(*)::int FROM compliance_alerts WHERE is_resolved = false) AS unresolved_alerts
     `);
     res.json(stats.rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
+  } catch (_err) {
+    res.status(500).json({ error: 'خطأ داخلي — تم تسجيل الحادثة', code:'INTERNAL_ERROR' });
   }
 });
 
@@ -217,12 +338,13 @@ app.get('/api/dashboard/enhanced-stats', async (req, res) => {
       totalReductionRequests: result.rows[0].total_reduction_requests,
       totalServices: result.rows[0].total_services,
     });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+    } catch (err) {
+      console.error('[Dashboard] enhanced-stats failed:', err.message);
+      res.status(500).json({ error: 'خطأ داخلي — تم تسجيل الحادثة', code: 'INTERNAL_ERROR' });
+    }
 });
 
-app.get('/api/dashboard/time-series', async (req, res) => {
+app.get('/api/dashboard/time-series', async (_req, res) => {
   try {
     const [monthlyEntities, monthlyMembers, monthlyViolations, byType, byGovernorate] = await Promise.all([
       pool.query(`
@@ -273,7 +395,8 @@ app.get('/api/dashboard/time-series', async (req, res) => {
 
     res.json({ monthly, byType: byType.rows, byGovernorate: byGovernorate.rows });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[Dashboard] time-series failed:', err.message);
+    res.status(500).json({ error: 'خطأ داخلي — تم تسجيل الحادثة', code: 'INTERNAL_ERROR' });
   }
 });
 
@@ -336,7 +459,7 @@ app.get('/api/reports/scheduled/:type', async (req, res) => {
     const period = req.query.period || 'daily';
     const report = await generateScheduledReport(type, period);
     res.json(report);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error('[Reports] scheduled/:type failed:', err.message); res.status(500).json({ error: 'خطأ داخلي — تم تسجيل الحادثة', code: 'INTERNAL_ERROR' }); }
 });
 
 app.get('/api/reports/scheduled', async (_req, res) => {
@@ -344,7 +467,7 @@ app.get('/api/reports/scheduled', async (_req, res) => {
     const types = ['summary', 'compliance', 'violations', 'inspections'];
     const reports = await Promise.all(types.map(t => generateScheduledReport(t, 'daily')));
     res.json({ reports, cachedAt: new Date().toISOString() });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { console.error('[Reports] scheduled failed:', err.message); res.status(500).json({ error: 'خطأ داخلي — تم تسجيل الحادثة', code: 'INTERNAL_ERROR' }); }
 });
 
 // Generate reports every 6 hours in background
@@ -356,28 +479,92 @@ const schedulerInterval = setInterval(async () => {
   } catch (e) { console.error('[Scheduler] Error:', e.message); }
 }, 6 * 60 * 60 * 1000);
 
-function gracefulShutdown() {
-  console.log('\n[Server] Shutting down gracefully...');
+function gracefulShutdown(signal) {
+  console.log(`\n[Server] ${signal} — shutting down gracefully...`);
   clearInterval(schedulerInterval);
-  process.exit(0);
+  // إغلاق تجمع قاعدة البيانات بأمان مع مهلة قصوى
+  const forceTimer = setTimeout(() => process.exit(0), 8000);
+  import('./middleware/shared.js').then(({ pool }) => pool.end())
+    .catch(() => {})
+    .finally(() => { clearTimeout(forceTimer); process.exit(0); });
 }
 
-process.on('SIGINT', gracefulShutdown);
-process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('uncaughtException', (err) => {
+  console.error('[Server] UNCAUGHT EXCEPTION:', err.message);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[Server] UNHANDLED REJECTION:', reason);
+});
+
+// ===================== Metrics & Observability =====================
+app.get('/api/metrics', metricsEndpoint);
+
+// ===================== Version (تتبع مؤسسي للإصدار) =====================
+import { existsSync, readFileSync } from 'fs';
+const pkgPath = join(__dirname, '..', 'package.json');
+const APP_VERSION = (() => {
+  try { return JSON.parse(readFileSync(pkgPath, 'utf8')).version || '0.0.0'; }
+  catch { return '0.0.0'; }
+})();
+app.get('/api/version', (_req, res) => {
+  res.json({
+    version: APP_VERSION,
+    environment: process.env.NODE_ENV || 'development',
+    authEnabled: AUTH_ENABLED,
+    nodeVersion: process.version,
+    uptimeSeconds: Math.floor(process.uptime()),
+  });
+});
+
+// ===================== Production Static Serving — الواجهة الرسمية من نفس الخادم =====================
+// عند توفر نسخة الإنتاج (dist/) تُخدم مباشرة مع دعم توجيه SPA الكامل
+const DIST_DIR = join(__dirname, '..', 'dist');
+if (existsSync(join(DIST_DIR, 'index.html'))) {
+  app.use(express.static(DIST_DIR, {
+    maxAge: '1y',            // أصول بصمات (hash) — تخزين طويل الأمد
+    index: false,            // نتحكم بـ index.html يدوياً
+    setHeaders(res, filePath) {
+      if (filePath.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache');
+      else if (/\.woff2?$/.test(filePath)) res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    },
+  }));
+  // SPA fallback — أي مسار GET غير API يعيد تطبيق الواجهة (متوافق مع Express 5)
+  app.use((req, res, next) => {
+    if (req.method === 'GET' && !req.path.startsWith('/api')) {
+      res.setHeader('Cache-Control', 'no-cache');
+      return res.sendFile(join(DIST_DIR, 'index.html'));
+    }
+    next();
+  });
+}
 
 // ===================== Catch-all =====================
 app.use((_req, res) => {
-  res.status(404).json({ error: 'المسار غير موجود' });
+  res.status(404).json({ error: 'المسار غير موجود', code:'NOT_FOUND' });
 });
+app.use(errorHandler);
 
 // ===================== Start Server (when not running as Vercel serverless) =====================
 if (process.env.VERCEL !== '1') {
-  app.listen(PORT, () => {
+  // خلف وكيل عكسي (nginx/IIS) في الإنتاج — يضمن req.ip الصحيح للمحدد والتدقيق
+  if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1);
+  const server = app.listen(PORT, () => {
     console.log(`\n🏛️  UnionSphere Enterprise Server`);
     console.log(`📡 Running on http://localhost:${PORT}`);
     console.log(`🔐 Auth: ${AUTH_ENABLED ? 'ENABLED' : 'DISABLED (dev mode)'}`);
     console.log(`📊 Health: http://localhost:${PORT}/api/health`);
-    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}\n`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`📦 Version: ${APP_VERSION}\n`);
+  });
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`[Server] المنفذ ${PORT} قيد الاستخدام — أوقف العملية القديمة أو غيّر PORT`);
+      process.exit(1);
+    }
+    console.error('[Server] listen error:', err.message);
+    process.exit(1);
   });
 }
 

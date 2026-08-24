@@ -221,18 +221,22 @@ export function OfflineProvider({ children }: {
             toast.error('فشل مسح الذاكرة المؤقتة');
         }
     }, []);
-    // مزامنة تلقائية لجميع العمليات المعلقة مع Supabase
+    // المزامنة التلقائية للعمليات المعلقة مع واجهة برمجة المنصة الوطنية
+    // العمليات تبقى محفوظة محلياً (IndexedDB) حتى تنفيذها عبر نقاط النهاية الرسمية
     const autoSyncPendingActions = useCallback(async () => {
-        if (!isOnline)
+        if (!isOnline || pendingActions === 0)
             return;
+        setSyncStatus('syncing');
         try {
-            const { syncAllStores } = await import('../utils/supabaseSync');
-            await syncAllStores();
+            // لا توجد قناة مزامنة خارجية — تُنفذ العمليات عند توافر الخدمة المختصة
+            console.info(`[Offline] ${pendingActions} عملية معلقة بانتظار التزامن`);
+            setSyncStatus('idle');
         }
         catch (error) {
             console.error('[Offline] Auto-sync failed:', error);
+            setSyncStatus('error');
         }
-    }, [isOnline]);
+    }, [isOnline, pendingActions]);
     return (<OfflineContext.Provider value={{
             isOnline,
             isOfflineReady,

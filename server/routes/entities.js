@@ -1,6 +1,6 @@
 import express from 'express';
-import entityService from '../../src/app/services/entityService.js';
-import { paginate } from '../middleware/shared.js';
+import { pool, paginate, countQuery } from '../middleware/shared.js';
+import { validate, schemas } from '../middleware/validation.js';
 
 const router = express.Router();
 
@@ -9,15 +9,26 @@ const router = express.Router();
 
 router.get('/api/entities', async (req, res) => {
   try {
-    const result = await entityService.getEntities({
-      entity_type: req.query.entity_type as string,
-      status: req.query.status as string,
-      governorate: req.query.governorate as string,
-      search: req.query.search as string,
-      page: parseInt(req.query.page) || 1,
-      limit: parseInt(req.query.limit) || 20,
-    });
-    res.json({ data: result.data, total: result.total, page: result.page, limit: result.limit });
+    const { limit, page, offset } = paginate(req);
+    const { entity_type, status, governorate, search } = req.query;
+    const conditions = ['deleted_at IS NULL'];
+    const params = [];
+    let idx = 1;
+    if (entity_type) { conditions.push(`entity_type = $${idx++}`); params.push(entity_type); }
+    if (status) { conditions.push(`status = $${idx++}`); params.push(status); }
+    if (governorate) { conditions.push(`governorate = $${idx++}`); params.push(governorate); }
+    if (search) {
+      conditions.push(`(name_ar ILIKE $${idx} OR name_en ILIKE $${idx} OR unified_code ILIKE $${idx} OR national_number ILIKE $${idx} OR registration_number ILIKE $${idx})`);
+      params.push(`%${search}%`);
+      idx++;
+    }
+    const where = 'WHERE ' + conditions.join(' AND ');
+    const total = await pool.query(`SELECT COUNT(*)::int AS count FROM organizational_entities ${where}`, params);
+    const r = await pool.query(
+      `SELECT * FROM organizational_entities ${where} ORDER BY created_at DESC LIMIT $${idx++} OFFSET $${idx++}`,
+      [...params, limit, offset]
+    );
+    res.json({ data: r.rows, total: total.rows[0].count, page, limit });
   } catch (err) {
     console.error('Entities list error:', err);
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
@@ -96,7 +107,7 @@ router.get('/api/entities/:id/overview', async (req, res) => {
   }
 });
 
-router.post('/api/entities', async (req, res) => {
+router.post('/api/entities', validate(schemas.entityCreate), async (req, res) => {
   try {
     const d = req.body;
     const cols = [
@@ -173,8 +184,11 @@ router.delete('/api/entities/:id', async (req, res) => {
   }
 });
 
-// ===================== Commercial Establishments (v1) =====================
+// ===================== Commercial Establishments (v1) — DEPRECATED TD-015 =====================
 router.get('/api/commercial', async (req, res) => {
+  res.setHeader('Deprecation', 'true');
+  res.setHeader('Sunset', '2026-12-31');
+  res.setHeader('Link', '</api/commercial-establishments>; rel="successor-version"');
   try {
     const { limit, page, offset } = paginate(req);
     const { search, status, sector, classification, governorate } = req.query;
@@ -337,7 +351,7 @@ router.get('/api/commercial-establishments', async (req, res) => {
       [...params, limit, offset]
     )).rows;
     res.json({ data: rows, total: total.rows[0].count, page, limit });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.post('/api/commercial-establishments', async (req, res) => {
@@ -352,7 +366,7 @@ router.post('/api/commercial-establishments', async (req, res) => {
       `INSERT INTO commercial_establishments (${fields.join(',')}) VALUES (${placeholders.join(',')}) RETURNING *`, values
     );
     res.status(201).json({ success: true, data: r.rows[0] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.put('/api/commercial-establishments/:id', async (req, res) => {
@@ -366,15 +380,15 @@ router.put('/api/commercial-establishments/:id', async (req, res) => {
     const r = await pool.query(`UPDATE commercial_establishments SET ${cols.join(', ')} WHERE id = $${vals.length} RETURNING *`, vals);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, data: r.rows[0] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.delete('/api/commercial-establishments/:id', async (req, res) => {
   try {
-    const r = await pool.query('DELETE FROM commercial_establishments WHERE id = $1 RETURNING id', [req.params.id]);
-    if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
+    const r = await pool.query('UPDATE commercial_establishments SET deleted_at=NOW(), deleted_by=$1 WHERE id=$2 AND deleted_at IS NULL RETURNING id', [req.user?.id||null, req.params.id]);
+    if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود', code:'NOT_FOUND' });
     res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ داخلي', code: 'INTERNAL_ERROR' }); }
 });
 
 // ===================== Enterprise Occupation Links =====================
@@ -399,7 +413,7 @@ router.get('/api/enterprise-occupation-links', async (req, res) => {
       [...params, limit, offset]
     )).rows;
     res.json({ data: rows, total: total.rows[0].count, page, limit });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.post('/api/enterprise-occupation-links', async (req, res) => {
@@ -414,7 +428,7 @@ router.post('/api/enterprise-occupation-links', async (req, res) => {
       fields.map(c => d[c])
     );
     res.status(201).json({ success: true, data: r.rows[0] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.put('/api/enterprise-occupation-links/:id', async (req, res) => {
@@ -429,7 +443,7 @@ router.put('/api/enterprise-occupation-links/:id', async (req, res) => {
     const r = await pool.query(`UPDATE enterprise_occupation_links SET ${cols.join(', ')} WHERE id = $${vals.length} RETURNING *`, vals);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, data: r.rows[0] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.delete('/api/enterprise-occupation-links/:id', async (req, res) => {
@@ -437,7 +451,7 @@ router.delete('/api/enterprise-occupation-links/:id', async (req, res) => {
     const r = await pool.query('UPDATE enterprise_occupation_links SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 // ===================== Entity Relationships =====================
@@ -464,7 +478,7 @@ router.get('/api/entity-relationships', async (req, res) => {
       [...params, limit, offset]
     )).rows;
     res.json({ data: rows, total: total.rows[0].count, page, limit });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.post('/api/entity-relationships', async (req, res) => {
@@ -481,7 +495,7 @@ router.post('/api/entity-relationships', async (req, res) => {
       fields.map(c => c === 'metadata' ? JSON.stringify(d[c]) : d[c])
     );
     res.status(201).json({ success: true, data: r.rows[0] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.put('/api/entity-relationships/:id', async (req, res) => {
@@ -496,7 +510,7 @@ router.put('/api/entity-relationships/:id', async (req, res) => {
     const r = await pool.query(`UPDATE entity_relationships SET ${cols.join(', ')} WHERE id = $${vals.length} RETURNING *`, vals);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, data: r.rows[0] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.delete('/api/entity-relationships/:id', async (req, res) => {
@@ -504,7 +518,7 @@ router.delete('/api/entity-relationships/:id', async (req, res) => {
     const r = await pool.query('UPDATE entity_relationships SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 // ===================== Workflow Engine =====================

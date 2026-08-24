@@ -1,6 +1,7 @@
 /**
  * Security Utilities — أدوات الأمان المؤسسية
  * Rate Limiting · Session Management · Input Sanitization · Audit
+ * Role-Based Access Control (RBAC)
  */
 
 // ============================================================
@@ -104,9 +105,10 @@ export interface SessionData {
   lastActivity: number;
   expiresAt: number;
   sessionId: string;
+  role?: string;
 }
 
-export function createSession(userId: string, email: string, userType: 'ministry' | 'organization'): SessionData {
+export function createSession(userId: string, email: string, userType: 'ministry' | 'organization', role?: string): SessionData {
   const now = Date.now();
   const session: SessionData = {
     userId,
@@ -116,6 +118,7 @@ export function createSession(userId: string, email: string, userType: 'ministry
     lastActivity: now,
     expiresAt: now + SESSION_TIMEOUT_MS,
     sessionId: generateSessionId(),
+    role,
   };
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   return session;
@@ -129,7 +132,7 @@ export function getSession(): SessionData | null {
     if (demoRaw || token) {
       try {
         const u = demoRaw ? JSON.parse(demoRaw) : { id: 'admin', email: 'ministry@yemen.gov.ye', userType: 'ministry' };
-        return createSession(u.id, u.email, u.userType || 'ministry');
+        return createSession(u.id, u.email, u.userType || 'ministry', u.role);
       } catch {
         return null;
       }
@@ -202,7 +205,7 @@ const XSS_PATTERNS = [
 ];
 
 const SQL_PATTERNS = [
-  /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|TRUNCATE|EXEC|UNION|HAVING|GROUP BY)\b)/gi,
+  /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|TRUNCATE|EXEC|UNION|HAVING|GROUP\s+BY)\b)/gi,
   /--[^\n]*/g,
   /\/\*[\s\S]*?\*\//g,
   /;\s*(SELECT|INSERT|UPDATE|DELETE|DROP)/gi,
@@ -324,7 +327,10 @@ export function checkPasswordStrength(password: string): PasswordStrength {
     { met: /[A-Z]/.test(password), text: 'حرف كبير واحد على الأقل' },
     { met: /[a-z]/.test(password), text: 'حرف صغير واحد على الأقل' },
     { met: /\d/.test(password), text: 'رقم واحد على الأقل' },
-    { met: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password), text: 'رمز خاص واحد على الأقل' },
+    { 
+      met: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password), 
+      text: 'رمز خاص واحد على الأقل' 
+    },
   ];
 
   const score = requirements.filter(r => r.met).length as 0 | 1 | 2 | 3 | 4;
@@ -366,9 +372,9 @@ export function escapeHTML(str: string): string {
     '<': '&lt;',
     '>': '&gt;',
     '"': '&quot;',
-    "'": '&#x27;',
+    "'": '&#39;',
   };
-  return str.replace(/[&<>"']/g, m => map[m]);
+  return str.replace(/[&<>"']/g, m => map[m] ?? m);
 }
 
 // ============================================================
@@ -397,5 +403,104 @@ export function throttle<T extends (...args: unknown[]) => unknown>(
       lastCall = now;
       fn(...args);
     }
+  };
+}
+
+// ============================================================
+// Role-Based Access Control (RBAC) Configuration
+// ============================================================
+
+export interface Role {
+  id: string;
+  name: string;
+  permissions: string[];
+  screenAccess: { [key: string]: boolean | string[] };
+}
+
+// Define core roles based on the login screen roles
+export const ROLES: Role[] = [
+  {
+    id: 'ministry-admin',
+    name: 'وزير/مدير عام',
+    permissions: ['view_all', 'create', 'update', 'delete'],
+    screenAccess: {
+      '/ministry/members': true,
+      '/ministry/establishments': true,
+      '/ministry/reports': true
+    }
+  },
+  {
+    id: 'organization-owner',
+    name: 'مالك المنشأة',
+    permissions: ['view', 'update', 'export'],
+    screenAccess: {
+      '/ministry/establishments': true,
+      '/ministry/equipment': true,
+      '/ministry/contracts': true
+    }
+  },
+  {
+    id: 'worker',
+    name: 'عامل',
+    permissions: ['view', 'update'],
+    screenAccess: {
+      '/ministry/members': true,
+      '/ministry/equipment': true
+    }
+  },
+  {
+    id: 'office-staff',
+    name: 'موظف مكتب',
+    permissions: ['view'],
+    screenAccess: {
+      '/ministry/reports': true
+    }
+  }
+];
+
+// ============================================================
+// Role Validation Middleware
+// ============================================================
+export function validateRole(_role: string, requiredPermissions: string[] = [], screenPath?: string): boolean {
+  const userRole = getCurrentUserRole();
+  
+  // Check if user has required permissions
+  if (requiredPermissions.length > 0 && !userRole.permissions.some(p => requiredPermissions.includes(p))) {
+    return false;
+  }
+  
+  // Check screen access rules
+  if (screenPath && !userRole.screenAccess[screenPath]) {
+    return false;
+  }
+  
+  return true;
+}
+
+// ============================================================
+// Helper: Get current user role from session
+// ============================================================
+export function getCurrentUserRole(): Role {
+  const session = getSession();
+  if (!session) return ROLES.find(r => r.id === 'guest') || ROLES[0];
+  
+  // In real implementation, this would map user ID to role
+  // For demo, return based on userType
+  if (session.userType === 'ministry') return ROLES[0];
+  if (session.userType === 'organization') return ROLES[1];
+  return ROLES.find(r => r.id === 'worker') || ROLES[2];
+}
+
+// ============================================================
+// Screen Access Decorator (non-JSX version)
+// ============================================================
+export function withRoleAccess(role: string, screenPath: string) {
+  return (component: any) => {
+    return (_props: any) => {
+      if (!validateRole(role, [], screenPath)) {
+        return document.createElement('div');
+      }
+      return component;
+    };
   };
 }

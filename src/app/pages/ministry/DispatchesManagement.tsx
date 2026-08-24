@@ -35,154 +35,8 @@ interface Dispatch {
     updatedAt: string;
 }
 // ============================================================
-// البيانات التجريبية
+// قوائم حية تُجلب من السجلات الرسمية عبر الخادم
 // ============================================================
-const ENTITY_LIST = [
-    'نقابة المعلمين اليمنيين',
-    'نقابة المهندسين',
-    'نقابة الأطباء اليمنيين',
-    'اتحاد عمال النقل',
-    'نقابة الصحفيين',
-    'نقابة المحامين',
-    'اتحاد موظفي الدولة',
-    'نقابة عمال البناء',
-];
-const WORKER_LIST = [
-    'أحمد محمد العلي',
-    'فهد عبدالله الشمري',
-    'خالد سعيد القحطاني',
-    'محمد عيسى الحربي',
-    'عبدالرحمن فهد المطيري',
-    'سلطان ناصر العتيبي',
-    'يوسف أحمد الزهراني',
-    'عمر حسن البلوي',
-];
-const MOCK_DISPATCHES: Dispatch[] = [
-    {
-        id: '1',
-        dispatchNumber: 'DSP-2026-001',
-        sendingEntity: 'نقابة عمال البناء',
-        receivingEntity: 'اتحاد عمال النقل',
-        workerName: 'أحمد محمد العلي',
-        workerId: 'W-1001',
-        dispatchDate: '2026-01-15',
-        expectedReturnDate: '2026-07-15',
-        status: 'in_progress',
-        purpose: 'العمل في مشروع بناء طريق رئيسي',
-        notes: 'يحتاج إلى تدريب إضافي على معدات الثقل',
-        location: 'صنعاء - طريق المطار',
-        createdAt: '2026-01-10T08:00:00Z',
-        updatedAt: '2026-01-15T10:30:00Z',
-    },
-    {
-        id: '2',
-        dispatchNumber: 'DSP-2026-002',
-        sendingEntity: 'نقابة الصحفيين',
-        receivingEntity: 'نقابة المحامين',
-        workerName: 'فهد عبدالله الشمري',
-        workerId: 'W-1002',
-        dispatchDate: '2026-02-01',
-        expectedReturnDate: '2026-08-01',
-        status: 'approved',
-        purpose: 'دعم إعلامي لحملة التوعية القانونية',
-        location: 'عدن - مقر النقابة',
-        createdAt: '2026-01-28T09:15:00Z',
-        updatedAt: '2026-02-01T14:00:00Z',
-    },
-    {
-        id: '3',
-        dispatchNumber: 'DSP-2026-003',
-        sendingEntity: 'اتحاد موظفي الدولة',
-        receivingEntity: 'نقابة المعلمين اليمنيين',
-        workerName: 'خالد سعيد القحطاني',
-        workerId: 'W-1003',
-        dispatchDate: '2026-01-20',
-        expectedReturnDate: '2026-04-20',
-        actualReturnDate: '2026-04-18',
-        status: 'completed',
-        purpose: 'تبادل الخبرات التعليمية',
-        notes: 'تمت الإعادة قبل الموعد المحدد',
-        location: 'تعز - مديرية صبر',
-        createdAt: '2026-01-15T11:00:00Z',
-        updatedAt: '2026-04-18T16:45:00Z',
-    },
-    {
-        id: '4',
-        dispatchNumber: 'DSP-2026-004',
-        sendingEntity: 'نقابة المهندسين',
-        receivingEntity: 'نقابة عمال النقل',
-        workerName: 'محمد عيسى الحربي',
-        workerId: 'W-1004',
-        dispatchDate: '2026-03-10',
-        status: 'pending_approval',
-        purpose: 'تطوير مشروع بنية تحتية للنقل',
-        location: 'إب - مدينة إب',
-        createdAt: '2026-03-05T08:30:00Z',
-        updatedAt: '2026-03-10T09:00:00Z',
-    },
-    {
-        id: '5',
-        dispatchNumber: 'DSP-2026-005',
-        sendingEntity: 'نقابة الأطباء اليمنيين',
-        receivingEntity: 'اتحاد موظفي الدولة',
-        workerName: 'عبدالرحمن فهد المطيري',
-        workerId: 'W-1005',
-        dispatchDate: '2026-04-01',
-        status: 'draft',
-        purpose: 'حملة طبية ميدانية',
-        notes: 'يحتاج إلى موافقة الوزارة',
-        location: 'حضرموت - سيئون',
-        createdAt: '2026-03-28T10:00:00Z',
-        updatedAt: '2026-04-01T08:00:00Z',
-    },
-    {
-        id: '6',
-        dispatchNumber: 'DSP-2026-006',
-        sendingEntity: 'نقابة المحامين',
-        receivingEntity: 'نقابة الصحفيين',
-        workerName: 'سلطان ناصر العتيبي',
-        workerId: 'W-1006',
-        dispatchDate: '2026-02-15',
-        expectedReturnDate: '2026-05-15',
-        status: 'cancelled',
-        purpose: 'إعداد تقرير قانوني مشترك',
-        notes: 'تم الإلغاء بطلب من الجهة المستقبلة',
-        location: 'صنعاء',
-        createdAt: '2026-02-10T13:20:00Z',
-        updatedAt: '2026-02-15T11:00:00Z',
-    },
-    {
-        id: '7',
-        dispatchNumber: 'DSP-2026-007',
-        sendingEntity: 'اتحاد عمال النقل',
-        receivingEntity: 'نقابة المهندسين',
-        workerName: 'يوسف أحمد الزهراني',
-        workerId: 'W-1007',
-        dispatchDate: '2026-05-01',
-        expectedReturnDate: '2026-11-01',
-        status: 'suspended',
-        purpose: 'إشراف على مشروع تحديث شبكة الطرق',
-        notes: 'معلق مؤقتاً لانتظار موافقة الإدارة',
-        location: 'المكلا',
-        createdAt: '2026-04-25T07:45:00Z',
-        updatedAt: '2026-05-01T09:30:00Z',
-    },
-    {
-        id: '8',
-        dispatchNumber: 'DSP-2026-008',
-        sendingEntity: 'نقابة عمال البناء',
-        receivingEntity: 'نقابة الأطباء اليمنيين',
-        workerName: 'عمر حسن البلوي',
-        workerId: 'W-1008',
-        dispatchDate: '2026-06-01',
-        expectedReturnDate: '2026-12-01',
-        status: 'in_progress',
-        purpose: 'فحص صحي شامل لعمال البناء',
-        location: 'لحج - المخا',
-        createdAt: '2026-05-28T12:00:00Z',
-        updatedAt: '2026-06-01T08:15:00Z',
-    },
-];
 // ============================================================
 // الثوابت
 // ============================================================
@@ -293,11 +147,37 @@ async function deleteDispatch(id: string): Promise<void> {
     if (!response.ok)
         throw new Error('فشل في حذف الإرسالية');
 }
+async function fetchEntityNames(): Promise<string[]> {
+    try {
+        const response = await fetch('/api/entities?limit=200');
+        if (!response.ok) return [];
+        const data = await response.json();
+        const rows = data.data ?? [];
+        return rows.map((r: any) => r.name_ar).filter(Boolean);
+    }
+    catch {
+        return [];
+    }
+}
+async function fetchMemberNames(): Promise<string[]> {
+    try {
+        const response = await fetch('/api/members?limit=500');
+        if (!response.ok) return [];
+        const data = await response.json();
+        const rows = data.data ?? [];
+        return rows.map((r: any) => r.full_name).filter(Boolean);
+    }
+    catch {
+        return [];
+    }
+}
 // ============================================================
 // المكوّن الرئيسي
 // ============================================================
 export default function DispatchesManagement() {
     const [dispatches, setDispatches] = useState<Dispatch[]>([]);
+    const [entityOptions, setEntityOptions] = useState<string[]>([]);
+    const [workerOptions, setWorkerOptions] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
     const [editingDispatch, setEditingDispatch] = useState<Dispatch | null>(null);
@@ -318,14 +198,15 @@ export default function DispatchesManagement() {
             }
             catch (error) {
                 console.error('خطأ في تحميل الإرساليات:', error);
-                setDispatches(MOCK_DISPATCHES);
-                toast.error('تعذر الاتصال بالخادم، يتم عرض البيانات التجريبية');
+                toast.error('تعذر تحميل الإرساليات من الخادم');
             }
             finally {
                 setLoading(false);
             }
         };
         loadData();
+        fetchEntityNames().then(setEntityOptions);
+        fetchMemberNames().then(setWorkerOptions);
     }, []);
     // ============================================================
     // التصفية
@@ -839,7 +720,7 @@ export default function DispatchesManagement() {
                   </label>
                   <select name="sendingEntity" value={formValues.sendingEntity} onChange={handleFormChange} className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-primary bg-card ${formErrors.sendingEntity ? 'border-error' : 'border-border'}`}>
                     <option value="">اختر المؤسسة المرسلة...</option>
-                    {ENTITY_LIST.map(e => <option key={e} value={e}>{e}</option>)}
+                    {entityOptions.map(e => <option key={e} value={e}>{e}</option>)}
                   </select>
                   {formErrors.sendingEntity && <p className="text-error text-xs mt-1">{formErrors.sendingEntity}</p>}
                 </div>
@@ -851,7 +732,7 @@ export default function DispatchesManagement() {
                   </label>
                   <select name="receivingEntity" value={formValues.receivingEntity} onChange={handleFormChange} className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-primary bg-card ${formErrors.receivingEntity ? 'border-error' : 'border-border'}`}>
                     <option value="">اختر المؤسسة المستقبلة...</option>
-                    {ENTITY_LIST.map(e => <option key={e} value={e}>{e}</option>)}
+                    {entityOptions.map(e => <option key={e} value={e}>{e}</option>)}
                   </select>
                   {formErrors.receivingEntity && <p className="text-error text-xs mt-1">{formErrors.receivingEntity}</p>}
                 </div>
@@ -863,7 +744,7 @@ export default function DispatchesManagement() {
                   </label>
                   <select name="workerName" value={formValues.workerName} onChange={handleFormChange} className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-primary bg-card ${formErrors.workerName ? 'border-error' : 'border-border'}`}>
                     <option value="">اختر العامل...</option>
-                    {WORKER_LIST.map(w => <option key={w} value={w}>{w}</option>)}
+                    {workerOptions.map(w => <option key={w} value={w}>{w}</option>)}
                   </select>
                   {formErrors.workerName && <p className="text-error text-xs mt-1">{formErrors.workerName}</p>}
                 </div>

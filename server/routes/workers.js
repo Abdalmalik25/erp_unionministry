@@ -14,7 +14,7 @@ router.get('/api/members', async (req, res) => {
     let idx = 1;
     if (entity_id) { where += ` AND m.entity_id = $${idx++}`; params.push(entity_id); }
     if (status) { where += ` AND m.status = $${idx++}`; params.push(status); }
-    if (search) { where += ` AND (m.full_name ILIKE $${idx} OR m.national_id ILIKE $${idx})`; params.push(`%${search}%`); idx++; }
+    if (search) { where += ` AND (m.full_name ILIKE $${idx} OR m.national_id ILIKE $${idx} OR m.member_number ILIKE $${idx})`; params.push(`%${search}%`); idx++; }
     const { sql: _qs, params: _qp } = countQuery('members m', where, params);
 
     const total = await pool.query(_qs, _qp);
@@ -115,22 +115,33 @@ router.put('/api/members/:id/restore', async (req, res) => {
 router.get('/api/worker-profiles', async (req, res) => {
   try {
     const { limit, page, offset, includeDeleted } = paginate(req);
-    const { enterprise_id, status } = req.query;
+    const { enterprise_id, status, search } = req.query;
     let where = '1=1';
     where += softDeleteFilter('worker_profiles', includeDeleted, 'worker_profiles');
     const params = [];
     let idx = 1;
     if (enterprise_id) { where += ` AND current_enterprise_id = $${idx++}`; params.push(enterprise_id); }
     if (status) { where += ` AND employment_status = $${idx++}`; params.push(status); }
+    if (search) {
+      where += ` AND (worker_profiles.national_number ILIKE $${idx} OR EXISTS (
+        SELECT 1 FROM members sm WHERE sm.id = worker_profiles.member_id
+        AND (sm.full_name ILIKE $${idx} OR sm.national_id ILIKE $${idx} OR sm.member_number ILIKE $${idx})))`;
+      params.push(`%${search}%`);
+      idx++;
+    }
     const { sql: _qs, params: _qp } = countQuery('worker_profiles', where, params);
 
     const total = await pool.query(_qs, _qp);
     const r = await pool.query(
-      `SELECT * FROM worker_profiles WHERE ${where} ORDER BY created_at DESC LIMIT $${idx++} OFFSET $${idx++}`,
+      `SELECT worker_profiles.*, m.full_name AS worker_name, m.national_id AS person_national_id
+       FROM worker_profiles
+       LEFT JOIN members m ON m.id = worker_profiles.member_id
+       WHERE ${where} ORDER BY worker_profiles.created_at DESC LIMIT $${idx++} OFFSET $${idx++}`,
       [...params, limit, offset]
     );
     res.json({ data: r.rows, total: total.rows[0].count, page, limit });
   } catch (err) {
+    console.error('Worker profiles list error:', err);
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
 });

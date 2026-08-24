@@ -11,6 +11,7 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { Modal } from '../../components/ui/Modal';
 import { toast } from 'sonner';
 import { logAudit } from '../../utils/security';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface SystemSetting {
     setting_key: string;
@@ -95,6 +96,7 @@ const EMPTY_COMM = {
 };
 
 export function SystemAdministration() {
+    const { user } = useAuth();
     const [activeTab, setActiveTab] = useState('settings');
     const [settings, setSettings] = useState<SystemSetting[]>([]);
     const [permissions, setPermissions] = useState<RolePermission[]>([]);
@@ -136,7 +138,7 @@ export function SystemAdministration() {
             const r = await fetch('/api/settings', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ settings: payload, updated_by: 'admin' }),
+                body: JSON.stringify({ settings: payload, updated_by: user?.email || user?.id || 'system' }),
             });
             if (r.ok) {
                 toast.success('تم حفظ الإعدادات بنجاح');

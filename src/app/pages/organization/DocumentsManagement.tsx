@@ -8,6 +8,7 @@ import { FileText, Plus, Search, Download, Edit, Trash2, Eye, X } from 'lucide-r
 import { toast } from '../../components/ui/Toast';
 import { logAudit } from '../../utils/security';
 import { exportReportToExcel } from '../../components/enterprise/PrintExportManager';
+import { fetchList } from '../../utils/api';
 
 interface Document {
   document_id: string;
@@ -42,12 +43,8 @@ export function OrganizationDocumentsManagement() {
   const fetchDocuments = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await fetch('/api/documents');
-      if (r.ok) {
-        const data = await r.json();
-        setDocuments(Array.isArray(data) ? data : data.data || []);
-        logAudit({ action: 'view', resource: 'organization_documents' });
-      }
+      setDocuments(await fetchList('/api/documents'));
+      logAudit({ action: 'view', resource: 'organization_documents' });
     } catch { toast.error('خطأ في تحميل الوثائق'); }
     finally { setLoading(false); }
   }, []);

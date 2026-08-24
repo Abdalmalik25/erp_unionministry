@@ -2,18 +2,26 @@
 import pg from 'pg';
 
 // Lazy pool — created on first access so DATABASE_URL is loaded by the time it's needed
-const DEFAULT_NEON_DB = 'postgresql://neondb_owner:npg_dIXtW6LQw8sH@ep-shiny-wind-ai4w5o0l-pooler.c-4.us-east-1.aws.neon.tech/unionministrydb?sslmode=require';
 let _pool = null;
 function getPool() {
   if (!_pool) {
-    const connStr = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL || DEFAULT_NEON_DB;
+    const connStr = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL;
+    if (!connStr) {
+      throw new Error('[DB] DATABASE_URL / NEON_DATABASE_URL is not configured — refusing to use embedded fallback (SECURITY)');
+    }
+    const useSSL = process.env.DB_SSL !== 'false';
     _pool = new pg.Pool({
       connectionString: connStr,
-      ssl: { rejectUnauthorized: false },
-      max: 20,
-      min: 2,
+      ssl: useSSL ? { rejectUnauthorized: true } : false,
+      max: 10,
+      min: 0,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
+      // Neon serverless cold-starts can exceed 2s — 15s prevents spurious failures
+      connectionTimeoutMillis: parseInt(process.env.DB_CONNECT_TIMEOUT_MS || '15000', 10),
+      query_timeout: 30000,
+      statement_timeout: 30000,
+      keepAlive: true,
+      allowExitOnIdle: false,
     });
     _pool.on('error', (err) => console.error('Database pool error:', err));
     _pool.on('connect', () => console.log('[DB] New connection established'));
@@ -58,7 +66,7 @@ const SOFT_DELETE_TABLES = new Set([
   'services', 'isic4_classifications', 'worker_reduction_requests',
   'directorates', 'ministry_offices', 'inspectors', 'ministry_employees',
   'inspection_criteria', 'work_injuries', 'insurance_records', 'irregular_workers',
-  'health_fitness_certificates', 'experience_certificates', 'worker_procedures',
+  'health_fitness_certificates', 'experience_certificates', 'work_procedures',
 ]);
 
 async function softDelete(table, id, userId) {
@@ -75,7 +83,7 @@ async function softDelete(table, id, userId) {
 async function auditLog(action, resource, userId, details = {}) {
   try {
     await pool.query(
-      `INSERT INTO audit_log (action, resource_type, user_id, details, created_at) VALUES ($1, $2, $3, $4, NOW())`,
+      `INSERT INTO audit_log (action, table_name, actor_id, notes, created_at) VALUES ($1, $2, $3, $4, NOW())`,
       [action, resource, userId || null, JSON.stringify(details)]
     );
   } catch (e) { console.error('[Audit] Write failed:', e.message); }

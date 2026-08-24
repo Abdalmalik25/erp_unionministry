@@ -1,3 +1,4 @@
+import '../lib/loadEnv.js';
 import express from 'express';
 import { pool, paginate, countQuery, softDeleteFilter, auditLog } from '../middleware/shared.js';
 import { hashPassword, verifyPassword, signToken } from '../middleware/auth.js';
@@ -39,27 +40,121 @@ router.get('/api/health', async (_req, res) => {
   }
 });
 
+// ===================== الهوية المؤسسية العامة (بدون مصادقة — لشاشة الدخول والترويسة) =====================
+router.get('/api/system/branding', async (_req, res) => {
+  try {
+    const r = await pool.query(
+      `SELECT setting_key, setting_value FROM system_settings
+       WHERE setting_key = ANY($1::text[])`,
+      [['org_name_ar', 'org_name_en', 'org_country', 'system_name_ar', 'legal_basis']]);
+    const map = Object.fromEntries(r.rows.map(x => [x.setting_key, x.setting_value]));
+    res.json({
+      ministryNameAr: map.org_name_ar || 'وزارة الشؤون الاجتماعية والعمل',
+      ministryNameEn: map.org_name_en || 'Ministry of Social Affairs and Labor',
+      countryAr: map.org_country || 'الجمهورية اليمنية',
+      systemNameAr: map.system_name_ar || 'نظام قطاع العمل — المنظومة الإلكترونية الموحدة',
+      legalBasis: map.legal_basis || 'قانون العمل رقم 40 لسنة 2025 ولائحه التنفيذية',
+    });
+  } catch (err) {
+    // حتى عند فشل قاعدة البيانات تعود الهوية الرسمية الافتراضية
+    res.json({
+      ministryNameAr: 'وزارة الشؤون الاجتماعية والعمل',
+      ministryNameEn: 'Ministry of Social Affairs and Labor',
+      countryAr: 'الجمهورية اليمنية',
+      systemNameAr: 'نظام قطاع العمل — المنظومة الإلكترونية الموحدة',
+      legalBasis: 'قانون العمل رقم 40 لسنة 2025 ولائحه التنفيذية',
+      degraded: true,
+    });
+  }
+});
+
+// ===================== السياسات والعتبات الرسمية (عام — تُعرض في الشاشات والمستندات) =====================
+// مصدر الحقيقة: system_settings (فئة policy) — تتغير من لوحة الإدارة دون إعادة نشر
+router.get('/api/system/policy', async (_req, res) => {
+  try {
+    const r = await pool.query(
+      `SELECT setting_key, setting_value FROM system_settings
+       WHERE setting_key = ANY($1::text[])`,
+      [['yemenization_min_ratio', 'password_min_length']]);
+    const map = Object.fromEntries(r.rows.map(x => [x.setting_key, x.setting_value]));
+    const num = (v, d) => { const n = Number(v); return Number.isFinite(n) && n >= 0 ? n : d; };
+    res.json({
+      yemenizationMinRatio: num(map.yemenization_min_ratio, 80),
+    });
+  } catch (_err) {
+    // قيم افتراضية رسمية عند تعذر قاعدة البيانات
+    res.json({ yemenizationMinRatio: 80, degraded: true });
+  }
+});
+
 // ===================== Auth Endpoints =====================
 router.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    const emailNorm = String(email || '').toLowerCase().trim();
+    const ip = (req.headers['x-forwarded-for']?.split(',')[0] || req.socket?.remoteAddress || '').toString().slice(0, 60);
+    const ua = (req.headers['user-agent'] || '').slice(0, 250);
     if (!email || !password) return res.status(400).json({ error: 'البريد الإلكتروني وكلمة المرور مطلوبان' });
     const r = await pool.query(
-      'SELECT * FROM sector_users WHERE email = $1 AND deleted_at IS NULL AND is_active = true',
-      [String(email).toLowerCase().trim()]
+      'SELECT * FROM sector_users WHERE email = $1 AND deleted_at IS NULL',
+      [emailNorm]
     );
-    if (r.rows.length === 0) return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' });
+    if (r.rows.length === 0) {
+      await pool.query(`INSERT INTO login_attempts (email_attempted, success, reason, ip_address, user_agent) VALUES ($1,false,'unknown_user',$2,$3)`, [emailNorm, ip, ua]);
+      return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' });
+    }
     const u = r.rows[0];
-    if (!verifyPassword(password, u.salt, u.password_hash)) return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' });
+    if (!u.is_active) {
+      await pool.query(`INSERT INTO login_attempts (email_attempted, user_id, success, reason, ip_address, user_agent) VALUES ($1,$2,false,'account_disabled',$3,$4)`, [emailNorm, u.id, ip, ua]);
+      return res.status(403).json({ error: 'الحساب موقوف — راجع إدارة النظام' });
+    }
+    if (!verifyPassword(password, u.salt, u.password_hash)) {
+      await pool.query(`INSERT INTO login_attempts (email_attempted, user_id, success, reason, ip_address, user_agent) VALUES ($1,$2,false,'bad_password',$3,$4)`, [emailNorm, u.id, ip, ua]);
+      return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' });
+    }
     await pool.query('UPDATE sector_users SET last_login = NOW() WHERE id = $1', [u.id]);
-    const token = signToken({ sub: u.id, email: u.email, role: u.role, userType: u.user_type, organizationId: u.organization_id });
+    // فتح جلسة عمل رسمية قابلة للتتبع
+    const sess = await pool.query(
+      `INSERT INTO user_sessions (user_id, ip_address, user_agent) VALUES ($1,$2,$3) RETURNING id`,
+      [u.id, ip, ua]);
+    const token = signToken({ sub: u.id, email: u.email, role: u.role, userType: u.user_type, organizationId: u.organization_id, sid: sess.rows[0].id });
+    await pool.query(`INSERT INTO login_attempts (email_attempted, user_id, success, reason, ip_address, user_agent) VALUES ($1,$2,true,'ok',$3,$4)`, [emailNorm, u.id, ip, ua]);
     await auditLog('login', 'auth', u.id, { email: u.email });
     res.json({
       success: true,
       token,
+      sessionId: sess.rows[0].id,
       user: { id: u.id, email: u.email, name: u.name, role: u.role, userType: u.user_type, organizationId: u.organization_id },
     });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
+});
+
+// نبض النشاط — يحدّث آخر نشاط للجلسة الحالية
+router.post('/api/auth/heartbeat', async (req, res) => {
+  try {
+    const sid = req.user?.sid;
+    if (!sid) return res.json({ ok: false });
+    await pool.query(`UPDATE user_sessions SET last_activity_at = NOW() WHERE id = $1 AND is_active = true`, [sid]);
+    res.json({ ok: true });
+  } catch { res.json({ ok: false }); }
+});
+
+// تسجيل خروج — إغلاق الجلسة وتوثيق المدة
+router.post('/api/auth/logout', async (req, res) => {
+  try {
+    const sid = req.user?.sid;
+    if (sid) {
+      const r = await pool.query(
+        `UPDATE user_sessions SET logout_at = NOW(), is_active = false,
+           last_activity_at = NOW()
+         WHERE id = $1 AND is_active = true RETURNING EXTRACT(EPOCH FROM (logout_at - login_at))::bigint AS duration_seconds`,
+        [sid]);
+      if (r.rows.length && req.user?.id) {
+        await auditLog('logout', 'auth', req.user.id, { duration_seconds: r.rows[0].duration_seconds });
+      }
+    }
+    res.json({ success: true, message: 'تم تسجيل الخروج' });
+  } catch { res.json({ success: true }); }
 });
 
 router.get('/api/auth/me', async (req, res) => {
@@ -72,7 +167,7 @@ router.get('/api/auth/me', async (req, res) => {
     const u = r.rows[0];
     if (!u) return res.json({ user: null });
     res.json({ user: { id: u.id, email: u.email, name: u.name, role: u.role, userType: u.user_type, organizationId: u.organization_id } });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 // ===================== Sector Users (RBAC & Enterprise Governance) =====================
@@ -113,7 +208,7 @@ router.get('/api/sector-users/stats', requireAdmin, async (_req, res) => {
     `);
     res.json({ success: true, data: stats.rows[0] });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' });
   }
 });
 
@@ -138,7 +233,7 @@ router.get('/api/sector-users', requireAdmin, async (req, res) => {
       params
     );
     res.json({ success: true, data: r.rows, total: r.rows.length });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.post('/api/sector-users', requireAdmin, async (req, res) => {
@@ -156,7 +251,7 @@ router.post('/api/sector-users', requireAdmin, async (req, res) => {
     );
     await auditLog('create', 'sector_user', req.user?.id || 'system', { email, role });
     res.status(201).json({ success: true, user: r.rows[0] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.put('/api/sector-users/:id', requireAdmin, async (req, res) => {
@@ -183,14 +278,24 @@ router.put('/api/sector-users/:id', requireAdmin, async (req, res) => {
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
     await auditLog('update', 'sector_user', req.user?.id || 'system', { id: req.params.id, changes: req.body });
     res.json({ success: true, user: r.rows[0] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.post('/api/sector-users/:id/toggle-status', requireAdmin, async (req, res) => {
   try {
     const { reason } = req.body;
-    const current = await pool.query('SELECT is_active, email, name FROM sector_users WHERE id = $1', [req.params.id]);
+    const current = await pool.query('SELECT is_active, email, name, role FROM sector_users WHERE id = $1', [req.params.id]);
     if (current.rows.length === 0) return res.status(404).json({ error: 'المستخدم غير موجود' });
+    // حماية آخر مدير نظام نشط من التعطيل — يضمن استمرارية الإدارة العليا
+    if (current.rows[0].role === 'ministry_admin' && current.rows[0].is_active) {
+      const admins = await pool.query(
+        `SELECT COUNT(*)::int n FROM sector_users WHERE role = 'ministry_admin' AND is_active = true AND deleted_at IS NULL`);
+      if (admins.rows[0].n <= 1)
+        return res.status(409).json({
+          error: 'لا يمكن تعطيل آخر مدير نظام نشط — يجب تزويد مدير آخر أولاً حفاظاً على استمرارية الإدارة',
+          code: 'LAST_ADMIN_PROTECTED',
+        });
+    }
     const newStatus = !current.rows[0].is_active;
     const r = await pool.query(
       'UPDATE sector_users SET is_active = $1, updated_at = NOW() WHERE id = $2 RETURNING id, name, email, is_active',
@@ -203,11 +308,23 @@ router.post('/api/sector-users/:id/toggle-status', requireAdmin, async (req, res
       reason: reason || 'تغيير الحالة الإدارية من قبل مدير النظام'
     });
     res.json({ success: true, user: r.rows[0], message: newStatus ? 'تم تفعيل الحساب بنجاح' : 'تم إيقاف الحساب وتجميد الصلاحيات' });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.delete('/api/sector-users/:id', requireAdmin, async (req, res) => {
   try {
+    // حماية آخر مدير نظام نشط من الحذف
+    const target = await pool.query('SELECT role, is_active FROM sector_users WHERE id = $1 AND deleted_at IS NULL', [req.params.id]);
+    if (target.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
+    if (target.rows[0].role === 'ministry_admin' && target.rows[0].is_active) {
+      const admins = await pool.query(
+        `SELECT COUNT(*)::int n FROM sector_users WHERE role = 'ministry_admin' AND is_active = true AND deleted_at IS NULL`);
+      if (admins.rows[0].n <= 1)
+        return res.status(409).json({
+          error: 'لا يمكن حذف آخر مدير نظام نشط — يجب تزويد مدير آخر أولاً حفاظاً على استمرارية الإدارة',
+          code: 'LAST_ADMIN_PROTECTED',
+        });
+    }
     const r = await pool.query(
       `UPDATE sector_users SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id`,
       [req.params.id]
@@ -215,7 +332,7 @@ router.delete('/api/sector-users/:id', requireAdmin, async (req, res) => {
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
     await auditLog('delete', 'sector_user', req.user?.id || 'system', { id: req.params.id });
     res.json({ success: true, message: 'تم حذف المستخدم ونقله للأرشيف' });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 // ===================== Notifications =====================
@@ -320,20 +437,20 @@ router.get('/api/audit-log', async (req, res) => {
     const { action, resource_type, user_id } = req.query;
     const conditions = []; const params = []; let idx = 1;
     if (action) { conditions.push(`al.action = $${idx++}`); params.push(action); }
-    if (resource_type) { conditions.push(`al.resource_type = $${idx++}`); params.push(resource_type); }
-    if (user_id) { conditions.push(`al.user_id = $${idx++}`); params.push(user_id); }
+    if (resource_type) { conditions.push(`al.table_name = $${idx++}`); params.push(resource_type); }
+    if (user_id) { conditions.push(`al.actor_id = $${idx++}`); params.push(user_id); }
     const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
     const wc = conditions.length ? conditions.join(' AND ') : '';
     const { sql: _qs, params: _qp } = countQuery('audit_log al', wc, params);
+    const total = await pool.query(_qs, _qp);
 
     const rows = (await pool.query(
-      `SELECT al.*, p.name as user_name, p.email as user_email FROM audit_log al
-       LEFT JOIN profiles p ON al.user_id = p.id
+      `SELECT al.* FROM audit_log al
        ${where} ORDER BY al.created_at DESC LIMIT $${idx++} OFFSET $${idx++}`,
       [...params, limit, offset]
     )).rows;
     res.json({ data: rows, total: total.rows[0].count, page, limit });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.post('/api/audit-log', async (req, res) => {

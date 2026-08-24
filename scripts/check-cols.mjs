@@ -1,15 +1,14 @@
-import { readFileSync } from 'fs';
-const lines = readFileSync('.env', 'utf-8').split('\n');
-const urlLine = lines.find(l => l.startsWith('DATABASE_URL='));
-const url = urlLine.split('=').slice(1).join('=');
+import fs from 'fs';
+import pg from 'pg';
 
-const { default: pg } = await import('pg');
+const url = fs.readFileSync('.env', 'utf8').match(/DATABASE_URL=(.*)/)[1].trim();
 const pool = new pg.Pool({ connectionString: url, ssl: { rejectUnauthorized: false } });
-
-const tables = ['organizational_entities', 'expatriate_licenses', 'labor_disputes', 'commercial_establishments'];
-for (const t of tables) {
-  const r = await pool.query(`SELECT column_name, data_type FROM information_schema.columns WHERE table_name=$1 ORDER BY ordinal_position`, [t]);
-  console.log(`=== ${t} ===`);
-  r.rows.forEach(row => console.log(`  ${row.column_name} (${row.data_type})`));
+for (const t of ['inspections', 'worker_dispatches', 'labor_disputes']) {
+  const r = await pool.query(
+    `SELECT column_name FROM information_schema.columns WHERE table_name=$1 AND table_schema='public' ORDER BY ordinal_position`,
+    [t]
+  );
+  console.log(`\n=== ${t} (${r.rows.length}) ===`);
+  console.log(r.rows.map(x => x.column_name).join(', '));
 }
 await pool.end();

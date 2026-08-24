@@ -1,6 +1,6 @@
-import { ReactNode } from 'react';
+import { HTMLAttributes, ReactNode } from 'react';
 import { Button } from './Button';
-interface CardProps {
+interface CardProps extends HTMLAttributes<HTMLDivElement> {
     children: ReactNode;
     className?: string;
     hover?: boolean;
@@ -8,7 +8,7 @@ interface CardProps {
     variant?: 'default' | 'gold' | 'glass' | 'elevated';
     clickable?: boolean;
 }
-export function Card({ children, className = '', hover = false, padding = 'md', variant = 'default', clickable = false }: CardProps) {
+export function Card({ children, className = '', hover = false, padding = 'md', variant = 'default', clickable = false, ...props }: CardProps) {
     const paddingClasses = {
         none: '',
         sm: 'p-4 sm:p-5',
@@ -29,9 +29,53 @@ export function Card({ children, className = '', hover = false, padding = 'md', 
         ${paddingClasses[padding]} 
         ${hoverClasses}
         ${className}
-      `}>
+      `} {...props}>
       {children}
     </div>);
+}
+
+type CardSectionProps = HTMLAttributes<HTMLDivElement> & {
+    children: ReactNode;
+};
+
+export function CardHeader({ children, className = '', ...props }: CardSectionProps) {
+    return (
+        <div className={`flex flex-col gap-1.5 p-4 sm:p-6 ${className}`} {...props}>
+            {children}
+        </div>
+    );
+}
+
+export function CardTitle({ children, className = '', ...props }: CardSectionProps) {
+    return (
+        <div className={`text-lg font-semibold leading-none tracking-normal text-heading ${className}`} {...props}>
+            {children}
+        </div>
+    );
+}
+
+export function CardDescription({ children, className = '', ...props }: CardSectionProps) {
+    return (
+        <div className={`text-sm text-muted ${className}`} {...props}>
+            {children}
+        </div>
+    );
+}
+
+export function CardContent({ children, className = '', ...props }: CardSectionProps) {
+    return (
+        <div className={`p-4 pt-0 sm:p-6 sm:pt-0 ${className}`} {...props}>
+            {children}
+        </div>
+    );
+}
+
+export function CardFooter({ children, className = '', ...props }: CardSectionProps) {
+    return (
+        <div className={`flex items-center p-4 pt-0 sm:p-6 sm:pt-0 ${className}`} {...props}>
+            {children}
+        </div>
+    );
 }
 interface StatsCardProps {
     title: string;

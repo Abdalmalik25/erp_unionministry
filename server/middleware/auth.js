@@ -1,6 +1,16 @@
+import '../lib/loadEnv.js';
 import crypto from 'crypto';
 
-const SECRET = process.env.JWT_SECRET || 'union-sphere-sector-rbac-secret';
+// P0 Gate: fail-closed — production must not run with default secret
+const DEFAULT_SECRET = 'union-sphere-sector-rbac-secret';
+const SECRET = process.env.JWT_SECRET || DEFAULT_SECRET;
+if (process.env.NODE_ENV === 'production' && SECRET === DEFAULT_SECRET) {
+  console.error('[SECURITY] FATAL: JWT_SECRET is default in production — refusing to start (P0 Gate)');
+  process.exit(1);
+}
+if (SECRET.length < 32) {
+  console.warn('[SECURITY] WARNING: JWT_SECRET <32 chars — weak for HS256');
+}
 
 export function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString('hex');

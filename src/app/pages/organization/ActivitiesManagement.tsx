@@ -8,6 +8,7 @@ import { Activity, Plus, Search, Download, Edit, Trash2, Eye, X, Calendar, MapPi
 import { toast } from '../../components/ui/Toast';
 import { logAudit } from '../../utils/security';
 import { exportReportToExcel } from '../../components/enterprise/PrintExportManager';
+import { fetchList } from '../../utils/api';
 
 interface ActivityItem {
   activity_id: string;
@@ -48,12 +49,8 @@ export function OrganizationActivitiesManagement() {
   const fetchActivities = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await fetch('/api/activities');
-      if (r.ok) {
-        const data = await r.json();
-        setActivities(Array.isArray(data) ? data : data.data || []);
-        logAudit({ action: 'view', resource: 'organization_activities' });
-      }
+      setActivities(await fetchList('/api/activities'));
+      logAudit({ action: 'view', resource: 'organization_activities' });
     } catch { toast.error('خطأ في تحميل الأنشطة'); }
     finally { setLoading(false); }
   }, []);

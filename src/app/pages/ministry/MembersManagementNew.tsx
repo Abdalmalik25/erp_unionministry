@@ -9,6 +9,7 @@ import { toast } from '../../components/ui/Toast';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { logAudit } from '../../utils/security';
+import { fetchList } from '../../utils/api';
 import { PermissionGate } from '../../hooks/usePermissions';
 import { Switch } from '../../components/ui/switch';
 
@@ -24,6 +25,7 @@ interface Member {
   id?: string;
   entity_id?: string;
   national_id: string;
+  member_number?: string;
   full_name: string;
   gender: string;
   birth_date?: string;
@@ -67,18 +69,12 @@ export function MembersManagement() {
     setLoading(true);
     try {
       const deletedParam = showDeleted ? '?include_deleted=true' : '';
-      const [mRes, eRes] = await Promise.all([
-        fetch(`/api/members${deletedParam}`),
-        fetch('/api/entities'),
+      const [members_, entities_] = await Promise.all([
+        fetchList<Member>(`/api/members${deletedParam}`, undefined, ['members']),
+        fetchList<{ entity_id: string; entity_name: string; unified_code: string }>('/api/entities', undefined, ['entities']),
       ]);
-      if (mRes.ok) {
-        const data = await mRes.json();
-        setMembers(Array.isArray(data) ? data : data.data || data.members || []);
-      }
-      if (eRes.ok) {
-        const data = await eRes.json();
-        setEntities(Array.isArray(data) ? data : data.data || data.entities || []);
-      }
+      setMembers(members_);
+      setEntities(entities_);
       logAudit({ action: 'view', resource: 'members' });
     } catch { toast.error('خطأ في تحميل البيانات'); }
     finally { setLoading(false); }
@@ -92,6 +88,7 @@ export function MembersManagement() {
       const matchesSearch = !q ||
         member.full_name?.toLowerCase().includes(q) ||
         member.national_id?.includes(q) ||
+        member.member_number?.toLowerCase().includes(q) ||
         member.phone?.includes(q) ||
         member.email?.toLowerCase().includes(q);
       const matchesUnion = filterUnion === 'الكل' || member.unified_code === filterUnion;
@@ -310,7 +307,10 @@ export function MembersManagement() {
                 <tbody className="divide-y divide-border">
                   {filteredMembers.map((member) => (
                     <tr key={member.id || member.national_id} className={`hover:bg-accent transition-colors ${(member as any).deleted_at ? 'opacity-50 bg-error/5' : ''}`}>
-                      <td className="px-6 py-4 text-sm text-heading font-mono">{member.national_id}</td>
+                      <td className="px-6 py-4 text-sm text-heading font-mono">
+                        {member.national_id}
+                        {member.member_number && <span className="block text-[10px] font-bold text-gold-dark mt-0.5">عضوية: {member.member_number}</span>}
+                      </td>
                       <td className="px-6 py-4 text-sm text-heading font-semibold">
                         {member.full_name}
                         {(member as any).deleted_at && <span className="mr-2 text-xs bg-error/10 text-error px-1.5 py-0.5 rounded">محذوف</span>}

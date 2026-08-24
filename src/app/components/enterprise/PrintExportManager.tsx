@@ -10,6 +10,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { BRAND } from '../../branding';
 import { BrandLogo } from '../ui/BrandLogo';
+import { getOfficialIdentity, useBranding } from '../../hooks/useBranding';
 
 // ============================================================
 // أنواع البيانات
@@ -55,16 +56,11 @@ export interface PrintExportOptions {
 }
 
 // ============================================================
-// ترويسة الحكومة (مشتركة لجميع القوالب)
+// ترويسة الحكومة (مشتركة لجميع القوالب) — الهوية من إعدادات النظام
 // ============================================================
 
-const MINISTRY_NAME = 'وزارة الشؤون الاجتماعية والعمل';
-const REPUBLIC_NAME = 'الجمهورية اليمنية';
-const SECTOR_NAME = 'قطاع العمل — المنظومة الإلكترونية الموحدة';
-const PLATFORM = SECTOR_NAME;
-const DEVELOPER = 'قطاع العمل';
-
 function GovernmentHeader({ compact = false }: { compact?: boolean }) {
+  const identity = useBranding();
   return (
     <div className={`flex items-center justify-between border-b-2 border-primary pb-3 mb-4 ${compact ? 'text-xs' : ''}`}>
       {/* يسار - شعار الجمهورية الرسمي */}
@@ -77,9 +73,9 @@ function GovernmentHeader({ compact = false }: { compact?: boolean }) {
 
       {/* وسط - البيانات الرسمية */}
       <div className="text-center flex-1 mx-4">
-        <p className="text-primary font-bold text-sm tracking-wide">{REPUBLIC_NAME}</p>
-        <p className="text-foreground font-bold text-base mt-0.5">{MINISTRY_NAME}</p>
-        <p className="text-primary text-xs font-semibold mt-0.5">{SECTOR_NAME}</p>
+        <p className="text-primary font-bold text-sm tracking-wide">{identity.countryAr}</p>
+        <p className="text-foreground font-bold text-base mt-0.5">{identity.ministryNameAr}</p>
+        <p className="text-primary text-xs font-semibold mt-0.5">{identity.systemNameAr}</p>
       </div>
 
       {/* يمين - رمز التحقق الأمني */}
@@ -98,9 +94,10 @@ function GovernmentHeader({ compact = false }: { compact?: boolean }) {
 }
 
 function GovernmentFooter({ page, total }: { page?: number; total?: number }) {
+  const identity = useBranding();
   return (
     <div className="border-t border-border pt-2 mt-4 flex items-center justify-between text-[10px] text-muted-foreground">
-      <span>الجمهورية اليمنية — وزارة الشؤون الاجتماعية والعمل — قطاع العمل</span>
+      <span>{identity.countryAr} — {identity.ministryNameAr} — قطاع العمل</span>
       <span>تاريخ الإصدار: {new Date().toLocaleDateString('ar-YE')}</span>
       {page && total && <span>صفحة {page} من {total}</span>}
     </div>
@@ -263,6 +260,7 @@ function DataListReport({ options }: { options: PrintExportOptions }) {
 // ============================================================
 
 function LicenseCertificate({ entity }: { entity: any }) {
+  const identity = useBranding();
   return (
     <div className="border-4 border-double border-primary rounded-2xl p-8 bg-card max-w-2xl mx-auto text-center relative overflow-hidden">
       {/* خلفية مائية */}
@@ -277,7 +275,7 @@ function LicenseCertificate({ entity }: { entity: any }) {
         <div className="w-20 h-1 bg-primary mx-auto mb-6 rounded"></div>
 
         <p className="text-foreground text-sm leading-relaxed">
-          تشهد <strong>وزارة الشؤون الاجتماعية والعمل</strong> بأن المنشأة المؤسسي:
+          تشهد <strong>{identity.ministryNameAr}</strong> بأن المنشأة المؤسسي:
         </p>
 
         <h2 className="text-2xl font-black text-primary my-4">
@@ -519,12 +517,13 @@ function FinancialSummaryReport({ options }: { options: PrintExportOptions }) {
 // دوال التصدير إلى Excel و PDF
 // ============================================================
 
-export function exportReportToExcel(options: PrintExportOptions) {
+export async function exportReportToExcel(options: PrintExportOptions) {
   const { title, data, columns = [], dateFrom, dateTo } = options;
+  const identity = await getOfficialIdentity();
 
   const meta = [
-    [REPUBLIC_NAME],
-    [MINISTRY_NAME],
+    [identity.countryAr],
+    [identity.ministryNameAr],
     [title],
     [`الفترة: ${dateFrom || '—'} إلى ${dateTo || '—'}`],
     [`تاريخ الطباعة: ${new Date().toLocaleDateString('ar-YE')}`],
@@ -554,8 +553,8 @@ export function exportReportToExcel(options: PrintExportOptions) {
 
   // ورقة البيانات الوصفية
   const metaWs = XLSX.utils.aoa_to_sheet([
-    ['المنصة', PLATFORM],
-    ['المطور', DEVELOPER],
+    ['المنصة', identity.systemNameAr],
+    ['الجهة', identity.ministryNameAr],
     ['نوع التقرير', title],
     ['تاريخ الإنشاء', new Date().toISOString()],
     ['إجمالي السجلات', data.length],
@@ -566,8 +565,9 @@ export function exportReportToExcel(options: PrintExportOptions) {
   XLSX.writeFile(wb, filename);
 }
 
-export function exportReportToPDF(options: PrintExportOptions) {
+export async function exportReportToPDF(options: PrintExportOptions) {
   const { title, data, columns = [], dateFrom, dateTo, orientation = 'landscape' } = options;
+  const identity = await getOfficialIdentity();
 
   const doc = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
   const pw = doc.internal.pageSize.width;
@@ -577,15 +577,15 @@ export function exportReportToPDF(options: PrintExportOptions) {
   doc.setFontSize(40);
   doc.setTextColor(230, 235, 245);
   doc.saveGraphicsState();
-  doc.text(MINISTRY_NAME, pw / 2, ph / 2, { angle: 45, align: 'center' });
+  doc.text(identity.ministryNameAr, pw / 2, ph / 2, { angle: 45, align: 'center' });
   doc.restoreGraphicsState();
 
   // ترويسة PDF
   doc.setFontSize(10);
   doc.setTextColor(30, 58, 138);
-  doc.text(REPUBLIC_NAME, pw / 2, 12, { align: 'center' });
+  doc.text(identity.countryAr, pw / 2, 12, { align: 'center' });
   doc.setFontSize(13);
-  doc.text(MINISTRY_NAME, pw / 2, 20, { align: 'center' });
+  doc.text(identity.ministryNameAr, pw / 2, 20, { align: 'center' });
   doc.setFontSize(11);
   doc.setTextColor(0, 0, 0);
   doc.text(title, pw / 2, 30, { align: 'center' });
@@ -626,7 +626,7 @@ export function exportReportToPDF(options: PrintExportOptions) {
       const pageCount = (doc as any).internal.getNumberOfPages();
       doc.setFontSize(8);
       doc.setTextColor(150);
-      doc.text(`${DEVELOPER} — ${PLATFORM}`, 14, doc.internal.pageSize.height - 8);
+      doc.text(`${identity.ministryNameAr} — ${identity.systemNameAr}`, 14, doc.internal.pageSize.height - 8);
       doc.text(`صفحة ${d.pageNumber} من ${pageCount}`, pw - 14, doc.internal.pageSize.height - 8, { align: 'right' });
     },
   });
@@ -639,7 +639,7 @@ export function exportReportToPDF(options: PrintExportOptions) {
 // تصدير شهادة رسمية (ترخيص / عضوية)
 // ============================================================
 
-export function exportCertificatePDF(opts: {
+export async function exportCertificatePDF(opts: {
   type: 'license' | 'membership' | 'compliance';
   entityName: string;
   entityNumber?: string;
@@ -648,6 +648,7 @@ export function exportCertificatePDF(opts: {
   details?: Record<string, string>;
 }) {
   const { type, entityName, entityNumber, issueDate, expiryDate, details } = opts;
+  const identity = await getOfficialIdentity();
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pw = doc.internal.pageSize.width;
   const ph = doc.internal.pageSize.height;
@@ -662,10 +663,10 @@ export function exportCertificatePDF(opts: {
   // Header
   doc.setFontSize(10);
   doc.setTextColor(30, 58, 138);
-  doc.text(REPUBLIC_NAME, pw / 2, 28, { align: 'center' });
+  doc.text(identity.countryAr, pw / 2, 28, { align: 'center' });
   doc.setFontSize(16);
   doc.setTextColor(0, 0, 0);
-  doc.text(MINISTRY_NAME, pw / 2, 38, { align: 'center' });
+  doc.text(identity.ministryNameAr, pw / 2, 38, { align: 'center' });
 
   // Divider
   doc.setDrawColor(30, 58, 138);
@@ -690,13 +691,13 @@ export function exportCertificatePDF(opts: {
   doc.setFontSize(12);
   doc.setTextColor(0, 0, 0);
   const lines = [
-    'ت وزارة الشؤون الاجتماعية والعمل',
+    `تشهد ${identity.ministryNameAr}`,
     `بأن الجهة / ${entityName}`,
     entityNumber ? `الرقم: ${entityNumber}` : null,
     issueDate ? `تاريخ الإصدار: ${issueDate}` : null,
     expiryDate ? `تاريخ الانتهاء: ${expiryDate}` : null,
     '',
-    type === 'license' ? 'حاصلة على ترخيص بموجب قانون العمل رقم ١ لسنة ١٩٩٥' : '',
+    type === 'license' ? `حاصلة على ترخيص بموجب ${identity.legalBasis}` : '',
     type === 'membership' ? 'عضو مسجل في النقابة بموجب اللائحة التنفيذية' : '',
     type === 'compliance' ? 'ممتثلة لجميع أحكام قوانين العمل والأنظمة الصادرة بمقتضاها' : '',
   ].filter(Boolean);
@@ -728,7 +729,7 @@ export function exportCertificatePDF(opts: {
   doc.setLineWidth(0.3);
   doc.line(30, ph - 40, 80, ph - 40);
   doc.setFontSize(9);
-  doc.text('توقيع المسؤول المauthorized', 55, ph - 36, { align: 'center' });
+  doc.text('توقيع المسؤول المختص', 55, ph - 36, { align: 'center' });
 
   // Official stamp placeholder
   doc.setDrawColor(30, 58, 138);
@@ -740,13 +741,13 @@ export function exportCertificatePDF(opts: {
   // Footer
   doc.setFontSize(7);
   doc.setTextColor(150);
-  doc.text(`${DEVELOPER} — ${PLATFORM}`, 14, ph - 12);
+  doc.text(`${identity.ministryNameAr} — ${identity.systemNameAr}`, 14, ph - 12);
   doc.text(`تاريخ الطباعة: ${new Date().toLocaleDateString('ar-YE')}`, pw - 14, ph - 12, { align: 'right' });
 
   // Watermark
   doc.setFontSize(35);
   doc.setTextColor(240, 242, 248);
-  doc.text(MINISTRY_NAME, pw / 2, ph / 2, { angle: 45, align: 'center' });
+  doc.text(identity.ministryNameAr, pw / 2, ph / 2, { angle: 45, align: 'center' });
 
   doc.save(`${titles[type]}_${entityName}_${new Date().toISOString().slice(0, 10)}.pdf`);
 }

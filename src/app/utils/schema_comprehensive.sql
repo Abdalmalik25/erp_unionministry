@@ -124,6 +124,8 @@ CREATE TABLE profiles (
   job_title TEXT,
   permissions JSONB DEFAULT '{}',
   metadata JSONB DEFAULT '{}',
+  global_id      UUID UNIQUE,
+  tenant_id      UUID NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

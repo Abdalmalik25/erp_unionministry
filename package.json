@@ -1,7 +1,7 @@
 {
   "name": "@unionsphere/enterprise",
   "private": true,
-  "version": "2.0.0",
+  "version": "2.1.0",
   "type": "module",
   "description": "UnionSphere Enterprise Platform - Ministry of Social Affairs and Labor - Work Sector",
   "author": "Ministry of Social Affairs and Labor",
@@ -22,7 +22,7 @@
   "scripts": {
     "dev": "vite",
     "server": "node server/index.js",
-    "dev:all": "node server/index.js & vite",
+    "dev:all": "start cmd /c npm run server && start cmd /c npm run dev",
     "build": "vite build",
     "preview": "vite preview",
     "vercel-build": "vite build",
@@ -32,14 +32,14 @@
     "lint": "eslint src --ext .ts,.tsx",
     "type-check": "tsc --noEmit",
     "format": "prettier --write .",
-    "clean": "rm -rf dist node_modules/.vite",
+    "clean": "node scripts/clean-build.mjs",
     "health-check": "node scripts/health-check.mjs",
     "backup": "node scripts/backup.mjs",
     "cleanup": "node scripts/cleanup.mjs",
     "db:migrate": "node scripts/migrate-sql.js",
     "db:seed": "node scripts/seed-professions.js",
-    "db:seed-all": "node scripts/seed-all-noas.js",
-    "db:setup": "node scripts/migrate-sql.js && node scripts/seed-all-noas.js"
+    "db:setup": "node scripts/migrate-sql.js && node scripts/seed-professions.js",
+    "start:prod": "node server/index.js"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",

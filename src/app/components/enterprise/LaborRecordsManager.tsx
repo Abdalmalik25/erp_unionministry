@@ -96,7 +96,7 @@ export function LaborRecordsManager({ config }: LaborRecordsManagerProps) {
       const r = await fetch('/api/labor-records/stats');
       if (r.ok) {
         const d = await r.json();
-        setStats(d);
+        setStats(d?.data ?? d);
       }
     } catch { /* stats اختيارية */ }
   }, []);

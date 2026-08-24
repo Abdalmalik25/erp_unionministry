@@ -134,7 +134,7 @@ router.get('/api/training-records', async (req, res) => {
     );
     res.json({ data: r.rows, total: total.rows[0].count, page, limit });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' });
   }
 });
 
@@ -157,7 +157,7 @@ router.post('/api/training-records', async (req, res) => {
     );
     res.status(201).json({ success: true, data: r.rows[0] });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' });
   }
 });
 
@@ -173,7 +173,7 @@ router.put('/api/training-records/:id', async (req, res) => {
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, data: r.rows[0] });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' });
   }
 });
 

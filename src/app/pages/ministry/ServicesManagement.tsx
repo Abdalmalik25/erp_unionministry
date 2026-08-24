@@ -9,6 +9,7 @@ import { Input } from '../../components/ui/Input';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { toast } from 'sonner';
 import { logAudit } from '../../utils/security';
+import { fetchList } from '../../utils/api';
 import { PermissionGate } from '../../hooks/usePermissions';
 import { exportReportToExcel } from '../../components/enterprise/PrintExportManager';
 
@@ -52,18 +53,12 @@ export function ServicesManagement() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [reqRes, svcRes] = await Promise.all([
-        fetch('/api/service-requests'),
-        fetch('/api/services'),
+      const [requests_, services_] = await Promise.all([
+        fetchList<ServiceRequest>('/api/service-requests'),
+        fetchList<Service>('/api/services'),
       ]);
-      if (reqRes.ok) {
-        const data = await reqRes.json();
-        setRequests(Array.isArray(data) ? data : data.data || []);
-      }
-      if (svcRes.ok) {
-        const data = await svcRes.json();
-        setServices(Array.isArray(data) ? data : data.data || []);
-      }
+      setRequests(requests_);
+      setServices(services_);
       logAudit({ action: 'view', resource: 'service_requests' });
     } catch { toast.error('خطأ في تحميل البيانات'); }
     finally { setLoading(false); }

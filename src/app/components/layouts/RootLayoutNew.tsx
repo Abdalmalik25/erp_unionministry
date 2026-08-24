@@ -3,16 +3,18 @@ import { useState, useCallback, useEffect } from 'react';
 import {
   LayoutDashboard, Users, Vote, Activity, FileText,
   Briefcase, AlertTriangle, BarChart3, FileSearch,
-  Bell, User, LogOut, Menu, ChevronLeft, ChevronDown, Settings, Building2,
+  Bell, User, LogOut, Menu, ChevronLeft, ChevronDown, Settings, Building2, UserPlus,
   Send, MinusCircle, FolderTree, Shield, DollarSign,
   ClipboardCheck, Award, BadgeCheck, GraduationCap, Scale, Globe,
   BookOpen, TrendingUp, GitBranch, GitCompare, Settings2, Download, BrainCircuit,
   Building, HeartPulse, Map, FileBadge, FileCheck2, UserCog, ListChecks, ShieldAlert, IdCard,
-  Layers,
+  Layers, Trophy, ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { usePermissions } from '../../hooks/usePermissions';
+import { usePermissions, ROLE_LIST } from '../../hooks/usePermissions';
+import { getPortalKind, ROLE_COLOR_CLASSES } from '../../utils/portals';
 import { CommandPalette, useCommandPalette } from '../CommandPalette';
+import { SystemStatusPill } from '../SystemStatusPill';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { OfflineWarning, useOnlineStatus } from '../../hooks/useOnlineStatus.tsx';
 import { useGlobalShortcuts } from '../../hooks/useKeyboardShortcuts.tsx';
@@ -25,6 +27,7 @@ import { BRAND } from '../../branding';
 import { BrandLogo } from '../ui/BrandLogo';
 import { AiLaborIntelligenceModal } from '../enterprise/AiLaborIntelligenceModal';
 import { AppDownloadModal } from '../enterprise/AppDownloadModal';
+import { UserGuideModal } from '../guide/UserGuideModal';
 export function RootLayout() {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
     try {
@@ -36,6 +39,7 @@ export function RootLayout() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [toolsMenuOpen, setToolsMenuOpen] = useState(false);
   const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [downloadModalOpen, setDownloadModalOpen] = useState(false);
   const [showSessionWarning, setShowSessionWarning] = useState(false);
   const [sessionRemaining, setSessionRemaining] = useState(0);
@@ -103,14 +107,30 @@ export function RootLayout() {
 
   const ministryGroups: MenuGroup[] = [
     {
+      id: 'command-centers', label: 'مراكز القيادة الذكية (جديد)', icon: Layers,
+      items: [
+        { icon: Globe, label: 'المنصة الوطنية الموحدة', path: '/ministry/national-platform', perm: 'view.dashboard' },
+        { icon: Building2, label: 'نظام تشغيل صاحب العمل — Employer OS', path: '/ministry/employer-os', perm: 'view.dashboard' },
+        { icon: IdCard, label: 'جواز العمل — Worker Passport', path: '/ministry/worker-passport', perm: 'view.dashboard' },
+        { icon: ClipboardCheck, label: 'مساحة عمل الموظف — Workspace', path: '/ministry/workspace', perm: 'view.dashboard' },
+        { icon: ShieldAlert, label: 'محرك القواعد التشريعية', path: '/ministry/regulatory-rules', perm: 'compliance.view' },
+        { icon: FileText, label: 'إدارة الخدمات — بدون كود', path: '/ministry/service-catalog', perm: 'system.audit.view' },
+        { icon: Trophy, label: 'لوحة التميز العالمي — Excellence', path: '/ministry/excellence', perm: 'view.dashboard' },
+        { icon: ShieldCheck, label: 'مركز جودة البيانات', path: '/ministry/data-quality', perm: 'system.audit.view' },
+        { icon: Globe, label: 'التكامل الخارجي — ذكي', path: '/ministry/integrations', perm: 'system.audit.view' },
+        { icon: Trophy, label: 'الجاهزية الإنتاجية — شهادة', path: '/ministry/production-readiness', perm: 'view.dashboard' },
+        { icon: BrainCircuit, label: 'مركز الذكاء — تنبؤ', path: '/ministry/intelligence', perm: 'view.dashboard' },
+      ],
+    },
+    {
       id: 'dashboard', label: 'لوحة القيادة والمؤشرات العامة', icon: LayoutDashboard,
       items: [{ icon: LayoutDashboard, label: 'لوحة القيادة المركزية', path: '/ministry', perm: 'view.dashboard' }],
     },
     {
       id: 'establishments-system', label: 'نظام المنشآت والشركات وسوق العمل', icon: Building2,
       items: [
-        { icon: Building2, label: 'سجل المنشآت والشركات (5,152 منشأة)', path: '/ministry/commercial', perm: 'commercial.view' },
-        { icon: Briefcase, label: 'تسكين وتوطين المهن (اليمننة 80%)', path: '/ministry/occupation-links', perm: 'occupations.view' },
+        { icon: Building2, label: 'سجل المنشآت والشركات', path: '/ministry/commercial', perm: 'commercial.view' },
+        { icon: Briefcase, label: 'تسكين وتوطين المهن (اليمننة)', path: '/ministry/occupation-links', perm: 'occupations.view' },
         { icon: Globe, label: 'تراخيص العمالة الوافدة (غير اليمنية)', path: '/ministry/expatriate-licenses', perm: 'licenses.expat.view' },
         { icon: Send, label: 'إرساليات وتوجيه العمالة', path: '/ministry/dispatches', perm: 'workers.dispatch.view' },
         { icon: MinusCircle, label: 'طلبات تقليص العمالة (اقتصادية)', path: '/ministry/reduction-requests', perm: 'workers.reduction.view' },
@@ -183,12 +203,19 @@ export function RootLayout() {
         { icon: GitCompare, label: 'التحليل المقارن واستشراف AI', path: '/ministry/comparative', perm: 'reports.view' },
         { icon: DollarSign, label: 'سداد الرسوم والتحصيل المالي', path: '/ministry/fee-payments', perm: 'fees.view' },
         { icon: FileSearch, label: 'سجل التدقيق الأمني المؤسسي', path: '/ministry/audit', perm: 'system.audit.view' },
+        { icon: Settings, label: 'إدارة النظام والإعدادات المتقدمة', path: '/ministry/system-administration', perm: 'system.users.manage' },
       ],
     },
     {
       id: 'roles-system', label: 'معرض الأدوار الوظيفية', icon: Users,
       items: [
-        { icon: Users, label: 'معرض الأدوار (9 أدوار)', path: '/ministry/roles', perm: 'view.dashboard' },
+        { icon: Users, label: `معرض الأدوار (${ROLE_LIST.length} أدوار)`, path: '/ministry/roles', perm: 'view.dashboard' },
+      ],
+    },
+    {
+      id: 'account-admin', label: 'إدارة الحسابات والجلسات والرقابة', icon: UserCog,
+      items: [
+        { icon: UserPlus, label: 'طلبات فتح الحسابات والمستخدمون', path: '/ministry/accounts', perm: 'view.dashboard' },
       ],
     },
   ];
@@ -198,12 +225,64 @@ export function RootLayout() {
   };
 
   const organizationMenuItems = [
-    { icon: LayoutDashboard, label: 'لوحة القيادة للمنشأة', path: '/organization', perm: 'view.dashboard' },
-    { icon: Users, label: 'سجل العاملين بالمنشأة', path: '/organization/members', perm: 'members.view' },
-    { icon: Activity, label: 'سجل الأنشطة التشغيلية', path: '/organization/activities', perm: 'activities.view' },
-    { icon: FileText, label: 'اللوائح الداخلية والعقود', path: '/organization/documents', perm: 'documents.view' },
+    { icon: LayoutDashboard, label: 'لوحة القيادة للنقابة', path: '/organization', perm: 'view.dashboard' },
+    { icon: Users, label: 'سجل الأعضاء والنقابيين', path: '/organization/members', perm: 'members.view' },
+    { icon: Activity, label: 'الأنشطة والفعاليات النقابية', path: '/organization/activities', perm: 'activities.view' },
+    { icon: FileText, label: 'اللوائح والوثائق النقابية', path: '/organization/documents', perm: 'documents.view' },
     { icon: Briefcase, label: 'طلبات الخدمات الحكومية', path: '/organization/services', perm: 'services.view' },
   ];
+
+  // بوابة أصحاب العمل — Employer Portal
+  const employerMenuItems = [
+    { icon: LayoutDashboard, label: 'مركز إدارة المنشأة', path: '/employer', perm: 'dashboard:view' },
+    { icon: Users, label: 'سجل العاملين بالمنشأة', path: '/employer/members', perm: 'members.view' },
+    { icon: Activity, label: 'الأنشطة التشغيلية', path: '/employer/activities', perm: 'activities.view' },
+    { icon: FileText, label: 'العقود واللوائح الداخلية', path: '/employer/documents', perm: 'documents.view' },
+    { icon: Briefcase, label: 'طلبات الخدمات الحكومية', path: '/employer/services', perm: 'services.view' },
+    { icon: User, label: 'ملف المنشأة', path: '/employer/profile', perm: 'profile:view' },
+  ];
+
+  // بوابة العاملين — جواز العمل الرقمي
+  const workerMenuItems = [
+    { icon: IdCard, label: 'جوازي المهني الرقمي', path: '/worker', perm: 'dashboard:view' },
+    { icon: Briefcase, label: 'طلبات وخدماتي الحكومية', path: '/worker/services', perm: 'services.request' },
+    { icon: User, label: 'ملفي الشخصي', path: '/worker/profile', perm: 'profile:view' },
+  ];
+
+  // البوابة الفعالة حسب المسار ونوع المستخدم
+  const activePortal = getPortalKind(location.pathname, isMinistry);
+  const portalFlatMenu =
+    activePortal === 'employer' ? employerMenuItems
+    : activePortal === 'worker' ? workerMenuItems
+    : organizationMenuItems;
+
+  // عناوين البوابات (رأس الصفحة)
+  const portalHeader = (() => {
+    switch (activePortal) {
+      case 'employer':
+        return {
+          title: 'بوابة أصحاب العمل والمنشآت',
+          subtitle: 'إدارة العاملين والامتثال والخدمات الحكومية لمنشأتك',
+        };
+      case 'worker':
+        return {
+          title: 'جواز العمل الرقمي — بوابة العاملين',
+          subtitle: 'هويتك المهنية • عقودك • أجرك • تدريبك • شكاواك في مكان واحد',
+        };
+      case 'organization':
+        return {
+          title: 'بوابة النقابات والمنظمات العمالية',
+          subtitle: 'إدارة الأعضاء والانتخابات والأنشطة والمعاملات النقابية',
+        };
+      default:
+        return {
+          title: 'الجمهورية اليمنية — وزارة الشؤون الاجتماعية والعمل',
+          subtitle: 'قطاع العمل | المنظومة الوطنية الشاملة لإدارة المنشآت والنقابات',
+        };
+    }
+  })();
+
+  const roleColorClass = ROLE_COLOR_CLASSES[meta(user?.role)?.color ?? ''] ?? ROLE_COLOR_CLASSES.sky;
 
   const handleLogout = useCallback(async () => {
     const confirmed = await confirm({
@@ -247,6 +326,7 @@ export function RootLayout() {
           )}
           <button
             onClick={handleToggleSidebar}
+            aria-label={sidebarOpen ? 'طي القائمة الجانبية' : 'توسيع وتثبيت القائمة الجانبية'}
             className={`p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer ${!sidebarOpen ? 'hidden' : ''}`}
             title={sidebarOpen ? 'طي القائمة' : 'تثبيت وتوسيع القائمة'}
           >
@@ -256,7 +336,7 @@ export function RootLayout() {
 
         {/* Scrollable System Menu Items */}
         <nav className="flex-1 py-3 px-2 overflow-y-auto space-y-1">
-          {isMinistry ? (
+          {isMinistry && activePortal === 'ministry' ? (
             ministryGroups.map((group) => {
               const GroupIcon = group.icon;
               const isGroupOpen = openGroups[group.id] ?? true;
@@ -313,7 +393,7 @@ export function RootLayout() {
               );
             })
           ) : (
-            organizationMenuItems.filter(it => !it.perm || can(it.perm)).map((item) => {
+            portalFlatMenu.filter(it => !it.perm || can(it.perm)).map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
               return (
@@ -343,7 +423,9 @@ export function RootLayout() {
               </div>
               <div className="min-w-0">
                 <p className="text-xs font-bold text-slate-100 truncate">{user.name}</p>
-                <p className="text-[10px] text-slate-400 truncate">{meta(user.role)?.label || user.role}</p>
+                <span className={`inline-block mt-0.5 px-1.5 py-px rounded-md border text-[9px] font-bold truncate max-w-full ${roleColorClass}`}>
+                  {meta(user.role)?.label || user.role}
+                </span>
               </div>
             </div>
           )}
@@ -364,12 +446,10 @@ export function RootLayout() {
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
               <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight truncate">
-                {isMinistry ? 'الجمهورية اليمنية — وزارة الشؤون الاجتماعية والعمل' : 'بوابة النقابات والمنظمات والمنشآت المسجلة'}
+                {portalHeader.title}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">
-                {isMinistry
-                  ? 'قطاع العمل | المنظومة الوطنية الشاملة لإدارة المنشآت والنقابات'
-                  : 'إدارة بيانات المنشأة وكشوفات العمال والمعاملات'}
+                {portalHeader.subtitle}
               </p>
             </div>
 
@@ -441,6 +521,17 @@ export function RootLayout() {
                       </div>
                     </button>
 
+                    <button
+                      onClick={() => { setToolsMenuOpen(false); setGuideOpen(true); }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium transition-colors text-right cursor-pointer"
+                    >
+                      <BookOpen size={16} className="text-violet-500 shrink-0" />
+                      <div className="text-right flex-1">
+                        <p className="font-semibold text-slate-900 dark:text-white">دليل المستخدم الرسمي</p>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400">دورة العمل الكاملة حسب دورك الوظيفي</p>
+                      </div>
+                    </button>
+
                     {isMinistry && can('system.audit.view') && (
                       <Link
                         to="/ministry/audit"
@@ -475,6 +566,8 @@ export function RootLayout() {
               <div className="relative">
                 <button
                   onClick={() => setNotificationsOpen(!notificationsOpen)}
+                  aria-label="التنبيهات والإشعارات"
+                  aria-expanded={notificationsOpen}
                   className="relative p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
                   title="التنبيهات والإشعارات"
                 >
@@ -503,7 +596,9 @@ export function RootLayout() {
                   </div>
                   <div className="text-right">
                     <p className="text-xs font-bold text-slate-900 dark:text-white leading-tight">{user.name}</p>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400">{meta(user.role)?.label || user.role}</p>
+                    <span className={`inline-block px-1.5 py-px rounded-md border text-[9px] font-bold ${roleColorClass}`}>
+                      {meta(user.role)?.label || user.role}
+                    </span>
                   </div>
                 </div>
               )}
@@ -522,7 +617,8 @@ export function RootLayout() {
         <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-6 py-3.5">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
             <p>© 2026 {BRAND.systemShort} — {BRAND.ministry}</p>
-            <p className="font-medium">{BRAND.systemName}</p>
+            <SystemStatusPill />
+            <p className="font-medium">{BRAND.systemName} • v2.0</p>
           </div>
         </footer>
       </div>
@@ -530,8 +626,9 @@ export function RootLayout() {
       {/* Global Components */}
       <CommandPalette isOpen={isOpen} onClose={() => setIsOpen(false)} commands={defaultCommands} />
       <OfflineWarning />
-      <AiLaborIntelligenceModal isOpen={aiModalOpen} onClose={() => setAiModalOpen(false)} />
-      <AppDownloadModal isOpen={downloadModalOpen} onClose={() => setDownloadModalOpen(false)} />
+<AiLaborIntelligenceModal isOpen={aiModalOpen} onClose={() => setAiModalOpen(false)} />
+<AppDownloadModal isOpen={downloadModalOpen} onClose={() => setDownloadModalOpen(false)} />
+<UserGuideModal open={guideOpen} onClose={() => setGuideOpen(false)} role={user?.role} />
 
       {showSessionWarning && (
         <SessionTimeoutWarning

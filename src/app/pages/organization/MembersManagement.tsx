@@ -8,6 +8,7 @@ import { Users, Plus, Search, Download, Edit, Trash2, Eye, X, Phone, Mail, MapPi
 import { toast } from '../../components/ui/Toast';
 import { logAudit } from '../../utils/security';
 import { exportReportToExcel } from '../../components/enterprise/PrintExportManager';
+import { fetchList } from '../../utils/api';
 
 interface Member {
   member_id: string;
@@ -46,12 +47,8 @@ export function OrganizationMembersManagement() {
   const fetchMembers = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await fetch('/api/members');
-      if (r.ok) {
-        const data = await r.json();
-        setMembers(Array.isArray(data) ? data : data.data || []);
-        logAudit({ action: 'view', resource: 'organization_members' });
-      }
+      setMembers(await fetchList('/api/members'));
+      logAudit({ action: 'view', resource: 'organization_members' });
     } catch { toast.error('خطأ في تحميل الأعضاء'); }
     finally { setLoading(false); }
   }, []);
