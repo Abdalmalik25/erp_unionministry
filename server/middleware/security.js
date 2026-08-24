@@ -43,7 +43,13 @@ export function sanitizeBody(req, _res, next) {
 }
 
 // Field-level encryption for PII (AES-256-GCM) — key from env
-const ENC_KEY = process.env.ENCRYPTION_KEY || 'dev-key-not-for-prod-32bytes!!!!';
+// P0 Gate: production must not run with the development encryption key
+const DEFAULT_ENC = 'dev-key-not-for-prod-32bytes!!!!';
+if (process.env.NODE_ENV === 'production' && (!process.env.ENCRYPTION_KEY || process.env.ENCRYPTION_KEY === DEFAULT_ENC)) {
+  console.error('[SECURITY] FATAL: ENCRYPTION_KEY missing/default in production — refusing to start (P0 Gate)');
+  process.exit(1);
+}
+const ENC_KEY = process.env.ENCRYPTION_KEY || DEFAULT_ENC;
 const ENC_ALGO='aes-256-gcm';
 export function encryptField(plaintext) {
   if (!plaintext) return null;

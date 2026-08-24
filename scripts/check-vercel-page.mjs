@@ -1,0 +1,11 @@
+const base = process.argv[2] || 'https://erp-unionministry-cx9td10vh-thamar-office-website.vercel.app';
+const r = await fetch(base + '/');
+const t = await r.text();
+const title = t.match(/<title[^>]*>([^<]*)<\/title>/i);
+console.log('status:', r.status);
+console.log('title:', title ? title[1] : '(none)');
+console.log('has #root:', t.includes('id="root"'));
+console.log('has Tajawal:', t.includes('Tajawal'));
+console.log('dpl-id:', (t.match(/data-dpl-id="([^"]+)"/) || [])[1]);
+console.log('--- first 500 chars ---');
+console.log(t.substring(0, 500));
