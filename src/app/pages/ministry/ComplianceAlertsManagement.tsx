@@ -1,6 +1,6 @@
 /**
  * ComplianceAlertsManagement — إدارة تنبيهات الامتثال
- * المنظومة الوطنية للعمل النقابي | وزارة الشؤون الاجتماعية والعمل
+ * المنظومة الوطنية لإدارة قطاع العمل | وزارة الشؤون الاجتماعية والعمل
  */
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Search, Eye, Trash2, Plus, RefreshCw, CheckCircle, X, Clock, AlertTriangle, Bell, Download, } from 'lucide-react';

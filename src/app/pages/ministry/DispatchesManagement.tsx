@@ -1,6 +1,6 @@
 /**
  * DispatchesManagement — إدارة إرساليات العمال
- * المنظومة الوطنية للعمل النقابي | وزارة الشؤون الاجتماعية والعمل
+ * المنظومة الوطنية لإدارة قطاع العمل | وزارة الشؤون الاجتماعية والعمل
  */
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Plus, Search, Filter, Eye, Edit2, Trash2, RefreshCw, CheckCircle, X, Clock, Send, ArrowLeftRight, FileText, Calendar, MapPin, Users, ChevronRight, ChevronLeft, AlertTriangle, Download, } from 'lucide-react';

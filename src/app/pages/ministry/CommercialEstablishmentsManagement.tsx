@@ -1,6 +1,6 @@
 /**
  * Commercial Establishments Management - منظومة إدارة وسجلات المنشآت التجارية (360° Dossier)
- * المنظومة الوطنية للعمل النقابي | وزارة الشؤون الاجتماعية والعمل - قطاع العمل
+ * المنظومة الوطنية لإدارة قطاع العمل | وزارة الشؤون الاجتماعية والعمل - قطاع العمل
  */
 import { useState, useEffect, useCallback } from 'react';
 import { Building2, Plus, Search, Download, Edit, RefreshCw, FileCheck, Users, Eye, Phone, MapPin, ShieldCheck, Scale, TrendingDown, Award, ChevronRight, ChevronLeft, Printer, X, CheckCircle2, Briefcase } from 'lucide-react';

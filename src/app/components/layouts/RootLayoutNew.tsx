@@ -8,7 +8,7 @@ import {
   ClipboardCheck, Award, BadgeCheck, GraduationCap, Scale, Globe,
   BookOpen, TrendingUp, GitBranch, GitCompare, Settings2, Download, BrainCircuit,
   Building, HeartPulse, Map, FileBadge, FileCheck2, UserCog, ListChecks, ShieldAlert, IdCard,
-  Layers, Trophy, ShieldCheck,
+  Layers, Trophy, ShieldCheck, Lock,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePermissions, ROLE_LIST } from '../../hooks/usePermissions';
@@ -65,6 +65,11 @@ export function RootLayout() {
   const { user, signOut, isMinistry } = useAuth();
   const { confirm, dialog: confirmDialog } = useConfirm();
 
+  // تنبيه «كلمة مرور ابتدائية» — يُخفى لكل جلسة عند الإغلاق أو بعد التغيير
+  const [pwdBannerDismissed, setPwdBannerDismissed] = useState(() => sessionStorage.getItem('pwd_banner_dismissed') === '1');
+  const showPwdBanner = Boolean(user?.mustChangePassword) && !pwdBannerDismissed;
+  const profilePath = `/${(location.pathname.split('/')[1] || 'ministry')}/profile`;
+
   // Command Palette
   const { isOpen, setIsOpen, defaultCommands } = useCommandPalette();
 
@@ -109,7 +114,7 @@ export function RootLayout() {
     {
       id: 'command-centers', label: 'مراكز القيادة الذكية (جديد)', icon: Layers,
       items: [
-        { icon: Globe, label: 'المنصة الوطنية الموحدة', path: '/ministry/national-platform', perm: 'view.dashboard' },
+        { icon: Globe, label: 'المنظومة الوطنية', path: '/ministry/national-platform', perm: 'view.dashboard' },
         { icon: Building2, label: 'نظام تشغيل صاحب العمل — Employer OS', path: '/ministry/employer-os', perm: 'view.dashboard' },
         { icon: IdCard, label: 'جواز العمل — Worker Passport', path: '/ministry/worker-passport', perm: 'view.dashboard' },
         { icon: ClipboardCheck, label: 'مساحة عمل الموظف — Workspace', path: '/ministry/workspace', perm: 'view.dashboard' },
@@ -608,6 +613,34 @@ export function RootLayout() {
 
         {/* Page Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+          {showPwdBanner && (
+            <div className="mx-auto w-full max-w-[1800px] mb-4 rounded-xl border border-amber-500/50 bg-amber-50 dark:bg-amber-500/10 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3" role="alert">
+              <ShieldAlert size={20} className="text-amber-600 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-black text-amber-900 dark:text-amber-200">تنبيه أمني: حسابك ما يزال بكلمة المرور الابتدائية</p>
+                <p className="text-xs text-amber-800/80 dark:text-amber-300/80 mt-0.5 leading-relaxed">
+                  كلمة المرور الابتدائية مُسلَّمة إدارياً وتُعدّ مؤقتة — غيّرها الآن من «الملف الشخصي ← تغيير كلمة المرور» لتأمين حسابك. التغيير يوثَّق رسمياً.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Link
+                  to={profilePath}
+                  onClick={() => { setPwdBannerDismissed(true); sessionStorage.setItem('pwd_banner_dismissed', '1'); }}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-black shadow transition-colors"
+                >
+                  <Lock size={13} /> تغيير كلمة المرور الآن
+                </Link>
+                <button
+                  type="button"
+                  aria-label="إغلاق التنبيه مؤقتاً"
+                  onClick={() => { setPwdBannerDismissed(true); sessionStorage.setItem('pwd_banner_dismissed', '1'); }}
+                  className="w-8 h-8 rounded-lg text-amber-700 hover:bg-amber-100 dark:hover:bg-amber-500/20 flex items-center justify-center"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
           <div className="mx-auto w-full max-w-[1800px]">
             <Outlet />
           </div>

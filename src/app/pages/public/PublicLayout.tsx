@@ -63,7 +63,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
             <span className="leading-tight hidden sm:block">
               <span className="block text-[10px] font-bold text-amber-600">{BRAND.country}</span>
               <span className="block font-black text-[15px] text-foreground">{BRAND.ministry}</span>
-              <span className="block text-[10px] text-muted-foreground">المنظومة الوطنية للعمل النقابي</span>
+              <span className="block text-[10px] text-muted-foreground">المنظومة الوطنية لإدارة قطاع العمل</span>
             </span>
           </Link>
 

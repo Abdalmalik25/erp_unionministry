@@ -1,6 +1,6 @@
 /**
  * InspectionsManagement — إدارة التفتيش الدوري
- * المنظومة الوطنية للعمل النقابي | وزارة الشؤون الاجتماعية والعمل
+ * المنظومة الوطنية لإدارة قطاع العمل | وزارة الشؤون الاجتماعية والعمل
  */
 
 import { useState, useMemo, useCallback, useEffect } from 'react';

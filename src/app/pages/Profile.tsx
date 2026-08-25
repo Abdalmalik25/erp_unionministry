@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { User, Mail, Bell, Moon, Sun, Lock, Save, Info, Building2, Code } from 'lucide-react';
+import { User, Mail, Bell, Moon, Sun, Lock, Save, Info, Building2, Code, ShieldAlert } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -9,7 +9,7 @@ import { validatePasswordStrength } from '../utils/validation';
 import { BRAND } from '../branding';
 
 export function Profile() {
-  const { user } = useAuth();
+  const { user, markPasswordChanged } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [darkMode, setDarkMode] = useState(false);
   const [notifications, setNotifications] = useState({
@@ -30,6 +30,7 @@ export function Profile() {
     new: '',
     confirm: '',
   });
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const [passwordStrength, setPasswordStrength] = useState<any>(null);
 
@@ -46,7 +47,7 @@ export function Profile() {
     toast.success('تم حفظ التغييرات بنجاح');
   };
 
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     if (!passwordData.current || !passwordData.new || !passwordData.confirm) {
       toast.error('الرجاء ملء جميع الحقول');
       return;
@@ -62,9 +63,29 @@ export function Profile() {
       return;
     }
 
-    toast.success('تم تغيير كلمة المرور بنجاح');
-    setPasswordData({ current: '', new: '', confirm: '' });
-    setPasswordStrength(null);
+    setChangingPassword(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ currentPassword: passwordData.current, newPassword: passwordData.new }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (res.ok && j?.success !== false) {
+        toast.success('تم تغيير كلمة المرور بنجاح — حسابك الآن مؤمَّن بالكامل');
+        setPasswordData({ current: '', new: '', confirm: '' });
+        setPasswordStrength(null);
+        markPasswordChanged();
+      } else {
+        const msg = j?.errors?.error || j?.error || 'تعذر تغيير كلمة المرور';
+        toast.error(msg);
+      }
+    } catch {
+      toast.error('خطأ في الاتصال بالخادم');
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
   return (
@@ -178,6 +199,19 @@ export function Profile() {
             تغيير كلمة المرور
           </h3>
 
+          {user?.mustChangePassword && (
+            <div className="mb-5 p-4 rounded-xl border border-amber-500/40 bg-amber-500/[.07] flex items-start gap-3">
+              <ShieldAlert size={20} className="text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-bold text-foreground">حسابك ما يزال يستخدم كلمة المرور الابتدائية</p>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  كلمة المرور الابتدائية مُسلَّمة إدارياً وتُعدّ مؤقتة لأغراض الدخول الأول فقط.
+                  غيّرها الآن لتأمين حسابك بالكامل — التغيير يوثَّق في سجل التدقيق الرسمي.
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-4 max-w-2xl">
             <Input
               label="كلمة المرور الحالية"
@@ -216,8 +250,9 @@ export function Profile() {
                 onClick={handleChangePassword}
                 variant="primary"
                 icon={<Lock size={18} />}
+                disabled={changingPassword}
               >
-                تغيير كلمة المرور
+                {changingPassword ? 'جارٍ التغيير...' : 'تغيير كلمة المرور'}
               </Button>
             </div>
           </div>

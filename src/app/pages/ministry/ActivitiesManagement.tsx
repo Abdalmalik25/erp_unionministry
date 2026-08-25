@@ -1,6 +1,6 @@
 /**
  * ActivitiesManagement — إدارة الأنشطة والفعاليات
- * المنظومة الوطنية للعمل النقابي | وزارة الشؤون الاجتماعية والعمل
+ * المنظومة الوطنية لإدارة قطاع العمل | وزارة الشؤون الاجتماعية والعمل
  */
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Activity, Plus, X, Download, Users, DollarSign, Calendar, MapPin, LayoutGrid, List, BookOpen, Mic, Briefcase, Heart, Dumbbell, Globe, Star, BarChart2, Loader2, Eye, Edit2, Trash2, Clock, CheckCircle, Search, Filter, ChevronRight, ChevronLeft, } from 'lucide-react';

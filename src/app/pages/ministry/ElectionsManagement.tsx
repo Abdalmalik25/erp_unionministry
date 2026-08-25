@@ -1,6 +1,6 @@
 /**
  * ElectionsManagement — إدارة الانتخابات النقابية
- * المنظومة الوطنية للعمل النقابي | وزارة الشؤون الاجتماعية والعمل
+ * المنظومة الوطنية لإدارة قطاع العمل | وزارة الشؤون الاجتماعية والعمل
  */
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Vote, Plus, X, Download, AlertCircle, Users, MapPin, Clock, CheckCircle, ChevronRight, ChevronLeft, } from 'lucide-react';

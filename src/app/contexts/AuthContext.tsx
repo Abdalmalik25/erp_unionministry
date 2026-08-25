@@ -18,6 +18,8 @@ export interface User {
     organizationId?: string;
     userType: 'ministry' | 'organization';
     sessionId?: string;
+    /** true = لا يزال الحساب بكلمة المرور الابتدائية ويجب تغييرها */
+    mustChangePassword?: boolean;
 }
 interface AuthContextType {
     user: User | null;
@@ -26,6 +28,8 @@ interface AuthContextType {
     signOut: () => Promise<void>;
     isMinistry: boolean;
     isOrganization: boolean;
+    /** تُستدعى بعد تغيير كلمة المرور بنجاح لإخفاء تنبيه التغيير الابتدائي */
+    markPasswordChanged: () => void;
 }
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -51,7 +55,9 @@ export function AuthProvider({ children }: {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 if (res.ok) {
-                    const data = await res.json();
+                    const body = await res.json();
+                    // يدعم الشكلين: الظرف الموحد أو الخام
+                    const data = body.data ?? body;
                     if (data.user) {
                         const u = data.user;
                         const sus = createSession(u.id, u.email, u.userType || 'ministry');
@@ -63,6 +69,7 @@ export function AuthProvider({ children }: {
                             organizationId: u.organizationId,
                             userType: u.userType === 'entity' ? 'organization' : (u.userType || 'ministry'),
                             sessionId: sus.sessionId,
+                            mustChangePassword: u.mustChangePassword === true,
                         });
                         return;
                     }
@@ -97,39 +104,35 @@ export function AuthProvider({ children }: {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),
             });
+            // قراءة الجسم مرة واحدة — يدعم الظرف الموحد والشكل الخام
+            const body = await res.json().catch(() => null);
+            const data = body?.data ?? body;
 
-            if (res.ok) {
-                const data = await res.json();
-                if (data.success && data.token && data.user) {
-                    const resolvedType = (data.user.userType === 'entity' || data.user.userType === 'organization')
-                        ? 'organization'
-                        : 'ministry';
-                    const userData: User = {
-                        id: data.user.id,
-                        email: data.user.email,
-                        name: data.user.name,
-                        role: data.user.role,
-                        organizationId: data.user.organizationId,
-                        userType: resolvedType,
-                        sessionId: data.token,
-                    };
-                    const session = createSession(userData.id, userData.email, userData.userType);
-                    userData.sessionId = session.sessionId;
-                    localStorage.setItem('auth_token', data.token);
-                    clearRateLimit(rlKey);
-                    logAudit({ action: 'LOGIN_SUCCESS', userId: userData.id, email, details: { mode: 'official', device: deviceInfo } });
-                    setUser(userData);
-                    return userData;
-                }
+            if (res.ok && body && body.success !== false && data.token && data.user) {
+                const resolvedType = (data.user.userType === 'entity' || data.user.userType === 'organization')
+                    ? 'organization'
+                    : 'ministry';
+                const userData: User = {
+                    id: data.user.id,
+                    email: data.user.email,
+                    name: data.user.name,
+                    role: data.user.role,
+                    organizationId: data.user.organizationId,
+                    userType: resolvedType,
+                    sessionId: data.token,
+                    mustChangePassword: data.user.mustChangePassword === true,
+                };
+                const session = createSession(userData.id, userData.email, userData.userType);
+                userData.sessionId = session.sessionId;
+                localStorage.setItem('auth_token', data.token);
+                clearRateLimit(rlKey);
+                logAudit({ action: 'LOGIN_SUCCESS', userId: userData.id, email, details: { mode: 'official', device: deviceInfo } });
+                setUser(userData);
+                return userData;
             }
 
             // رسائل خطأ مؤسسية موحدة دون كشف تفاصيل النظام
-            let serverError = '';
-            try {
-                const errBody = await res.json();
-                serverError = errBody?.errors?.error || errBody?.error || '';
-            }
-            catch { /* تجاهل */ }
+            const serverError = String(body?.errors?.error || body?.error || '');
 
             if (res.status === 429) {
                 throw new Error('تم تعليق محاولات الدخول مؤقتاً لأسباب أمنية. الرجاء المحاولة بعد قليل.');
@@ -176,6 +179,11 @@ export function AuthProvider({ children }: {
         }
     }, [user]);
 
+    /** بعد تغيير كلمة المرور بنجاح — يُخفي تنبيه «كلمة المرور الابتدائية» فوراً دون إعادة دخول */
+    const markPasswordChanged = useCallback(() => {
+        setUser((cur) => (cur ? { ...cur, mustChangePassword: false } : cur));
+    }, []);
+
     return (<AuthContext.Provider value={{
             user,
             loading,
@@ -183,6 +191,7 @@ export function AuthProvider({ children }: {
             signOut,
             isMinistry: user?.userType === 'ministry',
             isOrganization: user?.userType === 'organization',
+            markPasswordChanged,
         }}>
             {children}
         </AuthContext.Provider>);

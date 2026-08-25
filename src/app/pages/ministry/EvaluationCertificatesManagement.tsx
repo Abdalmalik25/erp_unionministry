@@ -1,6 +1,6 @@
 ﻿/**
  * EvaluationCertificatesManagement — إدارة شهادات التقييم
- * المنظومة الوطنية للعمل النقابي | وزارة الشؤون الاجتماعية والعمل
+ * المنظومة الوطنية لإدارة قطاع العمل | وزارة الشؤون الاجتماعية والعمل
  *
  * Integrates:
  *   - Profession linkage (profession_id) + standard version + assessed_against_standards

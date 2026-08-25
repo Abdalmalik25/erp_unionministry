@@ -1,6 +1,6 @@
 /**
  * ViolationsManagement — إدارة المخالفات والعقوبات
- * المنظومة الوطنية للعمل النقابي | وزارة الشؤون الاجتماعية والعمل
+ * المنظومة الوطنية لإدارة قطاع العمل | وزارة الشؤون الاجتماعية والعمل
  */
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { AlertTriangle, Eye, Edit2, Trash2, Plus, Search, Filter, CheckCircle, X, ChevronRight, ChevronLeft, Download, ShieldAlert, Clock, ChevronUp, RefreshCw, DollarSign, Scale, FileText, Calendar, } from 'lucide-react';

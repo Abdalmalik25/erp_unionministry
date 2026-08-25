@@ -221,7 +221,7 @@ export function OfflineProvider({ children }: {
             toast.error('فشل مسح الذاكرة المؤقتة');
         }
     }, []);
-    // المزامنة التلقائية للعمليات المعلقة مع واجهة برمجة المنصة الوطنية
+    // المزامنة التلقائية للعمليات المعلقة مع واجهة برمجة المنظومة الوطنية
     // العمليات تبقى محفوظة محلياً (IndexedDB) حتى تنفيذها عبر نقاط النهاية الرسمية
     const autoSyncPendingActions = useCallback(async () => {
         if (!isOnline || pendingActions === 0)

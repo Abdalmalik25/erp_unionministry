@@ -461,6 +461,14 @@ export function Login() {
               </button>
             </form>
 
+            {/* تلميح أمني — كلمة المرور الابتدائية */}
+            {!authSuccess && (
+              <p className="mt-3 text-center text-[11px] leading-relaxed text-slate-500 flex items-start justify-center gap-1.5">
+                <ShieldCheck size={13} className="text-slate-600 shrink-0 mt-0.5" />
+                إن كانت هذه كلمة مرور ابتدائية مُسلَّمة إليك إدارياً، فغيّرها فور الدخول من «الملف الشخصي ← تغيير كلمة المرور»
+              </p>
+            )}
+
             {/* طلب فتح حساب — نقابات / عمال / موظفو الوزارة */}
             {!authSuccess && REQUEST_TYPE_BY_AUDIENCE[audience] && !accReqDone && (
               <div className="mt-4">

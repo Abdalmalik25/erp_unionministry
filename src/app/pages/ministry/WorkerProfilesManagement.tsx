@@ -1,6 +1,6 @@
 /**
  * WorkerProfilesManagement — إدارة ملفات العمال
- * المنظومة الوطنية للعمل النقابي | وزارة الشؤون الاجتماعية والعمل
+ * المنظومة الوطنية لإدارة قطاع العمل | وزارة الشؤون الاجتماعية والعمل
  */
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Search, Eye, Edit2, Trash2, Plus, RefreshCw, X, Download, } from 'lucide-react';
