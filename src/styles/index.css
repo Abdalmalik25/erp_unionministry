@@ -427,11 +427,12 @@
     line-height: 1.2;
     color: var(--heading);
     margin: 0 0 0.5em;
-    letter-spacing: -0.02em;
+    /* العربية لا تحتمل التضييق السالب الكبير — محايد للعناوين */
+    letter-spacing: 0;
     text-wrap: balance;
   }
-  h1 { font-size: var(--text-4xl); font-weight: 800; }
-  h2 { font-size: var(--text-3xl); }
+  h1 { font-size: var(--text-4xl); font-weight: 900; }
+  h2 { font-size: var(--text-3xl); font-weight: 800; }
   h3 { font-size: var(--text-2xl); }
   h4 { font-size: var(--text-xl); }
   h5 { font-size: var(--text-lg); }

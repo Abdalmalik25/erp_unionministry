@@ -4,7 +4,7 @@
  * النسخة المحسنة v3 - دعم IndexedDB متقدم
  */
 
-const CACHE_VERSION = 'v6';
+const CACHE_VERSION = 'v7';
 const CACHE_NAME = `unionsphere-${CACHE_VERSION}`;
 const DB_NAME = 'UnionSphereDB';
 const DB_VERSION = 1;
@@ -20,6 +20,10 @@ const CORE_ASSETS = [
   '/android-chrome-512x512.png',
   '/apple-touch-icon.png',
   '/theme-init.js',
+  // الخطوط الرسمية ذاتية الاستضافة — عمل دون اتصال بهوية كاملة
+  '/fonts/IBMPlexSansArabic-400-arabic.woff2',
+  '/fonts/IBMPlexSansArabic-700-arabic.woff2',
+  '/fonts/Cairo-800-arabic.woff2',
 ];
 
 // استراتيجيات التخزين المؤقت

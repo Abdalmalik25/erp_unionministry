@@ -17,7 +17,8 @@ import { NATIONAL_REGISTRIES, LEGAL_ITEMS, FAQ_ITEMS, VISION_COMMITMENTS, GUARAN
 
 function PageHero({ icon: Icon, title, subtitle }: { icon: typeof Landmark; title: string; subtitle: string }) {
   return (
-    <section className="bg-gradient-to-bl from-[#0b1526] to-[#101a3a] text-white">
+    <section className="relative overflow-hidden bg-gradient-to-bl from-[#060d1a] via-[#0a1428] to-[#101f42] text-white">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_45%_40%_at_15%_90%,rgba(201,168,76,.12),transparent)] pointer-events-none" />
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="flex items-center gap-3">
           <span className="w-11 h-11 rounded-xl bg-amber-400/15 border border-amber-400/30 text-amber-300 flex items-center justify-center">

@@ -59,8 +59,9 @@ export function PublicHome() {
   return (
     <PublicLayout>
       {/* ===== البطل: رسالة وطنية ===== */}
-      <section className="relative overflow-hidden bg-gradient-to-bl from-[#0b1526] via-[#0d1830] to-[#101a3a] text-white">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_80%_10%,rgba(30,58,138,.35),transparent)] pointer-events-none" />
+      <section className="relative overflow-hidden bg-gradient-to-bl from-[#060d1a] via-[#0a1428] to-[#101f42] text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_80%_10%,rgba(37,64,143,.40),transparent)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_45%_35%_at_12%_88%,rgba(201,168,76,.14),transparent)] pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 py-16 md:py-24 relative">
           <p className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-300 text-xs font-bold">
             <Globe size={13} /> {BRAND.country} — البوابة الرسمية لقطاع العمل

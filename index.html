@@ -28,14 +28,9 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="preload" as="image" href="/logo_yemen.jpg" fetchpriority="high" />
 
-    <!-- الخطوط الرسمية: تحميل مبكر عالي الأداء -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Tajawal:wght@300;400;500;700;800;900&display=swap"
-      fetchpriority="high"
-    />
+    <!-- الخطوط الرسمية ذاتية الاستضافة: preload للحرجين فقط، والبقية font-display swap -->
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/IBMPlexSansArabic-400-arabic.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/Cairo-800-arabic.woff2" crossorigin />
 
     <!-- منع وميض الثيم الخاطئ (FOUC) عند التحميل — سكربت خارجي متوافق مع CSP -->
     <script src="/theme-init.js"></script>

@@ -1,20 +1,158 @@
 /**
- * Fonts CSS - نظام الخطوط الرسمي
- * منصة قطاع العمل - وزارة الشؤون الاجتماعية والعمل
- *
- * ملاحظة: يتم تحميل الخطوط عبر <link> في index.html مع preconnect لتحسين الأداء.
- * هذا الملف يعرّف متغيرات الخطوط (Tokens) والأنماط النصية الرسمية فقط.
+ * fonts.css — نظام الخطوط الرسمي (ذاتي الاستضافة — صفر اعتماد خارجي)
+ * ───────────────────────────────────────────────────────────────────
+ * الثنائية المؤسسية:
+ *  - Cairo                → العناوين والهوية (هندسي سيادي، أوزان 700–900)
+ *  - IBM Plex Sans Arabic → المتن والواجهات (قراءة مريحة عالية الوضوح)
+ *  - JetBrains Mono       → الأرقام المالية والإحصاءات
+ * كل الملفات محلية في /fonts مع unicode-range و font-display: swap
  */
 
 /* ============================================================
-   1. متغيرات نظام الخطوط (إدارة مركزية)
+   1. وجوه الخطوط (@font-face)
+   ============================================================ */
+@font-face {
+  font-family: 'IBM Plex Sans Arabic';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/IBMPlexSansArabic-400-arabic.woff2') format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+}
+@font-face {
+  font-family: 'IBM Plex Sans Arabic';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/IBMPlexSansArabic-400-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+20AC, U+2122, U+2212, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'IBM Plex Sans Arabic';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/IBMPlexSansArabic-500-arabic.woff2') format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFC;
+}
+@font-face {
+  font-family: 'IBM Plex Sans Arabic';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/IBMPlexSansArabic-500-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+2000-206F, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'IBM Plex Sans Arabic';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/IBMPlexSansArabic-600-arabic.woff2') format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFC;
+}
+@font-face {
+  font-family: 'IBM Plex Sans Arabic';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/IBMPlexSansArabic-600-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+2000-206F, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'IBM Plex Sans Arabic';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/IBMPlexSansArabic-700-arabic.woff2') format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFC;
+}
+@font-face {
+  font-family: 'IBM Plex Sans Arabic';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/IBMPlexSansArabic-700-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+2000-206F, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Cairo';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/Cairo-700-arabic.woff2') format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFC;
+}
+@font-face {
+  font-family: 'Cairo';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/Cairo-700-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+2000-206F, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Cairo';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('/fonts/Cairo-800-arabic.woff2') format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFC;
+}
+@font-face {
+  font-family: 'Cairo';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('/fonts/Cairo-800-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+2000-206F, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Cairo';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url('/fonts/Cairo-900-arabic.woff2') format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFC;
+}
+@font-face {
+  font-family: 'Cairo';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url('/fonts/Cairo-900-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+2000-206F, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/JetBrainsMono-400-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+2000-206F, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/JetBrainsMono-600-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+2000-206F, U+FEFF, U+FFFD;
+}
+
+/* ============================================================
+   2. متغيرات نظام الخطوط
    ============================================================ */
 :root {
-  /* عائلة الخطوط */
-  --font-primary: 'Tajawal', 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
-  --font-latin: 'Inter', 'Tajawal', 'Segoe UI', system-ui, sans-serif;
-  --font-heading: 'Noto Naskh Arabic', 'Tajawal', 'Amiri', 'Georgia', serif;
-  --font-arabic: 'Tajawal', 'Noto Naskh Arabic', 'Amiri', 'Times New Roman', serif;
+  /* عائلة المتن الأساسي */
+  --font-primary: 'IBM Plex Sans Arabic', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  /* عائلة العناوين — الطبقة السيادية */
+  --font-display: 'Cairo', 'IBM Plex Sans Arabic', 'Segoe UI', sans-serif;
+  --font-heading: var(--font-display);
+  --font-latin: 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  --font-arabic: var(--font-primary);
   --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Consolas', monospace;
 
   /* أحجام الخطوط (نظام وحدات مرن) */
@@ -41,14 +179,14 @@
   --font-extrabold: 800;
   --font-black: 900;
 
-  /* تباعد الأسطر (Line-height) */
+  /* تباعد الأسطر */
   --leading-tight: 1.15;
   --leading-snug: 1.375;
   --leading-normal: 1.6;
   --leading-relaxed: 1.75;
   --leading-loose: 2;
 
-  /* تباعد الأحرف (Letter-spacing) */
+  /* تباعد الأحرف */
   --tracking-tighter: -0.05em;
   --tracking-tight: -0.025em;
   --tracking-normal: 0em;
@@ -64,31 +202,29 @@
 }
 
 /* ============================================================
-   2. النصوص الرسمية في الترويسة والرأس
+   3. النصوص الرسمية الخاصة
    ============================================================ */
 .gov-header-text {
-  font-family: var(--font-heading);
+  font-family: var(--font-display);
   font-weight: var(--font-extrabold);
   font-size: var(--text-2xl);
-  letter-spacing: var(--tracking-wider);
-  text-transform: uppercase;
+  letter-spacing: 0;
   color: var(--color-white);
 }
 
 /* توقيع أو اسم الوزير */
 .minister-signature {
-  font-family: 'Noto Naskh Arabic', 'Tajawal', serif;
+  font-family: var(--font-display);
   font-size: var(--text-xl);
-  font-weight: var(--font-medium);
+  font-weight: var(--font-semibold);
   color: var(--color-gold);
-  font-style: italic;
 }
 
 /* نص شعار الوزارة */
 .ministry-slogan {
-  font-family: var(--font-arabic);
+  font-family: var(--font-primary);
   font-size: var(--text-sm);
-  font-weight: var(--font-light);
+  font-weight: var(--font-medium);
   letter-spacing: var(--tracking-wide);
   color: var(--color-gold-light);
 }
@@ -96,7 +232,7 @@
 /* البيانات المالية أو الأرقام الرسمية */
 .financial-number {
   font-family: var(--font-mono);
-  font-weight: var(--font-bold);
+  font-weight: var(--font-semibold);
   font-size: var(--text-2xl);
   color: var(--color-teal);
   direction: ltr;
@@ -108,7 +244,6 @@
   font-family: var(--font-primary);
   font-weight: var(--font-bold);
   font-size: var(--text-xs);
-  text-transform: uppercase;
   letter-spacing: var(--tracking-wider);
   color: var(--color-gold-dark);
   background: color-mix(in srgb, var(--color-gold) 15%, transparent);
@@ -118,9 +253,9 @@
 
 /* النصوص الرسمية (الاقتباسات والمراجع) */
 blockquote {
-  font-family: var(--font-heading);
-  font-size: var(--text-xl);
-  font-weight: var(--font-medium);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
   line-height: var(--leading-relaxed);
   padding: 1rem 2rem;
   border-inline: 4px solid var(--color-gold);
@@ -133,7 +268,7 @@ blockquote {
 /* البيانات الإحصائية والأرقام */
 .data-number {
   font-family: var(--font-mono);
-  font-weight: var(--font-bold);
+  font-weight: var(--font-semibold);
   font-size: var(--text-2xl);
   color: var(--color-primary-bright);
   letter-spacing: var(--tracking-tight);
@@ -145,20 +280,11 @@ blockquote {
   font-weight: var(--font-normal);
 }
 
-/* النصوص العربية الطويلة (قصائد، نصوص رسمية) */
+/* النصوص العربية الطويلة الرسمية */
 .arabic-poetic {
-  font-family: 'Noto Naskh Arabic', 'Amiri', serif;
+  font-family: var(--font-primary);
   line-height: var(--leading-loose);
   font-size: var(--text-lg);
   text-align: justify;
   text-justify: kashida;
-}
-
-/* ============================================================
-   3. دعم الخطوط المتغيرة (Variable Fonts) إن وجدت
-   ============================================================ */
-@supports (font-variation-settings: normal) {
-  html {
-    font-family: 'Tajawal', 'Inter var', 'Segoe UI', sans-serif;
-  }
 }
