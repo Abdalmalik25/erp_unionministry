@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { PublicLayout } from "./PublicLayout";
 import { BRAND } from "../../branding";
-import { IMPACT_ITEMS, NATIONAL_PANELS } from "../../content/institutional";
+import { IMPACT_ITEMS, NATIONAL_PANELS, GOVERNANCE_PRINCIPLES } from "../../content/institutional";
 
 const PORTALS = [
   {
@@ -43,12 +43,7 @@ const PORTALS = [
   },
 ];
 
-const GOVERNANCE_PRINCIPLES = [
-  { icon: Scale, title: "لا قرار بلا سند", outcome: "كل احتساب وكل عقوبة خلفها نص نظامي يراه المعني — فتنعدم المفاجأة وتُبنى الثقة." },
-  { icon: ShieldCheck, title: "التوثيق حماية للجميع", outcome: "حين تُوثَّق كل خطوة، يحمى الموظف من شبهة، ويطمئن المستفيد إلى أن ملفه لن يختفي." },
-  { icon: TrendingUp, title: "الأداء يُقاس ويُعلن", outcome: "زمن الخدمة ونسبة الامتثال وجودة البيانات مؤشرات معلنة داخل المنظومة — المساءلة تبدأ من القياس." },
-  { icon: Handshake, title: "شراكة لا وصاية", outcome: "المنظومة تجمع أطراف سوق العمل الطبيعية كلٍّ في دوره — فالقوة تنتج من التكامل لا من الهيمنة." },
-];
+const PRINCIPLE_ICONS = [Scale, ShieldCheck, TrendingUp, Handshake];
 
 export function PublicHome() {
   const [ratio, setRatio] = useState<number | null>(null);
@@ -209,17 +204,20 @@ export function PublicHome() {
             <h2 className="text-2xl md:text-3xl font-black text-foreground">مبادئ الحوكمة الملزِمة داخل المنظومة</h2>
         </div>
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-5xl">
-          {GOVERNANCE_PRINCIPLES.map(pl => (
-            <article key={pl.title} className="rounded-2xl border bg-card p-5 flex gap-4">
-              <span className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shrink-0">
-                <pl.icon size={20} />
-              </span>
-              <div>
-                <h3 className="font-black text-sm text-foreground">{pl.title}</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed mt-1.5">{pl.outcome}</p>
-              </div>
-            </article>
-          ))}
+          {GOVERNANCE_PRINCIPLES.map((pl, i) => {
+            const Icon = PRINCIPLE_ICONS[i];
+            return (
+              <article key={pl.title} className="rounded-2xl border bg-card p-5 flex gap-4">
+                <span className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shrink-0">
+                  <Icon size={20} />
+                </span>
+                <div>
+                  <h3 className="font-black text-sm text-foreground">{pl.title}</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed mt-1.5">{pl.outcome}</p>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </section>
 

@@ -2,7 +2,7 @@
  * اختبارات المحتوى المؤسسي المشترك — ضبط الجودة الرسمية للنصوص
  */
 import { describe, it, expect } from 'vitest';
-import { NATIONAL_REGISTRIES, LEGAL_ITEMS, FAQ_ITEMS, NATIONAL_PANELS } from './institutional';
+import { NATIONAL_REGISTRIES, LEGAL_ITEMS, FAQ_ITEMS, NATIONAL_PANELS, GOVERNANCE_PRINCIPLES, GUARANTEE_ITEMS } from './institutional';
 
 describe('المحتوى المؤسسي المشترك', () => {
   it('السجلات الوطنية عشرة سجلات كاملة النصوص', () => {
@@ -54,6 +54,17 @@ describe('المحتوى المؤسسي المشترك', () => {
     const joined = NATIONAL_PANELS.map(p => `${p.label} ${p.message}`).join(' ');
     for (const key of ['قانون العمل', 'سجلات', 'التعيين الوطني', 'الحوكمة']) {
       expect(joined).toContain(key);
+    }
+  });
+
+  it('مبادئ الحوكمة أربعة مكتملة والضمانات الحكومية ست فريدة', () => {
+    expect(GOVERNANCE_PRINCIPLES).toHaveLength(4);
+    expect(GOVERNANCE_PRINCIPLES.every(p => p.title.length > 3 && p.outcome.length > 40)).toBe(true);
+    expect(GUARANTEE_ITEMS.length).toBeGreaterThanOrEqual(6);
+    expect(new Set(GUARANTEE_ITEMS).size).toBe(GUARANTEE_ITEMS.length);
+    const guarantees = GUARANTEE_ITEMS.join(' ');
+    for (const key of ['القرار النهائي', 'نص نظامي', 'البصمات المتسلسلة']) {
+      expect(guarantees).toContain(key);
     }
   });
 });

@@ -1,4 +1,5 @@
-﻿PublicPages:104: body: `المنظومة الوطنية هي النظام الحكومي المرجعي الذي تمارس به وزارة الشؤون الاجتماعية والعمل إدارة
-PublicPages:127: title: "من يخدمه النظام؟ (الأدوار الأربعة)",
-NationalPlatformHome:87: {['سجل الأشخاص','سجل المنشآت','سجل العاملين','سجل العقود','سجل التفتيش','سجل القضايا','سجل...
-LEGAL has حوادث: true
+﻿PublicPages.tsx:213: <h2 className="font-black text-lg mt-12 mb-4 flex items-center gap-2"><BadgeCheck size={18
+PublicPages.tsx:216: "النظام لا يصدر حكماً نهائياً — القرار النهائي للمختص البشري",
+PublicPages.tsx:217: "لا عقوبة إلا بنص نظامي صريح ينظمها",
+NationalPlatformHome.tsx:70: <div className="font-bold text-sm flex items-center gap-2"><Scale className="w-5 h-5 text-
+NationalPlatformHome.tsx:72: <li>النظام لا يصدر حكماً نهائياً — القرار النهائي للإنسان المختص</li>

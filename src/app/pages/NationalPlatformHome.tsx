@@ -12,7 +12,7 @@ import { PlatformGuide } from "../components/national/PlatformGuide";
 import { Card } from "../components/ui/Card";
 import { Badge } from "../components/ui/badge";
 import { Globe, Layers, Shield, Zap, HeartPulse, Scale, Building2, TrendingUp } from "lucide-react";
-import { NATIONAL_PANELS, NATIONAL_REGISTRIES } from "../content/institutional";
+import { NATIONAL_PANELS, NATIONAL_REGISTRIES, GUARANTEE_ITEMS } from "../content/institutional";
 
 export default function NationalPlatformHome() {
   return (
@@ -69,10 +69,7 @@ export default function NationalPlatformHome() {
             <div className="p-5 space-y-2">
               <div className="font-bold text-sm flex items-center gap-2"><Scale className="w-5 h-5 text-slate-700"/> الضمانات الحكومية</div>
               <ul className="text-xs space-y-1 list-disc pr-4 text-muted-foreground">
-                <li>النظام لا يصدر حكماً نهائياً — القرار النهائي للإنسان المختص</li>
-                <li>لا تُحتسب أي درجة خطورة عقوبة إلا بنص نظامي صريح</li>
-                <li>كل قرار يوضح: السبب والمرجع النظامي وتاريخ الإصدار</li>
-                <li>البيانات التاريخية محفوظة كاملة مع مصدرها وسلسلة اعتمادها</li>
+                {GUARANTEE_ITEMS.map(g => <li key={g}>{g}</li>)}
               </ul>
             </div>
           </Card>

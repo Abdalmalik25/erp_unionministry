@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { PublicLayout } from "./PublicLayout";
 import { BRAND } from "../../branding";
-import { NATIONAL_REGISTRIES, LEGAL_ITEMS, FAQ_ITEMS, VISION_COMMITMENTS } from "../../content/institutional";
+import { NATIONAL_REGISTRIES, LEGAL_ITEMS, FAQ_ITEMS, VISION_COMMITMENTS, GUARANTEE_ITEMS } from "../../content/institutional";
 
 /* ============ مكوّنات مشتركة ============ */
 
@@ -212,14 +212,7 @@ export function AboutPage() {
 
         <h2 className="font-black text-lg mt-12 mb-4 flex items-center gap-2"><BadgeCheck size={18} className="text-primary" />الضمانات الحكومية الثابتة</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {[
-            "النظام لا يصدر حكماً نهائياً — القرار النهائي للمختص البشري",
-            "لا عقوبة إلا بنص نظامي صريح ينظمها",
-            "كل قرار يوضح سببه ومرجعه النظامي وتاريخه ومعتمده",
-            "البيانات التاريخية محفوظة كاملة بمصدرها وسلسلة اعتمادها",
-            "سجل تدقيق مقفل بتقنية البصمات المتسلسلة ضد أي تلاعب",
-            "استمرارية ميدانية كاملة حتى دون اتصال بالإنترنت",
-          ].map(g => (
+          {GUARANTEE_ITEMS.map(g => (
             <div key={g} className="flex items-start gap-2.5 rounded-xl border bg-card p-3.5">
               <BadgeCheck size={16} className="text-emerald-600 shrink-0 mt-0.5" />
               <p className="text-xs font-bold text-foreground leading-relaxed">{g}</p>
