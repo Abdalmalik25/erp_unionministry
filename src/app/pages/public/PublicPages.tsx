@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { PublicLayout } from "./PublicLayout";
 import { BRAND } from "../../branding";
+import { NATIONAL_REGISTRIES, LEGAL_ITEMS, FAQ_ITEMS } from "../../content/institutional";
 
 /* ============ مكوّنات مشتركة ============ */
 
@@ -34,23 +35,34 @@ function PageHero({ icon: Icon, title, subtitle }: { icon: typeof Landmark; titl
 
 function Accordion({ items, defaultOpen = 0 }: { items: { title: string; body: string }[]; defaultOpen?: number }) {
   const [open, setOpen] = useState(defaultOpen);
+  const uid = useState(() => `acc-${Math.random().toString(36).slice(2, 8)}`)[0];
   return (
     <div className="rounded-2xl border bg-card shadow-sm overflow-hidden divide-y divide-border/60">
       {items.map((it, i) => {
         const isOpen = open === i;
+        const btnId = `${uid}-btn-${i}`;
+        const panelId = `${uid}-panel-${i}`;
         return (
           <div key={it.title}>
             <button
               type="button"
+              id={btnId}
+              aria-controls={panelId}
               onClick={() => setOpen(isOpen ? -1 : i)}
               aria-expanded={isOpen}
               className="w-full flex items-center gap-3 px-5 py-4 text-right hover:bg-accent/50 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
             >
               <ScrollText size={15} className={`shrink-0 ${isOpen ? "text-primary" : "text-muted-foreground"}`} />
               <span className="flex-1 font-bold text-sm text-foreground">{it.title}</span>
-              <ChevronDown size={17} className={`shrink-0 text-muted-foreground transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
+              <ChevronDown size={17} aria-hidden className={`shrink-0 text-muted-foreground transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
             </button>
-            <div className={`grid transition-all duration-300 ease-in-out ${isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
+            <div
+              id={panelId}
+              role="region"
+              aria-labelledby={btnId}
+              hidden={!isOpen}
+              className={`grid transition-all duration-300 ease-in-out ${isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
+            >
               <div className="overflow-hidden">
                 <p className="px-5 pb-5 pr-[52px] text-[13px] leading-relaxed text-muted-foreground whitespace-pre-line max-h-80 overflow-y-auto">
                   {it.body}
@@ -116,19 +128,6 @@ const ABOUT_SECTIONS: { title: string; body: string }[] = [
   },
 ];
 
-const REGISTRIES_ROWS: [string, string][] = [
-  ["سجل الأشخاص", "القاعدة المرجعية الوطنية لكل شخص له تعامل مع منظومة العمل: البيانات الأساسية، المعرفات الرسمية، وحالة النفاذ — تُستكمل مرة واحدة وتُعتمد في كل السجلات الأخرى."],
-  ["سجل المنشآت", "بيانات المنشآت الخاصة وأرقامها التجارية، فروعها، نشاطها الاقتصادي وفق التصنيف الدولي، حالتها الترخيصية، وملاك تشغيلها."],
-  ["سجل العاملين", "الملف المهني الوطني للعامل: المؤهلات، الخبرات، الوظائف المتقلدة، والتاريخ المهني الموثق من أول يوم عمل."],
-  ["سجل العقود", "عقود العمل الفردية والجماعية بنصوصها ومددها وأطرافها، مع ربط آلي بحالة المنشأة والعامل وسجل التفتيش."],
-  ["سجل التفتيش", "زيارات التفتيش الميداني، الملاحظات، المخالفات المرصودة، الإشعارات الصادرة، ومتابعة التصحيح حتى الإغلاق."],
-  ["سجل القضايا", "النزاعات العمالية بجميع مراحلها: التسوية الودية، الجلسات، الأحكام، والتنفيذ — بسلسلة إجراءات مكتملة التوثيق."],
-  ["سجل النقابات", "تأسيس النقابات ومنظمات أصحاب العمل، مجالس إدارتها، جمعياتها العمومية، انتخاباتها، ومراسلاتها الرسمية."],
-  ["المرجع النظامي", "النصوص القانونية واللوائح ذات الصلة بقطاع العمل مرتبة ومحدثة، وكل قرار في المنظومة يستند إلى مرجع صريح منها."],
-  ["اللوائح التنظيمية", "القرارات الوزارية والتعميمات المنظمة للعمل، مع تواريخ النفاذ والحالات الملغاة — لضمان العمل بالنص الساري فقط."],
-  ["البحث الموحد", "نافذة بحث واحدة عبر جميع السجلات بصلاحيات المستخدم، تُظهر النتيجة بمصدرها ورابط سياقها الكامل."],
-];
-
 const SERVICES_BY_PORTAL: { portal: string; who: string; rows: [string, string][] }[] = [
   {
     portal: "خدمات أصحاب العمل",
@@ -176,25 +175,6 @@ const SERVICES_BY_PORTAL: { portal: string; who: string; rows: [string, string][
   },
 ];
 
-const LEGAL_ITEMS: [string, string][] = [
-  ["قانون العمل اليمني", "المرجع الأم لعلاقات العمل: العقود الفردية والجماعية، الأجور، ساعات العمل، الإجازات، سلامة البيئة العملية، إنهاء الخدمة، وتسوية النزاعات — وتُفصَّل أحكامه التنفيذية في اللوائز المصاحبة له. كل إجراء في المنظومة يتصل تلقائياً بالمادة الناظمة له."],
-  ["قانون المنظمات النقابية", "ينظّم حق التنظيم النقابي لأصحاب العمل والعاملين: إجراءات التأسيس والترخيص، الهياكل التنظيمية، الجمعيات العمومية، انتخابات المجالس، أموال المنظمات ورقابتها، وعلاقتها الرسمية بوزارة الشؤون الاجتماعية والعمل."],
-  ["سياسة اليمننة ونسبة التعيين", "السياسة الوطنية لإيراد العمالة الوطنية في الوظائف والمناصب. النسبة المعتمدة حالياً هي 80% وتُطبَّق آلياً داخل المنظومة على طلبات الترخيص والتوسع والتخفيض وفق القرار الوزاري المنظم — ولا يمكن تجاوزها إلا بقرار رسمي معلل يسري في النظام."],
-  ["أنظمة التفتيش والجزاءات", "إجراءات المعاينة والتفتيش الميداني، صلاحيات المفتشين، تصنيف المخالفات درجةً درجة، الجزاء المقابل لكل مخالفة نصاً، إجراءات الإشعار والتصحيح، وحق الاعتراض والتظلم ومواعيده."],
-  ["حماية البيانات الشخصية", "تجاه بيانات العاملين والمنشآت: جمع الحد الأدنى اللازم، تقييد الوصول بالدور الوظيفي، تشفير البيانات الحساسة، ومنع الاستخدام خارج الغرض الرسمي الذي جُمعت له — مع سجل تدقيق يوثق كل اطلاع حساس."],
-];
-
-const FAQ_ITEMS: [string, string][] = [
-  ["هل القرار الذي تصدره المنصة نهائي؟", "لا. المنصة تجمع المعطيات وتعرض التحليل والمسوغ النظامي، لكن القرار النهائي يبقى دائماً بيد المختص البشري المعتمد — هذا مبدأ ثابت في تصميم المنظومة."],
-  ["ماذا لو انقطع الإنترنت أثناء العمل الميداني؟", "تستمر المنصة في العمل بشكل كامل على جهازك: تُحفظ كل عملية في ذاكرة محلية آمنة داخل الجهاز، وعند عودة الاتصال تُزامَن تلقائياً مع الخادم دون أي تدخل. ولا تُعتبر العملية منجزة إلا بعد تأكيد استلام الخادم لها؛ فلا تضيع أي بيانات."],
-  ["هل يمكن لأحد تعديل سجل التدقيق؟", "مستحيل تقنياً. كل قيد يحمل بصمة رقمية مرتبطة بالقيد الذي قبله؛ أي تعديل أو حذف يكسر السلسلة ويُكتشف فوراً. والجدول نفسه مقفل ضد التعديل والحذف على مستوى قاعدة البيانات نفسها."],
-  ["كيف تُحمى بيانات الأشخاص؟", "البيانات الشخصية الحساسة مشفرة بمعيار AES-256 داخل قاعدة البيانات، وكلمات المرور تُحفظ بمشتق تشفير scrypt لا يسمح باسترجاعها، والصلاحيات مبنية على الحد الأدنى: كل حساب يرى ما يتطلبه دوره فقط، وكل اطلاع حساس يُسجَّل باسم صاحبه."],
-  ["من يحق له إنشاء الحسابات؟", "إنشاء الحسابات وإسناد الأدوار حكر على إدارة الحسابات بالوزارة. طلبات الانضمام تُقدَّم إلكترونياً من شاشة الدخول وتُراجع وتُعتمد رسمياً، ولا يمكن لأي جهة أخرى منح نفاذ."],
-  ["هل تُحتسب درجة خطورة أو عقوبة تلقائياً؟", "لا تُحتسب أي درجة عقوبة إلا بنص نظامي صريح ينظمها، والمنظومة تعرض الأساس النظامي لكل احتساب مع إمكانية مراجعته والاعتراض عليه وفق الإجراءات المنظمة."],
-  ["هل يعمل النظام على الهاتف؟", "نعم. المنظومة تطبيق ويب متقدم يعمل من المتصفح مباشرة على الهاتف والحاسب، ويمكن تثبيته كتطبيق مستقل من المتصفح دون الحاجة إلى متجر تطبيقات، ويستمر بالعمل عند انقطاع الاتصال."],
-  ["كم تستغرق خدمات الترخيص؟", "بعد اكتمال المستندات، تمر الطلب الآلي بدورة فحص واعتماد موثقة داخل المنظومة، ويظهر لك رقم مرجعي وحالة الطلب لحظياً. الهدف المعتمد: تقليص ما كان يستغرق أياماً إلى دقائق من وقت المراجع."],
-];
-
 /* ============ الصفحات ============ */
 
 export function AboutPage() {
@@ -207,7 +187,7 @@ export function AboutPage() {
         <h2 className="font-black text-lg mt-12 mb-1 flex items-center gap-2"><Database size={18} className="text-primary" />السجلات الوطنية العشرة</h2>
         <p className="text-xs text-muted-foreground mb-4">البنية المرجعية الموحدة التي تقوم عليها المنظومة — تفصيلاً</p>
         <div className="rounded-2xl border bg-card px-4 py-1 shadow-sm max-h-[420px] overflow-y-auto">
-          {REGISTRIES_ROWS.map(([k, v]) => (
+          {NATIONAL_REGISTRIES.map(([k, v]) => (
             <div key={k} className="border-b border-border/60 last:border-0 py-3.5">
               <p className="text-sm font-bold text-foreground flex items-center gap-2"><FileText size={13} className="text-primary shrink-0" />{k}</p>
               <p className="text-[13px] text-muted-foreground leading-relaxed mt-1 pr-5">{v}</p>
@@ -266,7 +246,7 @@ export function RegistriesPage() {
             بصلاحيات مضبوطة. كل عرض للبيانة يوضح مصدرها الرسمي وسلسلة اعتمادها، ولا توجد نسخ متكررة قد تتعارض.
           </p>
         </div>
-        <Accordion items={REGISTRIES_ROWS.map(([t, b]) => ({ title: t, body: b }))} defaultOpen={0} />
+        <Accordion items={NATIONAL_REGISTRIES.map(([t, b]) => ({ title: t, body: b }))} defaultOpen={0} />
         <CtaLogin />
       </div>
     </PublicLayout>

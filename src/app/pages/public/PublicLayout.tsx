@@ -2,7 +2,7 @@
  * PublicLayout — التخطيط الرسمي للموقع التعريفي العام
  * يتصفحه الجميع بلا حساب، ومنه الانتقال إلى بوابة الدخول
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router";
 import { Menu, X, LogIn, Globe, PhoneCall, Mail } from "lucide-react";
 import { BrandLogo } from "../../components/ui/BrandLogo";
@@ -16,11 +16,31 @@ const NAV = [
   { to: "/legal", label: "الأساس القانوني" },
   { to: "/faq", label: "الأسئلة الشائعة" },
   { to: "/contact", label: "تواصل معنا" },
-];
+] as const;
+
+/** جلب مسبق عند المرور بالماوس — يجعل التنقل فورياً تقريباً */
+const PREFETCH: Record<string, () => Promise<unknown>> = {
+  "/": () => import("./PublicHome"),
+  "/about": () => import("./PublicPages"),
+  "/services": () => import("./PublicPages"),
+  "/registries": () => import("./PublicPages"),
+  "/legal": () => import("./PublicPages"),
+  "/faq": () => import("./PublicPages"),
+  "/contact": () => import("./PublicPages"),
+  "/login": () => import("../Login"),
+};
 
 export function PublicLayout({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
+
+  // إرجاع التمرير لأعلى عند كل تنقل — سلوك مواقع رسمية طبيعي
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+    setOpen(false);
+  }, [pathname]);
+
+  const prefetch = (to: string) => () => { void PREFETCH[to]?.(); };
 
   return (
     <div dir="rtl" className="min-h-screen flex flex-col bg-background">
@@ -55,6 +75,9 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                 <Link
                   key={n.to}
                   to={n.to}
+                  onPointerEnter={prefetch(n.to)}
+                  onFocus={prefetch(n.to)}
+                  aria-current={active ? "page" : undefined}
                   className={`px-3 py-2 rounded-lg text-[13px] font-bold transition-colors ${active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`}
                 >
                   {n.label}
@@ -66,6 +89,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-2 mr-auto lg:mr-0">
             <Link
               to="/login"
+              onPointerEnter={prefetch("/login")}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[13px] font-black shadow hover:opacity-90 active:scale-[.98] transition-all"
             >
               <LogIn size={15} />
@@ -90,6 +114,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                 key={n.to}
                 to={n.to}
                 onClick={() => setOpen(false)}
+                onPointerEnter={prefetch(n.to)}
                 className={`px-3 py-2.5 rounded-lg text-[13px] font-bold ${n.to === "/" ? pathname === "/" : pathname.startsWith(n.to) ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent"}`}
               >
                 {n.label}
