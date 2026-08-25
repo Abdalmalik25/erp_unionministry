@@ -295,11 +295,11 @@ export function RootLayout() {
     if (!confirmed) return;
     try {
       await signOut();
-      navigate('/');
+      navigate('/login');
     } catch (e) {
       console.error('[Layout] Primary signOut failed, retrying:', e);
       await signOut();
-      navigate('/');
+      navigate('/login');
     }
   }, [confirm, signOut, navigate]);
 

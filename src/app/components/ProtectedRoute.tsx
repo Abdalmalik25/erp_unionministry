@@ -24,7 +24,7 @@ export function ProtectedRoute({
   useEffect(() => {
     if (loading) return;
     if (!user) {
-      navigate('/', { replace: true });
+      navigate('/login', { replace: true });
       return;
     }
 

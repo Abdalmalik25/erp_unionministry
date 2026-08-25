@@ -5,11 +5,11 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import {
   User, Lock, Eye, EyeOff, AlertCircle, Loader2, LogIn, CheckCircle2,
   Landmark, Building2, Users, HardHat, Search, SearchX, MapPin, UserPlus,
-  ShieldCheck, Scale,
+  ShieldCheck, Scale, ArrowRight,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { AUDIENCES, getAudience, getLandingPath } from '../utils/portals';
@@ -230,6 +230,12 @@ export function Login() {
         <div className="absolute inset-0 lg:hidden bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(30,58,138,0.25),rgba(255,255,255,0))] pointer-events-none" />
 
         <div className="w-full max-w-md relative z-10">
+          {/* رابط العودة إلى الموقع التعريفي العام */}
+          <div className="flex justify-end mb-3">
+            <Link to="/" className="inline-flex items-center gap-1.5 text-[12px] font-bold text-slate-400 hover:text-amber-300 transition-colors">
+              <ArrowRight size={13} /> العودة إلى الموقع الرسمي
+            </Link>
+          </div>
           {/* ترويسة مضغوطة — الجوال فقط */}
           <div className="lg:hidden text-center mb-6 space-y-3">
             <div className="inline-flex items-center justify-center shadow-2xl mb-1">

@@ -7,6 +7,15 @@ import { DashboardSkeleton } from "./components/ui/LoadingSkeleton";
 // Eager Loading للصفحات الأساسية
 import { Login } from "./pages/Login";
 
+// الموقع التعريفي العام — يتصفحه الجميع قبل الدخول
+const PublicHome = lazy(() => import("./pages/public/PublicHome").then(m => ({ default: m.PublicHome })));
+const AboutPage = lazy(() => import("./pages/public/PublicPages").then(m => ({ default: m.AboutPage })));
+const ServicesPage = lazy(() => import("./pages/public/PublicPages").then(m => ({ default: m.ServicesPage })));
+const RegistriesPage = lazy(() => import("./pages/public/PublicPages").then(m => ({ default: m.RegistriesPage })));
+const LegalPage = lazy(() => import("./pages/public/PublicPages").then(m => ({ default: m.LegalPage })));
+const FaqPage = lazy(() => import("./pages/public/PublicPages").then(m => ({ default: m.FaqPage })));
+const ContactPage = lazy(() => import("./pages/public/PublicPages").then(m => ({ default: m.ContactPage })));
+
 // Lazy Loading لباقي الصفحات
 const MinistryDashboard = lazy(() => import("./pages/ministry/DashboardNewEnhanced").then(m => ({ default: m.DashboardNewEnhanced })));
 const CommercialEstablishmentsManagement = lazy(() => import("./pages/ministry/CommercialEstablishmentsManagement").then(m => ({ default: m.CommercialEstablishmentsManagement })));
@@ -103,8 +112,38 @@ function PortalRoutes({ requiredRoles }: { requiredRoles: string[] }) {
 }
 
 export const router = createBrowserRouter([
+  // ===== الموقع التعريفي العام (بدون حساب) =====
   {
     path: "/",
+    element: <LazyPage><PublicHome /></LazyPage>,
+  },
+  {
+    path: "/about",
+    element: <LazyPage><AboutPage /></LazyPage>,
+  },
+  {
+    path: "/services",
+    element: <LazyPage><ServicesPage /></LazyPage>,
+  },
+  {
+    path: "/registries",
+    element: <LazyPage><RegistriesPage /></LazyPage>,
+  },
+  {
+    path: "/legal",
+    element: <LazyPage><LegalPage /></LazyPage>,
+  },
+  {
+    path: "/faq",
+    element: <LazyPage><FaqPage /></LazyPage>,
+  },
+  {
+    path: "/contact",
+    element: <LazyPage><ContactPage /></LazyPage>,
+  },
+  // ===== بوابة الدخول الرسمية =====
+  {
+    path: "/login",
     Component: Login,
   },
   {
