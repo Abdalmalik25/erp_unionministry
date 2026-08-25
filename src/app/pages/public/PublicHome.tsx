@@ -157,10 +157,10 @@ export function PublicHome() {
       {/* ===== الأثر الوطني ===== */}
       <section className="max-w-7xl mx-auto px-4 py-16">
         <div className="max-w-3xl">
-          <h2 className="text-2xl md:text-3xl font-black text-foreground leading-snug">لماذا منظومة وطنية؟ لأن الأثر يتجاوز الشاشة</h2>
+          <h2 className="text-2xl md:text-3xl font-black text-foreground leading-snug">الأثر الوطني — من توثيق السجل إلى صناعة الاستقرار</h2>
           <p className="text-sm md:text-base text-muted-foreground mt-3 leading-relaxed">
-            هذه ليست برمجيات تُشترى وتُركّب؛ إنها بنية سياسات عامة. ما يلي هو الفرق الذي تصنعه
-            حين يُدار سوق العمل بمرجعية وطنية واحدة:
+            حين تُدار علاقات العمل بمرجعية دولة واحدة، يتغير سلوك السوق كله:
+            الرقابة وقايةٌ لا مطاردة، والسياسة قرارٌ مبني على واقع موثق، والالتزام قاعدةٌ لا استثناء.
           </p>
         </div>
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -206,7 +206,7 @@ export function PublicHome() {
       {/* ===== مبادئ الحوكمة (لغة النتائج) ===== */}
       <section className="max-w-7xl mx-auto px-4 py-16">
         <div className="max-w-3xl">
-          <h2 className="text-2xl md:text-3xl font-black text-foreground">مبادئ نلتزمها أمامكم — وما تعنيه لكم فعلياً</h2>
+            <h2 className="text-2xl md:text-3xl font-black text-foreground">مبادئ الحوكمة الملزِمة داخل المنظومة</h2>
         </div>
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-5xl">
           {GOVERNANCE_PRINCIPLES.map(pl => (
