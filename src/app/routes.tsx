@@ -13,6 +13,7 @@ const AboutPage = lazy(() => import("./pages/public/PublicPages").then(m => ({ d
 const ServicesPage = lazy(() => import("./pages/public/PublicPages").then(m => ({ default: m.ServicesPage })));
 const RegistriesPage = lazy(() => import("./pages/public/PublicPages").then(m => ({ default: m.RegistriesPage })));
 const LegalPage = lazy(() => import("./pages/public/PublicPages").then(m => ({ default: m.LegalPage })));
+const PrivacyPage = lazy(() => import("./pages/public/PublicPages").then(m => ({ default: m.PrivacyPage })));
 const FaqPage = lazy(() => import("./pages/public/PublicPages").then(m => ({ default: m.FaqPage })));
 const ContactPage = lazy(() => import("./pages/public/PublicPages").then(m => ({ default: m.ContactPage })));
 
@@ -132,6 +133,10 @@ export const router = createBrowserRouter([
   {
     path: "/legal",
     element: <LazyPage><LegalPage /></LazyPage>,
+  },
+  {
+    path: "/privacy",
+    element: <LazyPage><PrivacyPage /></LazyPage>,
   },
   {
     path: "/faq",

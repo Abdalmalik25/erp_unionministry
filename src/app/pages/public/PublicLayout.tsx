@@ -151,6 +151,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
               {NAV.slice(1).map(n => (
                 <li key={n.to}><Link to={n.to} className="hover:text-amber-300 transition-colors">{n.label}</Link></li>
               ))}
+              <li><Link to="/privacy" className="hover:text-amber-300 transition-colors">سياسة الخصوصية</Link></li>
             </ul>
           </div>
           <div>
@@ -158,7 +159,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
             <ul className="space-y-2 text-xs text-slate-500">
               <li>بوابة الوزارة — للموظفين المعتمدين</li>
               <li>بوابة النقابات والمنظمات</li>
-              <li>منصة أصحاب العمل</li>
+              <li>بوابة أصحاب العمل</li>
               <li>جواز العامل الرقمي</li>
             </ul>
             <Link to="/login" className="inline-flex items-center gap-1.5 mt-4 text-amber-400 font-bold text-xs hover:text-amber-300">

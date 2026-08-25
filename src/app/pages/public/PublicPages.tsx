@@ -7,11 +7,11 @@ import { Link } from "react-router";
 import {
   Landmark, Scale, Database, Briefcase,
   HelpCircle, ChevronDown, ArrowLeft, PhoneCall, Mail, MapPin, Clock,
-  FileText, ScrollText, BadgeCheck, Users, Handshake,
+  FileText, ScrollText, BadgeCheck, Users, Handshake, ShieldCheck,
 } from "lucide-react";
 import { PublicLayout } from "./PublicLayout";
 import { BRAND } from "../../branding";
-import { NATIONAL_REGISTRIES, LEGAL_ITEMS, FAQ_ITEMS, VISION_COMMITMENTS, GUARANTEE_ITEMS } from "../../content/institutional";
+import { NATIONAL_REGISTRIES, LEGAL_ITEMS, FAQ_ITEMS, VISION_COMMITMENTS, GUARANTEE_ITEMS, PRIVACY_SECTIONS } from "../../content/institutional";
 
 /* ============ مكوّنات مشتركة ============ */
 
@@ -140,7 +140,7 @@ const ABOUT_SECTIONS: { title: string; body: string }[] = [
 const SERVICES_BY_PORTAL: { portal: string; who: string; rows: [string, string][] }[] = [
   {
     portal: "خدمات أصحاب العمل",
-    who: "للمنشآت الخاصة — عبر منصة أصحاب العمل",
+    who: "للمنشآت الخاصة — عبر بوابة أصحاب العمل",
     rows: [
       ["تسجيل منشأة جديدة", "نموذج إلكتروني واحد مع رفع المستندات الرسمية، ورقم مرجعي لمتابعة الطلب لحظة بلحظة حتى القرار."],
       ["إضافة الفروع وتحديث البيانات", "تعديل النشاط أو العنوان أو الملاك عبر طلبات موثقة تُراجع من الجهة المختصة دون مراجعة ميدانية."],
@@ -264,6 +264,31 @@ export function RegistriesPage() {
           </p>
         </div>
         <Accordion items={NATIONAL_REGISTRIES.map(([t, b]) => ({ title: t, body: b }))} defaultOpen={0} />
+        <CtaLogin />
+      </div>
+    </PublicLayout>
+  );
+}
+
+export function PrivacyPage() {
+  return (
+    <PublicLayout>
+      <PageHero icon={ShieldCheck} title="سياسة الخصوصية وحماية البيانات الشخصية" subtitle="البيانات أمانة تنظيمية — تُجمع بحدّها، تُحمى بصلابها، ولا تُشارك إلا بنص" />
+      <div className="max-w-4xl mx-auto px-4 py-10">
+        <div className="rounded-xl border-r-4 border-primary/50 bg-primary/[.04] p-4 mb-6">
+          <p className="text-[13px] text-muted-foreground leading-relaxed">
+            هذه السياسة ملزمة داخل المنظومة الوطنية لإدارة قطاع العمل وتنطبق على كل من تعامل معه:
+            موظفو الوزارة، والمنشآت، والنقابات، والعاملون. وهي جزء لا يتجزأ من الأساس{" "}
+            <Link to="/legal" className="text-primary font-bold hover:underline">القانوني للمنظومة</Link>.
+          </p>
+        </div>
+        <Accordion items={PRIVACY_SECTIONS.map(([t, b]) => ({ title: t, body: b }))} />
+        <div className="mt-6 rounded-xl border bg-card p-4 text-center">
+          <p className="text-xs text-muted-foreground">للاستفسار عن بياناتك أو طلب تصحيحها، تواصل عبر القنوات الرسمية</p>
+          <Link to="/contact" className="inline-flex items-center gap-1.5 mt-2 text-primary font-bold text-sm hover:underline">
+            صفحة التواصل الرسمي <ArrowLeft size={14} />
+          </Link>
+        </div>
         <CtaLogin />
       </div>
     </PublicLayout>

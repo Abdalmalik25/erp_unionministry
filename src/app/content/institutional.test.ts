@@ -2,7 +2,7 @@
  * اختبارات المحتوى المؤسسي المشترك — ضبط الجودة الرسمية للنصوص
  */
 import { describe, it, expect } from 'vitest';
-import { NATIONAL_REGISTRIES, LEGAL_ITEMS, FAQ_ITEMS, NATIONAL_PANELS, GOVERNANCE_PRINCIPLES, GUARANTEE_ITEMS } from './institutional';
+import { NATIONAL_REGISTRIES, LEGAL_ITEMS, FAQ_ITEMS, NATIONAL_PANELS, GOVERNANCE_PRINCIPLES, GUARANTEE_ITEMS, PRIVACY_SECTIONS } from './institutional';
 
 describe('المحتوى المؤسسي المشترك', () => {
   it('السجلات الوطنية عشرة سجلات كاملة النصوص', () => {
@@ -65,6 +65,15 @@ describe('المحتوى المؤسسي المشترك', () => {
     const guarantees = GUARANTEE_ITEMS.join(' ');
     for (const key of ['القرار النهائي', 'نص نظامي', 'البصمات المتسلسلة']) {
       expect(guarantees).toContain(key);
+    }
+  });
+
+  it('سياسة الخصوصية مكتملة الأركان التنظيمية', () => {
+    expect(PRIVACY_SECTIONS.length).toBeGreaterThanOrEqual(6);
+    expect(new Set(PRIVACY_SECTIONS.map(([t]) => t)).size).toBe(PRIVACY_SECTIONS.length);
+    const privacy = PRIVACY_SECTIONS.map(([, b]) => b).join(' ');
+    for (const key of ['قانون العمل رقم 40 لسنة 2025', 'AES-256', 'البصمات المتسلسلة', 'لا تُشارك']) {
+      expect(privacy).toContain(key);
     }
   });
 });

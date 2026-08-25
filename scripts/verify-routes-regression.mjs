@@ -1,6 +1,6 @@
 // فحص انحدار نهائي: كل المسارات العامة + الأصول الحرجة على الرابط الرسمي
 const BASE = 'https://erp-unionministry.vercel.app';
-const ROUTES = ['/', '/about', '/services', '/registries', '/legal', '/faq', '/contact', '/login'];
+const ROUTES = ['/', '/about', '/services', '/registries', '/legal', '/privacy', '/faq', '/contact', '/login'];
 const ASSETS = [
   'favicon.ico', 'favicon-32x32.png', 'android-chrome-512x512.png',
   'manifest.json', 'robots.txt', 'sitemap.xml', 'logo_yemen.jpg',
