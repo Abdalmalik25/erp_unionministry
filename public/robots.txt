@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /ministry
+Disallow: /organization
+
+Sitemap: https://erp-unionministry.vercel.app/sitemap.xml
