@@ -5,12 +5,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import {
-  ArrowLeft, Landmark, Building2, Users, HardHat, Globe,
-  FileText, Scale, TrendingUp, ShieldCheck, Handshake,
+  ArrowLeft, Landmark, Building2, Users, HardHat, Globe, Briefcase,
+  FileText, Scale, TrendingUp, ShieldCheck, Handshake, Database, Lock,
 } from "lucide-react";
 import { PublicLayout } from "./PublicLayout";
 import { BRAND } from "../../branding";
-import { IMPACT_ITEMS } from "../../content/institutional";
+import { IMPACT_ITEMS, NATIONAL_PANELS } from "../../content/institutional";
 
 const PORTALS = [
   {
@@ -116,6 +116,43 @@ export function PublicHome() {
           </div>
         </div>
       </section>
+
+      {/* ===== المؤشرات الوطنية: قطاع العمل في لوحات الدولة ===== */}
+      <section aria-labelledby="national-indicators" className="relative bg-gradient-to-b from-[#0b1526] to-[#0e1a33] text-white border-y border-white/5">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_20%_0%,rgba(30,58,138,.28),transparent)] pointer-events-none" />
+        <div className="max-w-7xl mx-auto px-4 py-14 relative">
+          <h2 id="national-indicators" className="text-2xl md:text-3xl font-black text-white">
+            قطاع العمل في مؤشرات الدولة
+          </h2>
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {NATIONAL_PANELS.map((p, i) => {
+              const value = p.label.includes("التعيين الوطني") && ratio !== null ? `${ratio}%` : p.value;
+              const PanelIcon = [Scale, Database, Building2, Briefcase, TrendingUp, Lock][i];
+              return (
+                <article
+                  key={p.label}
+                  className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[.05] backdrop-blur p-6 hover:border-amber-400/40 transition-colors"
+                >
+                  <span className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-amber-400/[.06] group-hover:bg-amber-400/[.12] transition-colors" aria-hidden />
+                  <span className="w-11 h-11 rounded-xl bg-amber-400/10 border border-amber-400/25 text-amber-300 flex items-center justify-center">
+                    <PanelIcon size={20} />
+                  </span>
+                  <p className="mt-5 text-4xl font-black tracking-tight text-amber-300" dir="ltr">{value}</p>
+                  <h3 className="mt-1.5 font-black text-[15px] text-white">{p.label}</h3>
+                  <p className="mt-2 text-xs leading-relaxed text-slate-300">{p.message}</p>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== الإعلان المؤسسي ===== */}
+      <div className="bg-amber-400/[.07] border-b border-amber-400/15" role="note">
+        <p className="max-w-7xl mx-auto px-4 py-4 text-center font-black text-sm md:text-base text-amber-200/95">
+          مرجعيةٌ واحدة للبيانات · قاعدةٌ واحدة للإجراء · معيارٌ واحد للمساءلة
+        </p>
+      </div>
 
       {/* ===== الأثر الوطني ===== */}
       <section className="max-w-7xl mx-auto px-4 py-16">

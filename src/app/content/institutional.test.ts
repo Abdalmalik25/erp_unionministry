@@ -2,7 +2,7 @@
  * اختبارات المحتوى المؤسسي المشترك — ضبط الجودة الرسمية للنصوص
  */
 import { describe, it, expect } from 'vitest';
-import { NATIONAL_REGISTRIES, LEGAL_ITEMS, FAQ_ITEMS } from './institutional';
+import { NATIONAL_REGISTRIES, LEGAL_ITEMS, FAQ_ITEMS, NATIONAL_PANELS } from './institutional';
 
 describe('المحتوى المؤسسي المشترك', () => {
   it('السجلات الوطنية عشرة سجلات كاملة النصوص', () => {
@@ -34,5 +34,15 @@ describe('المحتوى المؤسسي المشترك', () => {
     const all = [...LEGAL_ITEMS, ...FAQ_ITEMS].map(([, b]) => b).join(' ');
     // لا يجوز ذكر أسماء تقنيات بلا سياق تعريفي
     expect(all).not.toMatch(/API|database schema|backend/i);
+  });
+
+  it('المؤشرات الوطنية ست لوحات استراتيجية مكتملة', () => {
+    expect(NATIONAL_PANELS).toHaveLength(6);
+    expect(NATIONAL_PANELS.every(p => p.value.length > 0 && p.label.length > 3 && p.message.length > 30)).toBe(true);
+    expect(new Set(NATIONAL_PANELS.map(p => p.label)).size).toBe(6);
+    const joined = NATIONAL_PANELS.map(p => `${p.label} ${p.message}`).join(' ');
+    for (const key of ['قانون العمل', 'سجلات', 'التعيين الوطني', 'الحوكمة']) {
+      expect(joined).toContain(key);
+    }
   });
 });

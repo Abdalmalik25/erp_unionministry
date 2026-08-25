@@ -320,7 +320,7 @@ export function ContactPage() {
     { icon: PhoneCall, title: "الدعم الفني", value: BRAND.supportPhone, note: "خط مجاني — خلال ساعات العمل الرسمية" },
     { icon: Mail, title: "البريد الرسمي", value: BRAND.supportEmail, note: "للأعطال الفنية والاستفسارات المؤسسية" },
     { icon: MapPin, title: "المقر", value: "وزارة الشؤون الاجتماعية والعمل — صنعاء", note: "إدارة المنظومة الوطنية لقطاع العمل" },
-    { icon: Clock, title: "أوقات العمل", value: "الأحد – الخميس، 8:00 ص – 2:00 م", note: "المنظومة الإلكترونية تعمل على مدار الساعة" },
+    { icon: Clock, title: "أوقات العمل", value: "السبت – الأربعاء، 8:00 ص – 2:00 م", note: "المنظومة الإلكترونية تعمل على مدار الساعة" },
   ];
   return (
     <PublicLayout>
