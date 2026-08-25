@@ -1,4 +1,4 @@
-// server/index.js — Lean entry point
+﻿// server/index.js — Lean entry point
 // All routes are in server/routes/*.js modules
 // Shared utilities in server/middleware/shared.js
 
@@ -570,7 +570,7 @@ if (process.env.VERCEL !== '1') {
   // خلف وكيل عكسي (nginx/IIS) في الإنتاج — يضمن req.ip الصحيح للمحدد والتدقيق
   if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1);
   const server = app.listen(PORT, () => {
-    console.log(`\n🏛️  المنظومة الوطنية للعمل النقابي — وزارة الشؤون الاجتماعية والعمل`);
+    console.log(`\n🏛️  المنظومة الوطنية لإدارة قطاع العمل — وزارة الشؤون الاجتماعية والعمل`);
     console.log(`📡 Running on http://localhost:${PORT}`);
     console.log(`🔐 Auth: ${AUTH_ENABLED ? 'ENABLED' : 'DISABLED (dev mode)'}`);
     console.log(`📊 Health: http://localhost:${PORT}/api/health`);
