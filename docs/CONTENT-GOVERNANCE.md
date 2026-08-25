@@ -65,7 +65,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build-brand-icons.ps
 | `verify-encoding-live.mjs` | سلامة الترميز العربي في حزم الإنتاج وصفر أسماء قديمة |
 | `verify-home-upgrade.mjs` | لوحات المؤشرات وشريط الإعلان والدوام |
 | `verify-expert-audit.mjs` | الخدمات المهنتين + بيان الرسوم + مرساة ILO + التذييل |
-| `verify-icons-live.mjs` | توصيل الأيقونات في الرأس والـmanifest والـsw |
+| `verify-resilience.mjs` | نقطة الصحة + HSTS + أرضية المؤشرات + الضمانات الموحدة |
+| `verify-privacy.mjs` | صفحة الخصوصية + خريطة الموقع + توحيد مصطلح البوابة |
+| `verify-terms-clean.mjs` | صفر بقايا مصطلحية قديمة في المستودع كله |
 
 ## قاعدة ترميز حرجة (درس موثق)
 

@@ -151,5 +151,12 @@ node scripts/backup-db.mjs
 1. تسجيل النطاق لدى مزود .ye (TeleYemen / Y.NET) باسم الوزارة الرسمي.
 2. في لوحة DNS: CNAME للسجل الجذري `nlsmp.gov.ye` → `cname.vercel-dns.com`.
 3. إضافة الدومين في إعدادات مشروع Vercel → Domains والتحقق.
-4. بعد تأكيد العمل: تحديث `canonical` و`og:url` في index.html، ومصدر sitemap.xml، وإلغاء تعليق عرض الدومين.
+4. **القطع الآلي**: `node scripts/cutover-domain.mjs` — يرفض العمل ما لم يستجب
+   النطاق في DNS فعلياً، ثم يحوّل canonical وog:url وsitemap وrobots دفعة واحدة.
 5. حتى ذلك الحين يبقى `BRAND.domainShort` مرجعاً داخلياً فقط ولا يُطبع في أي واجهة.
+
+### الأتمتة القائمة
+- **نسخ احتياطي أسبوعي**: مهمة Windows مجدولة `UnionMinistry-DBBackup` — كل أحد 6:00 ص،
+  تنفذ `scripts/backup-db.mjs` وتسجل في `backups/_schedule.log`. فحص الحالة:
+  `Get-ScheduledTaskInfo UnionMinistry-DBBackup`
+- تشغيل يدوي فوري: `Start-ScheduledTask UnionMinistry-DBBackup`
