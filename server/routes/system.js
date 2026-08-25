@@ -13,7 +13,7 @@ router.get('/api/health', async (_req, res) => {
     const latency = Date.now() - startTime;
     res.json({
       status: 'healthy',
-      service: 'National Labor Platform Core API',
+      service: 'المنظومة الوطنية لإدارة قطاع العمل',
       version: '2.5.0',
       database: {
         status: 'connected',

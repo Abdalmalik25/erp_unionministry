@@ -302,17 +302,8 @@ app.use(chronologyRouter);
 app.use(externalIntegrationsRouter);
 app.use(intelligenceRouter);
 
-// ===================== Health (public — نقطة فحص الصحة للمراقبة الخارجية) =====================
+// ===================== Dashboard (inline — uses shared pool) =====================
 import { pool, paginate, countQuery } from './middleware/shared.js';
-
-app.get('/api/health', async (_req, res) => {
-  try {
-    await pool.query('SELECT 1');
-    res.json({ success: true, data: { ok: true, db: 'up', time: new Date().toISOString() } });
-  } catch (err) {
-    res.status(503).json({ success: false, errors: { error: 'database unavailable' } });
-  }
-});
 
 app.get('/api/dashboard/stats', async (_req, res) => {
   try {
