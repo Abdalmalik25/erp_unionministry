@@ -757,7 +757,7 @@ export default function LaborDisputesManagement() {
               <div className="p-4 bg-muted/40 border border-border rounded-2xl flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-14 h-14 border border-primary/20 rounded-xl flex items-center justify-center p-1 bg-white shadow-sm">
-                    <BrandLogo size={52} rounded="lg" />
+                    <BrandLogo variant="emblem" size={52} rounded="lg" />
                   </div>
                   <div>
                     <h4 className="font-bold text-xs text-primary">الجمهورية اليمنية — وزارة الشؤون الاجتماعية والعمل</h4>

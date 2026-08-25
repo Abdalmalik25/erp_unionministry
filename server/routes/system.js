@@ -46,13 +46,14 @@ router.get('/api/system/branding', async (_req, res) => {
     const r = await pool.query(
       `SELECT setting_key, setting_value FROM system_settings
        WHERE setting_key = ANY($1::text[])`,
-      [['org_name_ar', 'org_name_en', 'org_country', 'system_name_ar', 'legal_basis']]);
+      [['org_name_ar', 'org_name_en', 'org_country', 'system_name_ar', 'system_name_en', 'legal_basis']]);
     const map = Object.fromEntries(r.rows.map(x => [x.setting_key, x.setting_value]));
     res.json({
       ministryNameAr: map.org_name_ar || 'وزارة الشؤون الاجتماعية والعمل',
       ministryNameEn: map.org_name_en || 'Ministry of Social Affairs and Labor',
       countryAr: map.org_country || 'الجمهورية اليمنية',
       systemNameAr: map.system_name_ar || 'المنظومة الوطنية لإدارة قطاع العمل',
+      systemNameEn: map.system_name_en || 'National Labour Sector Management Platform',
       legalBasis: map.legal_basis || 'قانون العمل رقم 40 لسنة 2025 ولائحه التنفيذية',
     });
   } catch (err) {
@@ -62,6 +63,7 @@ router.get('/api/system/branding', async (_req, res) => {
       ministryNameEn: 'Ministry of Social Affairs and Labor',
       countryAr: 'الجمهورية اليمنية',
       systemNameAr: 'المنظومة الوطنية لإدارة قطاع العمل',
+      systemNameEn: 'National Labour Sector Management Platform',
       legalBasis: 'قانون العمل رقم 40 لسنة 2025 ولائحه التنفيذية',
       degraded: true,
     });

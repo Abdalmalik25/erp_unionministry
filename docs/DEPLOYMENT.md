@@ -146,3 +146,10 @@ node scripts/backup-db.mjs
 ### ترويسات الأمان
 - HSTS على API (`vercel.json`) وعلى صفحات الموقع العامة (`max-age=63072000; includeSubDomains; preload`).
 - CSP صارم على HTML، nosniff وframe-deny على المسارين.
+
+### الدومين المختصر nlsmp.gov.ye (قيد التسجيل — لا يُعرض في الواجهات قبل عمله)
+1. تسجيل النطاق لدى مزود .ye (TeleYemen / Y.NET) باسم الوزارة الرسمي.
+2. في لوحة DNS: CNAME للسجل الجذري `nlsmp.gov.ye` → `cname.vercel-dns.com`.
+3. إضافة الدومين في إعدادات مشروع Vercel → Domains والتحقق.
+4. بعد تأكيد العمل: تحديث `canonical` و`og:url` في index.html، ومصدر sitemap.xml، وإلغاء تعليق عرض الدومين.
+5. حتى ذلك الحين يبقى `BRAND.domainShort` مرجعاً داخلياً فقط ولا يُطبع في أي واجهة.

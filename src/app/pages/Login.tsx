@@ -22,6 +22,7 @@ interface OfficialIdentity {
   ministryNameAr: string;
   countryAr: string;
   systemNameAr: string;
+  systemNameEn: string;
   legalBasis: string;
 }
 
@@ -29,6 +30,7 @@ const IDENTITY_FALLBACK: OfficialIdentity = {
   ministryNameAr: BRAND.ministry,
   countryAr: BRAND.country,
   systemNameAr: BRAND.systemName,
+  systemNameEn: BRAND.nameEn,
   legalBasis: 'قانون العمل رقم 40 لسنة 2025 ولائحه التنفيذية',
 };
 
@@ -43,6 +45,7 @@ async function fetchIdentity(): Promise<OfficialIdentity> {
       ministryNameAr: d.ministryNameAr || IDENTITY_FALLBACK.ministryNameAr,
       countryAr: d.countryAr || IDENTITY_FALLBACK.countryAr,
       systemNameAr: d.systemNameAr || IDENTITY_FALLBACK.systemNameAr,
+      systemNameEn: d.systemNameEn || IDENTITY_FALLBACK.systemNameEn,
       legalBasis: d.legalBasis || IDENTITY_FALLBACK.legalBasis,
     };
   } catch {
@@ -183,7 +186,7 @@ export function Login() {
 
         <header className="relative z-10 space-y-6">
           <div className="flex items-center gap-4">
-            <BrandLogo size={72} rounded="2xl" priority="high" className="border border-slate-700/80 shadow-2xl" />
+            <BrandLogo variant="emblem" size={72} rounded="2xl" priority="high" className="border border-slate-700/80 shadow-2xl" />
             <div>
               <p className="inline-block px-3 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/25 text-amber-400 text-xs font-bold mb-1.5">
                 {identity.countryAr}
@@ -195,6 +198,7 @@ export function Login() {
           <div className="h-px bg-gradient-to-l from-transparent via-slate-700/70 to-transparent" />
 
           <p className="text-base text-slate-300 font-bold leading-relaxed">{identity.systemNameAr}</p>
+          <p className="text-[11px] text-slate-600 tracking-wide" dir="ltr">{identity.systemNameEn} — {BRAND.abbrEn}</p>
           <p className="text-sm text-slate-500 leading-relaxed max-w-md">{BRAND.tagline}</p>
         </header>
 
@@ -240,7 +244,7 @@ export function Login() {
           {/* ترويسة مضغوطة — الجوال فقط */}
           <div className="lg:hidden text-center mb-6 space-y-3">
             <div className="inline-flex items-center justify-center shadow-2xl mb-1">
-              <BrandLogo size={76} rounded="2xl" priority="high" className="border border-slate-700/80" />
+              <BrandLogo variant="emblem" size={76} rounded="2xl" priority="high" className="border border-slate-700/80" />
             </div>
             <div className="space-y-1">
               <div className="inline-block px-3 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/25 text-amber-400 text-xs font-bold">

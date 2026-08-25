@@ -13,6 +13,12 @@ interface BrandLogoProps {
   /** الحجم بالبكسل (مربع) */
   size?: number;
   className?: string;
+  /**
+   * variant = أي شعار يُعرض:
+   * - 'mark'   شعار المنظومة (الافتراضي — كل الواجهات)
+   * - 'emblem' الطير الجمهوري (المستندات والتقارير والشاشة الرئيسية للبوابات فقط)
+   */
+  variant?: 'mark' | 'emblem';
   /** أولوية التحميل — use 'high' في الشاشات الافتتاحية والرأسية الثابتة */
   priority?: 'high' | 'auto';
   /** نص بديل للوصول */
@@ -27,20 +33,27 @@ const ROUNDED: Record<string, string> = {
   '2xl': 'rounded-2xl',
 };
 
+const VARIANT_SRC = {
+  mark: BRAND.markUrl,
+  emblem: BRAND.emblemUrl,
+} as const;
+
 function BrandLogoBase({
   size = 44,
   className = '',
+  variant = 'mark',
   priority = 'auto',
-  alt = 'شعار الجمهورية اليمنية',
+  alt,
   rounded = 'xl',
 }: BrandLogoProps) {
   const [errored, setErrored] = useState(false);
+  const resolvedAlt = alt ?? (variant === 'emblem' ? 'طير الجمهورية اليمنية' : 'شعار المنظومة الوطنية');
 
   return (
     <div
       className={`relative flex items-center justify-center overflow-hidden bg-white/5 ${ROUNDED[rounded]} ${className}`}
       style={{ width: size, height: size }}
-      aria-label={alt}
+      aria-label={resolvedAlt}
       role="img"
     >
       {errored ? (
@@ -48,14 +61,16 @@ function BrandLogoBase({
           className="flex items-center justify-center w-full h-full text-[10px] font-black leading-tight text-center text-amber-200 bg-gradient-to-br from-blue-700/80 to-amber-600/80 p-1 select-none"
           title={BRAND.ministry}
         >
-          الجمهورية
-          <br />
-          اليمنية
+          {variant === 'emblem' ? (
+            <>الجمهورية<br />اليمنية</>
+          ) : (
+            <>المنظومة<br />الوطنية</>
+          )}
         </span>
       ) : (
         <img
-          src={BRAND.logoUrl}
-          alt={alt}
+          src={VARIANT_SRC[variant]}
+          alt={resolvedAlt}
           width={size}
           height={size}
           decoding="async"

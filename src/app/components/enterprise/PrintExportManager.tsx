@@ -66,7 +66,7 @@ function GovernmentHeader({ compact = false }: { compact?: boolean }) {
       {/* يسار - شعار الجمهورية الرسمي */}
       <div className="flex flex-col items-center gap-1">
         <div className="w-16 h-16 border border-primary/30 rounded-xl flex items-center justify-center p-1 bg-white shadow-sm">
-          <BrandLogo size={56} rounded="lg" />
+          <BrandLogo variant="emblem" size={56} rounded="lg" />
         </div>
         <span className="text-[10px] text-primary font-bold">{BRAND.systemShort}</span>
       </div>

@@ -4,7 +4,7 @@
  * النسخة المحسنة v3 - دعم IndexedDB متقدم
  */
 
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 const CACHE_NAME = `unionsphere-${CACHE_VERSION}`;
 const DB_NAME = 'UnionSphereDB';
 const DB_VERSION = 1;
