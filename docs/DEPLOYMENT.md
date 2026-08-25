@@ -123,3 +123,25 @@ npm run type-check      # تدقيق أنواع صارم
 - تقوية أمنية: تنظيف حد الطلبات، سد تسريبات رسائل الأخطاء، `/api/version`، خدمة dist إنتاجياً مع SPA fallback متوافق Express 5.
 - إصلاح جوهري: تحميل متغيرات البيئة قبل أي وحدة أمان (ESM hoisting).
 - تصفير الشيفرة الميتة (~77 ملفاً) وبقايا supabase والأسماء الأجنبية والعطب النصي.
+
+## 10. الصمود التشغيلي
+
+### النسخ الاحتياطي
+```powershell
+node scripts/backup-db.mjs
+```
+- ينسخ **كل** جداول القاعدة (126 جدولاً) ملفات JSON في `backups/<timestamp>/` مع `_manifest.txt` (جرد الصفوف والأحجام).
+- المجلد مستثنى من git — النسخ تحتوي بيانات تشغيلية حساسة (جلسات، محاولات دخول).
+- الجدولة الأسبوعية عبر Task Scheduler:
+  `powershell -NoProfile -Command "node G:\App25\unionministry1\scripts\backup-db.mjs *>> G:\App25\unionministry1\backups\_schedule.log"`
+- جدول `professions` (~14 MB) هو الأثقل؛ البداية الباردة لـ Neon تضيف ~3 ثوانٍ.
+- يُعاد التحقق من أرضية المؤشرات المعروضة (مثل «3,607+ مهنة») مقابل بيان جرد النسخة دورياً.
+
+### نقطة فحص الصحة
+- `GET /api/health` عام (خارج المصادقة): `{ ok, db, time }` — 503 عند سقوط القاعدة.
+- أي مراقب خارجي (UptimeRobot أو ما يماثله) يُوجَّه إليها؛ لا حاجة لمصادقة.
+- تُستخدم نفس النقطة في حلقات التحقق المحلية بعد كل نشر.
+
+### ترويسات الأمان
+- HSTS على API (`vercel.json`) وعلى صفحات الموقع العامة (`max-age=63072000; includeSubDomains; preload`).
+- CSP صارم على HTML، nosniff وframe-deny على المسارين.

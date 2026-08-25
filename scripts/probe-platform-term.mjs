@@ -1,14 +1,13 @@
 import fs from 'node:fs';
-const out = [];
-const files = [
-  'src/app/pages/public/PublicPages.tsx',
-  'src/app/pages/NationalPlatformHome.tsx',
-];
-for (const f of files) {
-  const lines = fs.readFileSync(f, 'utf8').split('\n');
-  lines.forEach((ln, i) => {
-    if (/الضمانات الحكومية|لا يصدر حكماً|لا عقوبة إلا/.test(ln)) out.push(`${f.split('/').pop()}:${i + 1}: ${ln.trim().slice(0, 90)}`);
-  });
+import pg from 'pg';
+const url = fs.readFileSync('.env', 'utf8').match(/DATABASE_URL=(.+)/)?.[1]?.trim();
+console.log('URL host:', new URL(url.replace('postgresql://', 'http://')).host);
+const pool = new pg.Pool({ connectionString: url, ssl: { rejectUnauthorized: false }, connectionTimeoutMillis: 15000 });
+const t0 = Date.now();
+try {
+  const r = await pool.query('SELECT 1 as ok');
+  console.log(`SELECT1 ok in ${Date.now() - t0}ms:`, r.rows[0]);
+} catch (e) {
+  console.log(`FAIL after ${Date.now() - t0}ms:`, e.message);
 }
-fs.writeFileSync('scripts/probe-out.txt', '\ufeff' + out.join('\n'), 'utf8');
-console.log(out.length);
+await pool.end();
