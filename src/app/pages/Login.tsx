@@ -203,7 +203,7 @@ export function Login() {
             { icon: Landmark, t: 'أصحاب العمل', d: 'تسجيل المنشآت، الفروع، الترخيص، وإدارة العمالة' },
             { icon: Users, t: 'النقابات والمنظمات', d: 'التسجيل النقابي، الانتخابات، الاجتماعات، والتقارير' },
             { icon: HardHat, t: 'العمال والموظفون', d: 'الملفات المهنية، الشهادات، الإصابات، والتأمين' },
-            { icon: ShieldCheck, t: 'التفتيش والامتثال', d: 'المعاريف الميدانية، المخالفات، والإجراءات القانونية' },
+            { icon: ShieldCheck, t: 'التفتيش والامتثال', d: 'المعاينات الميدانية، المخالفات، والإجراءات القانونية' },
           ].map(({ icon: Icon, t, d }) => (
             <div key={t} className="flex items-start gap-3.5">
               <span className="mt-0.5 w-9 h-9 rounded-xl bg-blue-600/15 border border-blue-500/25 flex items-center justify-center shrink-0">
@@ -222,6 +222,7 @@ export function Login() {
             <Scale size={12} className="text-slate-600" /> السند القانوني: {identity.legalBasis}
           </p>
           <p className="text-[11px] text-slate-600">الدعم الفني: {BRAND.supportPhone} • {BRAND.supportEmail}</p>
+          <p className="text-[11px] text-slate-600">أوقات العمل: السبت – الأربعاء، 8:00 ص – 2:00 م — والمنظومة تعمل على مدار الساعة</p>
         </footer>
       </aside>
 
