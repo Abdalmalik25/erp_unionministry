@@ -4,7 +4,7 @@
  * النسخة المحسنة v3 - دعم IndexedDB متقدم
  */
 
-const CACHE_VERSION = 'v4';
+const CACHE_VERSION = 'v5';
 const CACHE_NAME = `unionsphere-${CACHE_VERSION}`;
 const DB_NAME = 'UnionSphereDB';
 const DB_VERSION = 1;
@@ -14,9 +14,12 @@ const CORE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/favicon.svg',
+  '/favicon.ico',
+  '/favicon-32x32.png',
+  '/android-chrome-192x192.png',
+  '/android-chrome-512x512.png',
+  '/apple-touch-icon.png',
   '/theme-init.js',
-  '/src/imports/image.png',
 ];
 
 // استراتيجيات التخزين المؤقت
@@ -204,8 +207,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'UnionSphere';
   const options = {
     body: data.body || 'لديك إشعار جديد',
-    icon: '/src/imports/image.png',
-    badge: '/src/imports/image.png',
+    icon: '/android-chrome-192x192.png',
+    badge: '/android-chrome-192x192.png',
     vibrate: [200, 100, 200],
     data: data.data || {},
     actions: data.actions || [],
