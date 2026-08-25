@@ -23,6 +23,17 @@ describe('المحتوى المؤسسي المشترك', () => {
     expect(yemenization![1]).toContain('80%');
   });
 
+  it('كل نص نظامي يُستشهد به في الأسئلة له مدخل في المرجع القانوني', () => {
+    const legalTitles = LEGAL_ITEMS.map(([t]) => t).join('|');
+    const faqBodies = FAQ_ITEMS.map(([, b]) => b).join(' ');
+    if (faqBodies.includes('لائحة حوادث العمل')) {
+      expect(legalTitles).toContain('حوادث وإصابات العمل');
+    }
+    if (faqBodies.includes('نسبة التعيين الوطني')) {
+      expect(legalTitles).toContain('اليمننة');
+    }
+  });
+
   it('الأسئلة الشائعة تغطي المواضيع الحرجة', () => {
     const topics = FAQ_ITEMS.map(([q]) => q).join('|');
     for (const key of ['سجل التدقيق', 'انقطع الإنترنت', 'بيانات الأشخاص', 'الحسابات', 'حادث العمل', 'العمالة الوافدة']) {

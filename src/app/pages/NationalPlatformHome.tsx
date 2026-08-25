@@ -12,7 +12,7 @@ import { PlatformGuide } from "../components/national/PlatformGuide";
 import { Card } from "../components/ui/Card";
 import { Badge } from "../components/ui/badge";
 import { Globe, Layers, Shield, Zap, HeartPulse, Scale, Building2, TrendingUp } from "lucide-react";
-import { NATIONAL_PANELS } from "../content/institutional";
+import { NATIONAL_PANELS, NATIONAL_REGISTRIES } from "../content/institutional";
 
 export default function NationalPlatformHome() {
   return (
@@ -84,7 +84,7 @@ export default function NationalPlatformHome() {
           <div className="font-bold text-sm flex items-center gap-2"><Building2 className="w-5 h-5"/> سجلّات المنظومة الموحدة</div>
           <div className="text-xs text-muted-foreground mt-1">عشر سجلات وطنية موحدة تعمل بقواعد موحدة وصلاحيات محددة وحماية من الاستخدام المفرط</div>
           <div className="mt-3 flex flex-wrap gap-1.5">
-            {['سجل الأشخاص','سجل المنشآت','سجل العاملين','سجل العقود','سجل التفتيش','سجل القضايا','سجل النقابات','المرجع النظامي','اللوائح التنظيمية','البحث الموحد'].map(p=> <Badge key={p} variant="outline" className="text-[10px]">{p}</Badge>)}
+            {NATIONAL_REGISTRIES.map(([name]) => <Badge key={name} variant="outline" className="text-[10px]">{name}</Badge>)}
           </div>
         </div>
       </Card>
