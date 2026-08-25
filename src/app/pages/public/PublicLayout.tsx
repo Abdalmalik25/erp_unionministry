@@ -4,7 +4,7 @@
  */
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router";
-import { Menu, X, LogIn, Globe, PhoneCall, Mail } from "lucide-react";
+import { Menu, X, LogIn, Globe, PhoneCall, Mail, Clock } from "lucide-react";
 import { BrandLogo } from "../../components/ui/BrandLogo";
 import { BRAND } from "../../branding";
 
@@ -139,6 +139,11 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
               </div>
             </div>
             <p className="text-xs leading-relaxed text-slate-500">{BRAND.tagline}</p>
+            <div className="space-y-1.5 text-[11px] text-slate-500 pt-1">
+              <p className="flex items-center gap-1.5"><Clock size={12} className="text-slate-600" /> السبت – الأربعاء: 8:00 ص – 2:00 م</p>
+              <p className="flex items-center gap-1.5"><PhoneCall size={12} className="text-slate-600" /> {BRAND.supportPhone}</p>
+              <p className="flex items-center gap-1.5"><Mail size={12} className="text-slate-600" /> {BRAND.supportEmail}</p>
+            </div>
           </div>
           <div>
             <p className="text-white font-bold text-sm mb-3">روابط سريعة</p>

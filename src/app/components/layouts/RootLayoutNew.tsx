@@ -292,7 +292,7 @@ export function RootLayout() {
   const handleLogout = useCallback(async () => {
     const confirmed = await confirm({
       title: 'تسجيل الخروج',
-      message: 'هل تريد تسجيل الخروج من المنصة؟',
+      message: 'هل تريد تسجيل الخروج من المنظومة؟',
       confirmLabel: 'تسجيل الخروج',
       cancelLabel: 'إلغاء',
       variant: 'danger',

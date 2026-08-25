@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { User, Mail, Bell, Moon, Sun, Lock, Save, Info, Building2, Code, ShieldAlert } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -125,7 +125,7 @@ export function Profile() {
             { id: 'password', label: 'تغيير كلمة المرور', icon: Lock },
             { id: 'notifications', label: 'الإشعارات', icon: Bell },
             { id: 'appearance', label: 'المظهر', icon: Moon },
-            { id: 'about', label: 'حول المنصة', icon: Info },
+            { id: 'about', label: 'حول المنظومة', icon: Info },
           ].map((tab) => {
             const Icon = tab.icon;
             return (
@@ -269,7 +269,7 @@ export function Profile() {
           <div className="space-y-4 max-w-2xl">
             {[
               { id: 'email', label: 'إشعارات البريد الإلكتروني', desc: 'استقبال الإشعارات عبر البريد' },
-              { id: 'system', label: 'إشعارات النظام', desc: 'الإشعارات داخل المنصة' },
+              { id: 'system', label: 'إشعارات النظام', desc: 'الإشعارات داخل المنظومة' },
               { id: 'documents', label: 'إشعارات الوثائق', desc: 'عند مراجعة أو اعتماد الوثائق' },
               { id: 'activities', label: 'إشعارات الأنشطة', desc: 'عند إضافة أو تحديث الأنشطة' },
             ].map((item) => (
@@ -352,7 +352,7 @@ export function Profile() {
         <Card>
           <h3 className="text-lg font-bold text-heading mb-6 flex items-center gap-2">
             <Info size={20} className="text-primary-bright" />
-            حول المنصة
+            حول المنظومة
           </h3>
 
           <div className="space-y-6">
