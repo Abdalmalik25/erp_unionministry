@@ -285,7 +285,17 @@ export function logAudit(entry: Omit<AuditEntry, 'timestamp'>): void {
 
     fetch('/api/audit-log', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: (() => {
+        const h: Record<string, string> = { 'Content-Type': 'application/json' };
+        try {
+          const raw = localStorage.getItem('us_session');
+          if (raw) {
+            const sess = JSON.parse(raw);
+            if (sess?.token) h['Authorization'] = `Bearer ${sess.token}`;
+          }
+        } catch { /* لا جلسة */ }
+        return h;
+      })(),
       body: JSON.stringify({
         action: entry.action,
         resource: entry.resource,

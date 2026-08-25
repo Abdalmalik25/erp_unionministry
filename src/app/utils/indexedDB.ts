@@ -230,6 +230,23 @@ class IndexedDBWrapper {
         return this.delete('pendingActions', id);
     }
     /**
+     * تحديث حقول عملية معلقة (عداد المحاولات)
+     */
+    async updatePendingAction(id: number, patch: Record<string, unknown>): Promise<void> {
+        const db = await this.open();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(['pendingActions'], 'readwrite');
+            const store = transaction.objectStore('pendingActions');
+            const getReq = store.get(id);
+            getReq.onsuccess = () => {
+                const target = getReq.result;
+                if (target) store.put({ ...target, ...patch });
+            };
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = () => reject(transaction.error);
+        });
+    }
+    /**
      * تسجيل عملية للمزامنة
      */
     async queueAction(action: {
@@ -254,16 +271,26 @@ class IndexedDBWrapper {
         let synced = 0;
         for (const action of pendingActions) {
             try {
-                await fetch(action.url, {
+                // لا نحذف الإجراء إلا بعد تأكيد نجاح الخادم — منع فقدان البيانات
+                const res = await fetch(action.url, {
                     method: action.method,
                     headers: action.headers,
                     body: action.body,
                 });
+                if (!res.ok) {
+                    const attempts = ((action as any).attempts || 0) + 1;
+                    if (attempts >= 5) {
+                        await this.deletePendingAction(action.id);
+                    } else {
+                        await this.updatePendingAction(action.id, { attempts });
+                    }
+                    continue;
+                }
                 await this.deletePendingAction(action.id);
                 synced++;
             }
             catch (e) {
-                console.error('[IndexedDB] Failed to sync pending action:', e);
+                if (import.meta.env.DEV) console.warn('[IndexedDB] Sync retry later:', action.id);
             }
         }
         return { synced };

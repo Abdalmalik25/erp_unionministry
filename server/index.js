@@ -182,10 +182,29 @@ app.use((req, res, next) => {
   const publicPaths = ['/api/health','/api/auth/login','/api/auth/me','/api/isic4','/api/geography/governorates'];
   // مسارات البوابة العامة المقيدة بالطريقة — شاشة الدخول وطلبات فتح الحسابات
   const PUBLIC_GET = ['/api/system/branding', '/api/system/policy', '/api/establishments/lookup'];
-  const PUBLIC_POST = ['/api/account-requests'];
+  const PUBLIC_POST = ['/api/account-requests', '/api/audit-log'];
+
+// مانع إغراق مخصص لقيود التدقيق العامة: 30 طلباً/دقيقة لكل عنوان — يحمي جدول التدقيق من التعبئة
+const AUDIT_POST_LIMITER = (() => {
+  const hits = new Map();
+  setInterval(() => { const now = Date.now(); for (const [k, v] of hits) if (now - v.t > 60000) hits.delete(k); }, 30000).unref();
+  return (req, res, next) => {
+    const ip = (req.headers['x-forwarded-for']?.split(',')[0] || req.socket?.remoteAddress || 'x').toString().slice(0, 50);
+    const now = Date.now();
+    const e = hits.get(ip);
+    if (!e || now - e.t > 60000) { hits.set(ip, { t: now, n: 1 }); return next(); }
+    e.n += 1;
+    if (e.n > 30) return res.status(429).json({ error: 'عدد كبير من الطلبات — حاول لاحقاً', code: 'RATE_LIMITED' });
+    next();
+  };
+})();
   const isPublic = publicPaths.some(p => req.path === p || req.path.startsWith(p + '/')) || req.path.startsWith('/api/v1/legal/sources')
     || (req.method === 'GET' && PUBLIC_GET.includes(req.path))
     || (req.method === 'POST' && PUBLIC_POST.includes(req.path));
+  if (req.method === 'POST' && req.path === '/api/audit-log') return AUDIT_POST_LIMITER(req, res, () => {
+    // قيود التدقيق العامة مسموحة حتى قبل الدخول (توثيق محاولات الاختراق) لكنها لا تتجاوز الليمنتر
+    next();
+  });
   if (AUTH_ENABLED && !isPublic && req.path.startsWith('/api') && !req.user) {
     return res.status(401).json({ error: 'غير مصرح — يرجى تسجيل الدخول', code: 'UNAUTHORIZED' });
   }

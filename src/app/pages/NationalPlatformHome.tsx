@@ -8,6 +8,7 @@ import { AICopilot } from "../components/labor/AICopilot";
 import { AICopilotV2 } from "../components/labor/AICopilotV2";
 import { SecurityCenter } from "../components/labor/SecurityCenter";
 import { ServiceMarketplace } from "../components/labor/ServiceMarketplace";
+import { PlatformGuide } from "../components/national/PlatformGuide";
 import { Card } from "../components/ui/Card";
 import { Badge } from "../components/ui/badge";
 import { Globe, Layers, Shield, Zap, HeartPulse, Scale, Building2 } from "lucide-react";
@@ -34,6 +35,7 @@ export default function NationalPlatformHome() {
           <UnifiedSearch />
           <AICopilot />
           <AICopilotV2 />
+          <PlatformGuide />
         </div>
         <div className="space-y-6">
           <SecurityCenter />
