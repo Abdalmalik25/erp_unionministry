@@ -11,7 +11,8 @@ import { ServiceMarketplace } from "../components/labor/ServiceMarketplace";
 import { PlatformGuide } from "../components/national/PlatformGuide";
 import { Card } from "../components/ui/Card";
 import { Badge } from "../components/ui/badge";
-import { Globe, Layers, Shield, Zap, HeartPulse, Scale, Building2 } from "lucide-react";
+import { Globe, Layers, Shield, Zap, HeartPulse, Scale, Building2, TrendingUp } from "lucide-react";
+import { NATIONAL_PANELS } from "../content/institutional";
 
 export default function NationalPlatformHome() {
   return (
@@ -26,6 +27,17 @@ export default function NationalPlatformHome() {
           <Badge className="bg-amber-500">يعمل دون اتصال</Badge>
           <Badge variant="outline" className="text-white border-white/30">قرارات مفسَّرة ومعلَّلة</Badge>
           <Badge variant="outline" className="text-white border-white/30">تتبع كامل للمعاملات</Badge>
+        </div>
+        {/* المؤشرات الوطنية — نفس لوحات البوابة العامة، مصدر واحد للمحتوى */}
+        <div className="mt-5 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2">
+          {NATIONAL_PANELS.map(p => (
+            <div key={p.label} className="rounded-xl border border-white/10 bg-white/[.05] backdrop-blur px-3 py-2.5">
+              <p className="flex items-center gap-1 text-lg font-black text-amber-300" dir="ltr">
+                <TrendingUp size={13} className="opacity-60" />{p.value}
+              </p>
+              <p className="text-[10px] font-bold text-white/90 leading-tight mt-0.5">{p.label}</p>
+            </div>
+          ))}
         </div>
       </div>
 
