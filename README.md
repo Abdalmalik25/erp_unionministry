@@ -11,7 +11,7 @@
 
 | الطبقة | التقنية | الملاحظات |
 |---|---|---|
-| الواجهة | React 19 + TypeScript + Vite + Tailwind v4 | عربية RTL، خطوط Tajawal/Noto Naskh الرسمية، PWA بعمل دون اتصال |
+| الواجهة | React 18.3 + TypeScript + Vite + Tailwind v4 | عربية RTL، خطوط Cairo/Plex Arabic ذاتية الاستضافة، PWA بعمل دون اتصال |
 | الخادم | Node ≥ 20 + Express 5.2 | JWT + RBAC بستة أدوار، سجل تدقيق شامل، يخدم الواجهة إنتاجياً على :4000 |
 | قاعدة البيانات | PostgreSQL (Neon) مع SSL | 429 فهرس أداء، حذف ناعم، ترحيلات مُرقّمة ومتكررة الأمان |
 
@@ -42,7 +42,7 @@ npm run start:prod        # تشغيل الإنتاجي على :4000
 ## الجودة
 
 - `npm run type-check` — تدقيق أنواع صارم (صفر أخطاء)
-- `npm test` — 74 اختباراً (RBAC، البوابات، API، الدخان)
+- `npm test` — 83 اختباراً (RBAC، البوابات، API، الدخام، الأمان)
 - `node scripts/scan-mojibake.mjs` — مسح العطب النصي (صفر)
 - `node scripts/check-staged-secrets.mjs` — فحص أسرار ما قبل الالتزام
 
