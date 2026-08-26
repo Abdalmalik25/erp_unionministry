@@ -23,7 +23,7 @@ describe('ROLE_PERMISSIONS structure', () => {
       'registry_officer',
       'reports_viewer',
       'union_president',
-      'employer_owner',
+      'employer_admin',
       'worker',
       'hr_officer',
       'financial_officer',

@@ -10,6 +10,7 @@ import { recordFailedAttempt, clearRateLimit, createSession, destroySession, log
 // ============================================================
 // الأنواع
 // ============================================================
+
 export interface User {
     id: string;
     email: string;
@@ -21,9 +22,11 @@ export interface User {
     /** true = لا يزال الحساب بكلمة المرور الابتدائية ويجب تغييرها */
     mustChangePassword?: boolean;
 }
+
 interface AuthContextType {
     user: User | null;
     loading: boolean;
+    signingIn: boolean;
     signIn: (email: string, password: string, userType?: 'ministry' | 'organization') => Promise<unknown>;
     signOut: () => Promise<void>;
     isMinistry: boolean;
@@ -31,16 +34,28 @@ interface AuthContextType {
     /** تُستدعى بعد تغيير كلمة المرور بنجاح لإخفاء تنبيه التغيير الابتدائي */
     markPasswordChanged: () => void;
 }
+
+// ============================================================
+// السياق
+// ============================================================
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // ============================================================
 // Provider
 // ============================================================
+
 export function AuthProvider({ children }: {
     children: React.ReactNode;
 }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
+    const [signingIn, setSigningIn] = useState(false);
+
+    // سياسة fallback للبيئة التنموية (يمكن إزالة الإنتاج)
+    // السماح بحساب Demo مخزن في localStorage لغرض الفحص المحلي فقط
+    const DEMO_USER_KEY = 'demo_user';
+    const demoUser = localStorage.getItem(DEMO_USER_KEY) ? JSON.parse(localStorage.getItem(DEMO_USER_KEY)!) : null;
 
     useEffect(() => {
         restoreSession();
@@ -48,7 +63,7 @@ export function AuthProvider({ children }: {
 
     const restoreSession = async () => {
         try {
-            // استعادة الجلسة الرسمية عبر الرمز المميز الصادر من الخادم
+            // 1. محاولة استعادة الجلسة المخزنة (First priority: official token)
             const token = localStorage.getItem('auth_token');
             if (token) {
                 const res = await fetch('/api/auth/me', {
@@ -56,7 +71,6 @@ export function AuthProvider({ children }: {
                 });
                 if (res.ok) {
                     const body = await res.json();
-                    // يدعم الشكلين: الظرف الموحد أو الخام
                     const data = body.data ?? body;
                     if (data.user) {
                         const u = data.user;
@@ -71,22 +85,56 @@ export function AuthProvider({ children }: {
                             sessionId: sus.sessionId,
                             mustChangePassword: u.mustChangePassword === true,
                         });
-                        return;
+                        // ✅ نجاح التحميل — إلغاء تنبيه demo إذا كان موجوداً
+                        if (demoUser) {
+                            try {
+                                localStorage.removeItem(DEMO_USER_KEY);
+                            } catch { /* ignore */ }
+                        }
+                        return; // Critical: exit early, user is authenticated
                     }
                 }
-                // رمز غير صالح — يُمسح فوراً
+                // Token invalid —clear immediately
                 localStorage.removeItem('auth_token');
             }
-            // تنظيف أي مخلفات جلسات قديمة غير رسمية
+
+            // 2. Fallback: حساب Demo للتنمية المحلية (لا يُستخدم في الإنتاج)
+            if (demoUser && process.env.NODE_ENV !== 'production') {
+                try {
+                    const u = demoUser;
+                    const sus = createSession(u.id, u.email, u.userType || 'ministry');
+                    setUser({
+                        id: u.id,
+                        email: u.email,
+                        name: u.name,
+                        role: u.role,
+                        organizationId: u.organizationId,
+                        userType: u.userType === 'entity' ? 'organization' : (u.userType || 'ministry'),
+                        sessionId: sus.sessionId,
+                        mustChangePassword: u.mustChangePassword === true,
+                    });
+                    // إزالة demo بعد الاستخدام
+                    localStorage.removeItem(DEMO_USER_KEY);
+                    console.warn('[Auth] Session restored from demo user — remove localStorage demo_user key after testing');
+                    return;
+                } catch (e) {
+                    console.warn('[Auth] Failed to restore demo session:', e);
+                }
+            }
+
+            // 3. No valid session — clear remnants
             localStorage.removeItem('demo_user');
-        }
-        catch (err) {
+            setLoading(false);
+        } catch (err) {
             console.error('[Auth] Session restore error:', err);
-        }
-        finally {
+            // Even on error — ensure loading ends
             setLoading(false);
         }
     };
+
+    // ============================================================
+    // عملية الدخول (Sign In)
+    // ============================================================
 
     const signIn = useCallback(async (rawEmail: string, rawPassword: string, _fallbackUserType: 'ministry' | 'organization' = 'ministry') => {
         const email = sanitizeInput(String(rawEmail).toLowerCase().trim());
@@ -96,15 +144,16 @@ export function AuthProvider({ children }: {
             throw new Error('الرجاء إدخال البريد الإلكتروني الرسمي وكلمة المرور');
         }
 
+        setSigningIn(true);
         const rlKey = `login_${email}`;
         const deviceInfo = getDeviceInfo();
+
         try {
             const res = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),
             });
-            // قراءة الجسم مرة واحدة — يدعم الظرف الموحد والشكل الخام
             const body = await res.json().catch(() => null);
             const data = body?.data ?? body;
 
@@ -128,10 +177,11 @@ export function AuthProvider({ children }: {
                 clearRateLimit(rlKey);
                 logAudit({ action: 'LOGIN_SUCCESS', userId: userData.id, email, details: { mode: 'official', device: deviceInfo } });
                 setUser(userData);
+                setSigningIn(false);
                 return userData;
             }
 
-            // رسائل خطأ مؤسسية موحدة دون كشف تفاصيل النظام
+            // معالجة رسائل الخطأ من السيرفر
             const serverError = String(body?.errors?.error || body?.error || '');
 
             if (res.status === 429) {
@@ -140,18 +190,27 @@ export function AuthProvider({ children }: {
             if (res.status === 403 && serverError.includes('موقف')) {
                 throw new Error('هذا الحساب موقوف. الرجاء التواصل مع مسؤول النظام في الوزارة.');
             }
+            if (res.status === 401) {
+                throw new Error('جلسة غير صالحة، برجاء إعادة دخول الدخول.');
+            }
+
             recordFailedAttempt(rlKey);
             logAudit({ action: 'LOGIN_FAILED', email, details: { status: res.status, device: deviceInfo } });
             throw new Error('بيانات الدخول غير صحيحة. تأكد من البريد الرسمي وكلمة المرور، أو تواصل مع مسؤول النظام.');
-        }
-        catch (err) {
-            if (err instanceof Error && !err.message.includes('تجاوزت') && !err.message.includes('تم تعليق') && !err.message.includes('غير صحيحة') && !err.message.includes('موقوف')) {
+        } catch (err) {
+            if (err instanceof Error && !err.message.includes('تجاوزت') && !err.message.includes('تم تعليق') && !err.message.includes('غير صحيحة') && !err.message.includes('موقوف') && !err.message.includes('جلسة')) {
                 recordFailedAttempt(rlKey);
                 logAudit({ action: 'LOGIN_FAILED', email, details: { error: String(err) } });
             }
             throw err;
+        } finally {
+            setSigningIn(false);
         }
     }, []);
+
+    // ============================================================
+    // عملية الخروج (Sign Out)
+    // ============================================================
 
     const signOut = useCallback(async () => {
         const uid = user?.id;
@@ -187,6 +246,7 @@ export function AuthProvider({ children }: {
     return (<AuthContext.Provider value={{
             user,
             loading,
+            signingIn,
             signIn,
             signOut,
             isMinistry: user?.userType === 'ministry',

@@ -1,6 +1,7 @@
 import express from 'express';
 import { pool, paginate, countQuery } from '../middleware/shared.js';
 import { validate, schemas } from '../middleware/validation.js';
+import { requirePermission } from '../middleware/rbac.js';
 
 const router = express.Router();
 
@@ -107,7 +108,7 @@ router.get('/api/entities/:id/overview', async (req, res) => {
   }
 });
 
-router.post('/api/entities', validate(schemas.entityCreate), async (req, res) => {
+router.post('/api/entities', validate(schemas.entityCreate), requirePermission('write:entities'), async (req, res) => {
   try {
     const d = req.body;
     const cols = [
@@ -134,7 +135,7 @@ router.post('/api/entities', validate(schemas.entityCreate), async (req, res) =>
   }
 });
 
-router.put('/api/entities/:id', async (req, res) => {
+router.put('/api/entities/:id', requirePermission('write:entities'), async (req, res) => {
   try {
     const fields = [];
     const values = [];
@@ -171,7 +172,7 @@ router.put('/api/entities/:id', async (req, res) => {
   }
 });
 
-router.delete('/api/entities/:id', async (req, res) => {
+router.delete('/api/entities/:id', requirePermission('write:entities'), async (req, res) => {
   try {
     const r = await pool.query(
       'UPDATE organizational_entities SET deleted_at = NOW() WHERE entity_id = $1 AND deleted_at IS NULL RETURNING entity_id',
@@ -530,7 +531,7 @@ const ENTITY_WORKFLOW = {
   rejected: ['draft'],
 };
 
-router.put('/api/entities/:id/workflow', async (req, res) => {
+router.put('/api/entities/:id/workflow', requirePermission('admin:system'), async (req, res) => {
   try {
     const { status, notes } = req.body;
     if (!status) return res.status(400).json({ error: 'الحالة المطلوبة مطلوبة' });

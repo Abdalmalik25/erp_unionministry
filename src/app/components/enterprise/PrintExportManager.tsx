@@ -59,8 +59,19 @@ export interface PrintExportOptions {
 // ترويسة الحكومة (مشتركة لجميع القوالب) — الهوية من إعدادات النظام
 // ============================================================
 
-function GovernmentHeader({ compact = false }: { compact?: boolean }) {
+function simpleHash(str: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  const hex = (h >>> 0).toString(16).toUpperCase().padStart(8, '0');
+  return `${hex.slice(0, 4)}-${hex.slice(4)}`;
+}
+
+function GovernmentHeader({ compact = false, docTitle }: { compact?: boolean; docTitle?: string }) {
   const identity = useBranding();
+  const verificationCode = simpleHash(`${docTitle ?? ''}${identity.systemNameAr}${new Date().toISOString().slice(0, 10)}`);
   return (
     <div className={`flex items-center justify-between border-b-2 border-primary pb-3 mb-4 ${compact ? 'text-xs' : ''}`}>
       {/* يسار - شعار الجمهورية الرسمي */}
@@ -76,16 +87,15 @@ function GovernmentHeader({ compact = false }: { compact?: boolean }) {
         <p className="text-primary font-bold text-sm tracking-wide">{identity.countryAr}</p>
         <p className="text-foreground font-bold text-base mt-0.5">{identity.ministryNameAr}</p>
         <p className="text-primary text-xs font-semibold mt-0.5">{identity.systemNameAr}</p>
+        <p className="text-muted-foreground text-[10px] mt-0.5">{identity.ministryNameEn} — {identity.systemNameEn}</p>
       </div>
 
-      {/* يمين - رمز التحقق الأمني */}
+      {/* يمين - رمز التحقق */}
       <div className="flex flex-col items-center gap-1 text-[10px] text-muted-foreground">
-        <div className="w-14 h-14 border border-border rounded-lg flex items-center justify-center bg-muted p-1">
-          <div className="grid grid-cols-5 gap-px">
-            {Array.from({ length: 25 }).map((_, i) => (
-              <div key={i} className={`w-2 h-2 ${Math.random() > 0.5 ? 'bg-primary-dark' : 'bg-white'}`} />
-            ))}
-          </div>
+        <div className="w-14 h-14 border border-border rounded-lg flex flex-col items-center justify-center bg-muted px-1">
+          <span className="font-mono text-[8px] font-bold text-primary leading-tight">NLSMP</span>
+          <span className="font-mono text-[9px] font-bold text-foreground mt-0.5">{verificationCode}</span>
+          <span className="text-[7px] text-muted-foreground mt-0.5">رقم تحقق</span>
         </div>
         <span className="font-mono text-[9px]">وثيقة رسمية معتمدة</span>
       </div>
@@ -98,6 +108,7 @@ function GovernmentFooter({ page, total }: { page?: number; total?: number }) {
   return (
     <div className="border-t border-border pt-2 mt-4 flex items-center justify-between text-[10px] text-muted-foreground">
       <span>{identity.countryAr} — {identity.ministryNameAr} — قطاع العمل</span>
+      <span className="text-center hidden sm:inline">{BRAND.abbrEn} — {identity.systemNameEn}</span>
       <span>تاريخ الإصدار: {new Date().toLocaleDateString('ar-YE')}</span>
       {page && total && <span>صفحة {page} من {total}</span>}
     </div>
@@ -141,7 +152,7 @@ function EntityCard({ entity }: { entity: any }) {
 
   return (
     <div className="border-2 border-primary rounded-xl p-5 bg-card max-w-2xl mx-auto">
-      <GovernmentHeader />
+      <GovernmentHeader docTitle="بطاقة تعريف المنشأة" />
       <div className="text-center mb-4">
         <p className="text-xs text-muted-foreground uppercase tracking-wider">بطاقة تعريف المنشأة</p>
         <h2 className="text-xl font-bold text-primary mt-1">{entity?.nameAr || entity?.name_ar || '—'}</h2>
@@ -201,7 +212,7 @@ function DataListReport({ options }: { options: PrintExportOptions }) {
 
   return (
     <div className="bg-card p-6 text-sm">
-      <GovernmentHeader />
+      <GovernmentHeader docTitle={title} />
 
       {/* عنوان التقرير */}
       <div className="text-center mb-4">
@@ -268,7 +279,7 @@ function LicenseCertificate({ entity }: { entity: any }) {
         <span className="text-[120px] font-black text-primary rotate-[-30deg] select-none">رسمي</span>
       </div>
 
-      <GovernmentHeader />
+      <GovernmentHeader docTitle="شهادة تسجيل وترخيص" />
 
       <div className="my-6">
         <p className="text-xs tracking-[0.3em] text-muted-foreground uppercase mb-3">شهادة تسجيل وترخيص</p>
@@ -554,7 +565,9 @@ export async function exportReportToExcel(options: PrintExportOptions) {
   // ورقة البيانات الوصفية
   const metaWs = XLSX.utils.aoa_to_sheet([
     ['المنصة', identity.systemNameAr],
+    ['System', `${identity.systemNameEn} (${BRAND.abbrEn})`],
     ['الجهة', identity.ministryNameAr],
+    ['Authority', identity.ministryNameEn],
     ['نوع التقرير', title],
     ['تاريخ الإنشاء', new Date().toISOString()],
     ['إجمالي السجلات', data.length],

@@ -10,6 +10,7 @@ export interface OfficialIdentity {
   ministryNameEn: string;
   countryAr: string;
   systemNameAr: string;
+  systemNameEn: string;
   legalBasis: string;
 }
 
@@ -18,6 +19,7 @@ const FALLBACK: OfficialIdentity = {
   ministryNameEn: 'Ministry of Social Affairs and Labor',
   countryAr: BRAND.country,
   systemNameAr: BRAND.systemName,
+  systemNameEn: BRAND.nameEn,
   legalBasis: 'قانون العمل رقم 40 لسنة 2025 ولائحه التنفيذية',
 };
 
@@ -37,6 +39,7 @@ export async function getOfficialIdentity(): Promise<OfficialIdentity> {
           ministryNameEn: d?.ministryNameEn || FALLBACK.ministryNameEn,
           countryAr: d?.countryAr || FALLBACK.countryAr,
           systemNameAr: d?.systemNameAr || FALLBACK.systemNameAr,
+          systemNameEn: d?.systemNameEn || FALLBACK.systemNameEn,
           legalBasis: d?.legalBasis || FALLBACK.legalBasis,
         };
         cached = identity;

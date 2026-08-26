@@ -7,7 +7,18 @@ export default tseslint.config([
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    ignores: ['dist', 'node_modules', 'supabase/functions/**'],
+    ignores: [
+      'dist',
+      'node_modules',
+      'supabase/functions/**',
+      '*.config.js',
+      '*.config.mjs',
+      'public',
+      'coverage',
+      'vitest.config.ts',
+      'vite.config.ts',
+      '**/*.sql',
+    ],
   },
   {
     files: ['**/*.{ts,tsx}'],

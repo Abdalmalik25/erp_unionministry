@@ -2,6 +2,7 @@ import express from 'express';
 import { pool, paginate, countQuery, softDeleteFilter, TABLE_COLUMNS, validateColumns, ALLOWED_TABLES, validateTableName } from '../middleware/shared.js';
 import { validateCertificateProfession, normalizeCertificateStatus } from '../lib/certificateValidation.mjs';
 import { validateFieldValues } from '../lib/dynamicFieldsValidation.mjs';
+import { requirePermission } from '../middleware/rbac.js';
 
 const router = express.Router();
 
@@ -44,7 +45,7 @@ router.get('/api/legal-references', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.post('/api/legal-references', async (req, res) => {
+router.post('/api/legal-references', requirePermission('legal:create'), async (req, res) => {
   try {
     const d = req.body;
     const table = d._table || 'legal_references';
@@ -61,7 +62,7 @@ router.post('/api/legal-references', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.put('/api/legal-references/:id', async (req, res) => {
+router.put('/api/legal-references/:id', requirePermission('legal:edit'), async (req, res) => {
   try {
     const d = req.body;
     const table = d._table || 'legal_references';
@@ -78,7 +79,7 @@ router.put('/api/legal-references/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.delete('/api/legal-references/:id', async (req, res) => {
+router.delete('/api/legal-references/:id', requirePermission('legal:delete'), async (req, res) => {
   try {
     const table = req.query.table || 'legal_references';
     if (!validateTableName(table)) return res.status(400).json({ error: 'الجدول غير صالح' });
@@ -123,7 +124,7 @@ router.get('/api/labor-disputes', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.post('/api/labor-disputes', async (req, res) => {
+router.post('/api/labor-disputes', requirePermission('laborDisputes:create'), async (req, res) => {
   try {
     const d = req.body;
     const cols = ['enterprise_id','enterprise_name','worker_name','dispute_type','dispute_description','dispute_date','status','resolution_date','resolution_notes','settlement_proposal'];
@@ -138,7 +139,7 @@ router.post('/api/labor-disputes', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.put('/api/labor-disputes/:id', async (req, res) => {
+router.put('/api/labor-disputes/:id', requirePermission('laborDisputes:edit'), async (req, res) => {
   try {
     const d = req.body;
     const map = { enterprise_id:'enterprise_id', enterprise_name:'enterprise_name', worker_name:'worker_name', dispute_type:'dispute_type', dispute_description:'dispute_description', dispute_date:'dispute_date', status:'status', resolution_date:'resolution_date', resolution_notes:'resolution_notes', settlement_proposal:'settlement_proposal' };
@@ -152,7 +153,7 @@ router.put('/api/labor-disputes/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.delete('/api/labor-disputes/:id', async (req, res) => {
+router.delete('/api/labor-disputes/:id', requirePermission('laborDisputes:delete'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE labor_disputes SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -195,7 +196,7 @@ router.get('/api/expatriate-licenses', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.post('/api/expatriate-licenses', async (req, res) => {
+router.post('/api/expatriate-licenses', requirePermission('expatriate:create'), async (req, res) => {
   try {
     const d = req.body;
     if (!d.enterprise_id) return res.status(400).json({ error: 'enterprise_id مطلوب' });
@@ -211,7 +212,7 @@ router.post('/api/expatriate-licenses', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.put('/api/expatriate-licenses/:id', async (req, res) => {
+router.put('/api/expatriate-licenses/:id', requirePermission('expatriate:edit'), async (req, res) => {
   try {
     const d = req.body;
     const map = { enterprise_id:'enterprise_id', expatriate_name:'expatriate_name', expatriate_nationality:'expatriate_nationality', passport_number:'passport_number', license_number:'license_number', issue_date:'issue_date', expiry_date:'expiry_date', status:'status', linked_replacement_plan:'linked_replacement_plan' };
@@ -225,7 +226,7 @@ router.put('/api/expatriate-licenses/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.delete('/api/expatriate-licenses/:id', async (req, res) => {
+router.delete('/api/expatriate-licenses/:id', requirePermission('expatriate:delete'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE expatriate_licenses SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -269,7 +270,7 @@ router.get('/api/evaluation-certificates', async (req, res) => {
   }
 });
 
-router.post('/api/evaluation-certificates', async (req, res) => {
+router.post('/api/evaluation-certificates', requirePermission('evaluation:create'), async (req, res) => {
   try {
     const d = req.body;
     if (!d.enterprise_id) return res.status(400).json({ error: 'enterprise_id مطلوب' });
@@ -317,7 +318,7 @@ router.post('/api/evaluation-certificates', async (req, res) => {
   }
 });
 
-router.put('/api/evaluation-certificates/:id', async (req, res) => {
+router.put('/api/evaluation-certificates/:id', requirePermission('evaluation:edit'), async (req, res) => {
   try {
     const d = req.body;
 
@@ -388,7 +389,7 @@ router.put('/api/evaluation-certificates/:id', async (req, res) => {
   }
 });
 
-router.delete('/api/evaluation-certificates/:id', async (req, res) => {
+router.delete('/api/evaluation-certificates/:id', requirePermission('evaluation:delete'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE evaluation_certificates SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -435,7 +436,7 @@ router.get('/api/licenses', async (req, res) => {
   }
 });
 
-router.post('/api/licenses', async (req, res) => {
+router.post('/api/licenses', requirePermission('licenses:create'), async (req, res) => {
   try {
     const d = req.body;
     if (!d.entity_id) return res.status(400).json({ error: 'entity_id مطلوب' });
@@ -459,7 +460,7 @@ router.post('/api/licenses', async (req, res) => {
   }
 });
 
-router.put('/api/licenses/:id', async (req, res) => {
+router.put('/api/licenses/:id', requirePermission('licenses:edit'), async (req, res) => {
   try {
     const fields = [];
     const values = [];
@@ -490,7 +491,7 @@ router.put('/api/licenses/:id', async (req, res) => {
   }
 });
 
-router.delete('/api/licenses/:id', async (req, res) => {
+router.delete('/api/licenses/:id', requirePermission('licenses:delete'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE licenses SET deleted_at = NOW(), deleted_by = NULL WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });

@@ -2,10 +2,12 @@
  * usePermissions — نظام صلاحيات RBAC
  * Role-Based Access Control لجميع عمليات المنصة
  * مفتاح الخريطة هو «الدور» (role) وليس نوع المستخدم.
+ * موحد مع server/middleware/rbac.js عبر strings موحدة في src/app/roles.ts
  */
 
 import { useCallback, useMemo, ReactNode } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { ROLES, ROLE_ALIASES } from '../roles';
 
 // ============================================================
 // تعريف الصلاحيات
@@ -57,18 +59,21 @@ export interface RoleMeta {
 }
 
 export const ROLE_META: Record<string, RoleMeta> = {
-  ministry_admin: { label: 'مدير النظام والوزارة', userType: 'ministry', color: 'violet', description: 'صلاحيات كاملة على جميع شاشات وخدمات الوزارة' },
-  supervisory_director: { label: 'مدير عام الرقابة والتفتيش', userType: 'ministry', color: 'rose', description: 'إشراف كامل على خطط التفتيش والمخالفات والامتثال' },
-  legal_counsel: { label: 'المستشار القانوني', userType: 'ministry', color: 'amber', description: 'التحكيم في المنازعات العمالية وتعزيز اللوائح والعقود' },
-  labor_inspector: { label: 'مفتش عمل وميدان', userType: 'ministry', color: 'amber', description: 'التفتيش الميداني والمخالفات والسلامة المهنية' },
-  compliance_officer: { label: 'مسؤول الامتثال', userType: 'ministry', color: 'emerald', description: 'الامتثال وتقييم المخاطر وتصاريح العمل' },
-  registry_officer: { label: 'موظف السجل الوطني', userType: 'ministry', color: 'sky', description: 'سجل المنشآت والنقابات والمنظمات والأعضاء والمهن' },
-  reports_viewer: { label: 'محلل البيانات والذكاء', userType: 'ministry', color: 'slate', description: 'عرض التقارير والمؤشرات والتحليلات فقط' },
-  union_president: { label: 'رئيس النقابة أو منظمة', userType: 'organization', color: 'violet', description: 'صلاحيات الإشراف على النقابة أو المنظمة العمالية' },
-  employer_owner: { label: 'صاحب عمل / منشأة', userType: 'organization', color: 'blue', description: 'إدارة المنشأة والعاملين والامتثال والخدمات الحكومية والرسوم' },
-  worker: { label: 'عامل — الجواز المهني الرقمي', userType: 'organization', color: 'cyan', description: 'جواز العمل والعقود والأجور واللياقة والتدريب والشكاوى' },
-  hr_officer: { label: 'مسؤول موارد بشرية', userType: 'organization', color: 'sky', description: 'إدارة الأعضاء والملفات والأنشطة' },
-  financial_officer: { label: 'مسؤول مالي', userType: 'organization', color: 'emerald', description: 'إدارة الرسوم والخدمات المالية' },
+  [ROLES.SUPER_ADMIN]: { label: 'مدير النظام والوزارة', userType: 'ministry', color: 'violet', description: 'صلاحيات كاملة على جميع شاشات وخدمات الوزارة' },
+  [ROLES.MINISTRY_ADMIN]: { label: 'مدير الوزارة', userType: 'ministry', color: 'violet', description: 'صلاحيات كاملة على جميع شاشات وخدمات الوزارة' },
+  [ROLES.DEPUTY_MINISTER]: { label: 'وكيل الوزارة', userType: 'ministry', color: 'indigo', description: 'صلاحيات شاملة على جميع الشاشات والتقارير والاعتمادات (دون إدارة المستخدمين)' },
+  [ROLES.MINISTRY_STAFF]: { label: 'مستخدم وزارة', userType: 'ministry', color: 'sky', description: 'مستخدمو الوزارة والوحدات التنظيمية' },
+  [ROLES.SUPERVISORY_DIRECTOR]: { label: 'مدير عام الرقابة والتفتيش', userType: 'ministry', color: 'rose', description: 'إشراف كامل على خطط التفتيش والمخالفات والامتثال' },
+  [ROLES.LEGAL_COUNSEL]: { label: 'المستشار القانوني', userType: 'ministry', color: 'amber', description: 'التحكيم في المنازعات العمالية وتعزيز اللوائح والعقود' },
+  [ROLES.LABOR_INSPECTOR]: { label: 'مفتش عمل وميدان', userType: 'ministry', color: 'amber', description: 'التفتيش الميداني والمخالفات والسلامة المهنية' },
+  [ROLES.COMPLIANCE_OFFICER]: { label: 'مسؤول الامتثال', userType: 'ministry', color: 'emerald', description: 'الامتثال وتقييم المخاطر وتصاريح العمل' },
+  [ROLES.REGISTRY_OFFICER]: { label: 'موظف السجل الوطني', userType: 'ministry', color: 'sky', description: 'سجل المنشآت والنقابات والمنظمات والأعضاء والمهن' },
+  [ROLES.REPORTS_VIEWER]: { label: 'محلل البيانات والذكاء', userType: 'ministry', color: 'slate', description: 'عرض التقارير والمؤشرات والتحليلات فقط' },
+  [ROLES.UNION_PRESIDENT]: { label: 'رئيس النقابة أو منظمة', userType: 'organization', color: 'violet', description: 'صلاحيات الإشراف على النقابة أو المنظمة العمالية' },
+  [ROLES.EMPLOYER_ADMIN]: { label: 'صاحب عمل / منشأة', userType: 'organization', color: 'blue', description: 'إدارة المنشأة والعاملين والامتثال والخدمات الحكومية والرسوم' },
+  [ROLES.HR_OFFICER]: { label: 'مسؤول موارد بشرية', userType: 'organization', color: 'sky', description: 'إدارة الأعضاء والملفات والأنشطة' },
+  [ROLES.FINANCIAL_OFFICER]: { label: 'مسؤول مالي', userType: 'organization', color: 'emerald', description: 'إدارة الرسوم والخدمات المالية' },
+  [ROLES.WORKER]: { label: 'عامل — الجواز المهني الرقمي', userType: 'organization', color: 'cyan', description: 'جواز العمل والعقود والأجور واللياقة والتدريب والشكاوى' },
 };
 
 export const ROLE_LIST = Object.keys(ROLE_META);
@@ -87,9 +92,54 @@ const VIEW_ALL = [
 ];
 
 export const ROLE_PERMISSIONS: Record<string, string[]> = {
-  ministry_admin: ['admin:all'],
+  [ROLES.SUPER_ADMIN]: ['admin:all'],
 
-  supervisory_director: [
+  [ROLES.MINISTRY_ADMIN]: ['admin:all'],
+
+  // وكيل الوزارة — شامل تشغيلياً على كل المجالات والاعتمادات والتقارير
+  // (يُستثنى منه إدارة المستخدمين admin:all / users:* المحفوظة لمدير النظام)
+
+  [ROLES.MINISTRY_STAFF]: [
+    ...VIEW_ALL,
+    'members:create', 'members:edit', 'members:export',
+    'activities:create', 'activities:edit', 'activities:export',
+    'documents:upload',
+    'services:request',
+    'workerProfiles:create', 'workerProfiles:edit',
+    'reports:export',
+  ],
+
+  [ROLES.DEPUTY_MINISTER]: [
+    ...VIEW_ALL,
+    'entities:create', 'entities:edit', 'entities:export',
+    'members:create', 'members:edit', 'members:export',
+    'elections:create', 'elections:edit', 'elections:approve', 'elections:export',
+    'activities:create', 'activities:edit', 'activities:export',
+    'documents:upload', 'documents:approve', 'documents:reject',
+    'services:approve', 'services:reject',
+    'violations:create', 'violations:edit', 'violations:resolve', 'violations:export',
+    'inspections:create', 'inspections:edit', 'inspections:export',
+    'compliance:create', 'compliance:edit',
+    'risk:create', 'risk:edit',
+    'evaluation:create', 'evaluation:edit',
+    'licenses:create', 'licenses:edit',
+    'training:create', 'training:edit', 'training:export',
+    'dispatches:create', 'dispatches:edit', 'dispatches:approve',
+    'reduction:create', 'reduction:edit', 'reduction:approve',
+    'laborDisputes:create', 'laborDisputes:edit', 'laborDisputes:resolve',
+    'expatriate:create', 'expatriate:edit',
+    'commercial:create', 'commercial:edit', 'commercial:export',
+    'professions:create', 'professions:edit',
+    'workerProfiles:create', 'workerProfiles:edit',
+    'board:create', 'board:edit',
+    'occupations:create', 'occupations:edit',
+    'fees:create', 'fees:edit',
+    'notifications:create', 'notifications:edit',
+    'legal:create', 'legal:edit',
+    'reports:generate', 'reports:export',
+  ],
+
+  [ROLES.SUPERVISORY_DIRECTOR]: [
     ...VIEW_ALL,
     'inspections:view', 'inspections:create', 'inspections:edit', 'inspections:delete', 'inspections:export',
     'violations:view', 'violations:create', 'violations:edit', 'violations:delete', 'violations:resolve', 'violations:export',
@@ -100,7 +150,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'reports:generate', 'reports:export',
   ],
 
-  legal_counsel: [
+  [ROLES.LEGAL_COUNSEL]: [
     ...VIEW_ALL,
     'laborDisputes:view', 'laborDisputes:create', 'laborDisputes:edit', 'laborDisputes:delete', 'laborDisputes:resolve',
     'documents:view', 'documents:approve', 'documents:reject',
@@ -110,7 +160,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'reports:export',
   ],
 
-  labor_inspector: [
+  [ROLES.LABOR_INSPECTOR]: [
     ...VIEW_ALL,
     'inspections:view', 'inspections:create', 'inspections:edit', 'inspections:delete', 'inspections:export',
     'violations:view', 'violations:create', 'violations:edit', 'violations:delete', 'violations:resolve', 'violations:export',
@@ -120,7 +170,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'reports:export',
   ],
 
-  compliance_officer: [
+  [ROLES.COMPLIANCE_OFFICER]: [
     ...VIEW_ALL,
     'compliance:view', 'compliance:create', 'compliance:edit', 'compliance:delete',
     'risk:view', 'risk:create', 'risk:edit',
@@ -129,7 +179,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'reports:generate', 'reports:export',
   ],
 
-  registry_officer: [
+  [ROLES.REGISTRY_OFFICER]: [
     ...VIEW_ALL,
     'entities:view', 'entities:create', 'entities:edit', 'entities:delete', 'entities:export',
     'members:view', 'members:create', 'members:edit', 'members:delete', 'members:export',
@@ -145,12 +195,12 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'reports:export',
   ],
 
-  reports_viewer: [
+  [ROLES.REPORTS_VIEWER]: [
     ...VIEW_ALL,
     'reports:view', 'reports:generate', 'reports:export', 'comparative:view', 'audit:view',
   ],
 
-  union_president: [
+  [ROLES.UNION_PRESIDENT]: [
     ...VIEW_ALL,
     'members:view', 'members:create', 'members:edit', 'members:delete', 'members:export',
     'elections:view', 'elections:create', 'elections:edit', 'elections:delete', 'elections:approve', 'elections:export',
@@ -165,7 +215,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'reports:export', 'profile:view',
   ],
 
-  employer_owner: [
+  [ROLES.EMPLOYER_ADMIN]: [
     ...VIEW_ALL,
     'members:view', 'members:create', 'members:edit', 'members:export',
     'workerProfiles:view', 'workerProfiles:create', 'workerProfiles:edit', 'workerProfiles:delete',
@@ -179,7 +229,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'reports:export', 'profile:view',
   ],
 
-  worker: [
+  [ROLES.WORKER]: [
     'dashboard:view', 'profile:view',
     'workerProfiles:view',
     'services:view', 'services:request',
@@ -188,7 +238,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'evaluation:view', 'licenses:view',
   ],
 
-  hr_officer: [
+  [ROLES.HR_OFFICER]: [
     ...VIEW_ALL,
     'members:view', 'members:create', 'members:edit', 'members:delete', 'members:export',
     'workerProfiles:view', 'workerProfiles:create', 'workerProfiles:edit', 'workerProfiles:delete',
@@ -198,7 +248,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'reports:export', 'profile:view',
   ],
 
-  financial_officer: [
+  [ROLES.FINANCIAL_OFFICER]: [
     ...VIEW_ALL,
     'fees:view', 'fees:create', 'fees:edit', 'fees:delete',
     'services:view', 'services:request', 'services:approve', 'services:reject',
@@ -249,8 +299,14 @@ export function hasPermission(userPermissions: readonly string[], permission: st
 export function usePermissions() {
   const { user } = useAuth();
 
-  const userPermissions: string[] = user
-    ? (ROLE_PERMISSIONS[user.role] || ROLE_PERMISSIONS.reports_viewer)
+  const userRole = user?.role;
+  const userPermissions: string[] = userRole
+    ? (ROLE_PERMISSIONS[userRole] || (() => {
+        // fallback: try to find by alias
+        const aliasKey = Object.keys(ROLE_ALIASES).find(k => ROLE_ALIASES[k] === userRole);
+      const permissions = aliasKey ? ROLE_PERMISSIONS[aliasKey] : undefined;
+      return permissions || ROLE_PERMISSIONS[ROLES.REPORTS_VIEWER];
+      })())
     : [];
 
   const normalizedUserPermissions = useMemo(

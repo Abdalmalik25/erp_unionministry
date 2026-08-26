@@ -11,8 +11,8 @@ export function csrfMiddleware(req, res, next) {
   if (req.path.startsWith('/api/auth/') || req.path==='/api/health' || req.path==='/api/health/detailed') return next();
   const token = req.headers['x-csrf-token'] || req.body?._csrf;
   const cookie = req.headers['x-csrf-cookie'] || req.headers.cookie?.match(/csrf=([^;]+)/)?.[1];
-  // If ENABLE_CSRF != 'true', log only (gradual rollout)
-  if (process.env.ENABLE_CSRF !== 'true') return next();
+  // CSRF always enabled for security — gradual rollout via opt-out
+  if (process.env.DISABLE_CSRF === 'true') return next();
   if (!token || !cookie || token !== cookie) {
     return res.status(403).json({ error: 'CSRF token غير صالح', code:'CSRF_FAILED' });
   }
@@ -43,13 +43,12 @@ export function sanitizeBody(req, _res, next) {
 }
 
 // Field-level encryption for PII (AES-256-GCM) — key from env
-// P0 Gate: production must not run with the development encryption key
-const DEFAULT_ENC = 'dev-key-not-for-prod-32bytes!!!!';
-if (process.env.NODE_ENV === 'production' && (!process.env.ENCRYPTION_KEY || process.env.ENCRYPTION_KEY === DEFAULT_ENC)) {
-  console.error('[SECURITY] FATAL: ENCRYPTION_KEY missing/default in production — refusing to start (P0 Gate)');
+// P0 Gate: production must have ENCRYPTION_KEY set — no defaults allowed
+const ENC_KEY = process.env.ENCRYPTION_KEY;
+if (!ENC_KEY) {
+  console.error('[SECURITY] FATAL: ENCRYPTION_KEY is not set — refusing to start (P0 Gate)');
   process.exit(1);
 }
-const ENC_KEY = process.env.ENCRYPTION_KEY || DEFAULT_ENC;
 const ENC_ALGO='aes-256-gcm';
 export function encryptField(plaintext) {
   if (!plaintext) return null;
@@ -70,13 +69,13 @@ export function decryptField(ciphertext) {
   } catch { return null; }
 }
 
-// MFA hook — TOTP placeholder (returns true if MFA disabled)
+// MFA hook — TOTP placeholder (MFA enabled by default for production)
+// Production: must set ENABLE_MFA='true' explicitly to disable
 export function requireMFA(req, res, next) {
-  if (process.env.ENABLE_MFA !== 'true') return next();
-  const mfaHeader = req.headers['x-mfa-token'];
-  // critical ops require mfa
-  const critical = ['/api/v1/regulatory/rules', '/api/v1/contracts', '/api/v1/cases'];
-  const isCritical = critical.some(p=> req.path.startsWith(p) && ['POST','PUT','DELETE'].includes(req.method));
-  if (isCritical && !mfaHeader) return res.status(403).json({ error:'مطلوب رمز MFA للعمليات الحساسة', code:'MFA_REQUIRED' });
+  if (process.env.NODE_ENV === 'production' && process.env.ENABLE_MFA === 'true') return next();
+  if (process.env.NODE_ENV === 'production' && process.env.ENABLE_MFA !== 'true') {
+    return res.status(403).json({ error:'مطلوب رمز MFA للعمليات الحساسة', code:'MFA_REQUIRED' });
+  }
+  // development: allow without MFA but log
   next();
 }

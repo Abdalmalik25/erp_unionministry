@@ -4,18 +4,18 @@
  */
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router";
-import { Menu, X, LogIn, Globe, PhoneCall, Mail, Clock } from "lucide-react";
+import { Menu, X, LogIn, Globe, PhoneCall, Mail, Clock, Home, Info, Layers, Database, Scale, HelpCircle } from "lucide-react";
 import { BrandLogo } from "../../components/ui/BrandLogo";
 import { BRAND } from "../../branding";
 
 const NAV = [
-  { to: "/", label: "الرئيسية" },
-  { to: "/about", label: "عن المنظومة" },
-  { to: "/services", label: "الخدمات الإلكترونية" },
-  { to: "/registries", label: "السجلات الوطنية" },
-  { to: "/legal", label: "الأساس القانوني" },
-  { to: "/faq", label: "الأسئلة الشائعة" },
-  { to: "/contact", label: "تواصل معنا" },
+  { to: "/", label: "الرئيسية", icon: Home },
+  { to: "/about", label: "عن المنظومة", icon: Info },
+  { to: "/services", label: "الخدمات الإلكترونية", icon: Layers },
+  { to: "/registries", label: "السجلات الوطنية", icon: Database },
+  { to: "/legal", label: "الأساس القانوني", icon: Scale },
+  { to: "/faq", label: "الأسئلة الشائعة", icon: HelpCircle },
+  { to: "/contact", label: "تواصل معنا", icon: PhoneCall },
 ] as const;
 
 /** جلب مسبق عند المرور بالماوس — يجعل التنقل فورياً تقريباً */
@@ -57,7 +57,8 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
 
       {/* الترويسة الرئيسية */}
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center gap-4">
+        <div className="h-px bg-gradient-to-l from-transparent via-amber-400/70 to-transparent" aria-hidden />
+        <div className="max-w-7xl mx-auto px-4 h-16 md:h-[4.5rem] flex items-center gap-4">
           <Link to="/" className="flex items-center gap-3 shrink-0 group">
             <BrandLogo size={44} rounded="xl" priority="high" className="border border-border shadow-sm group-hover:shadow-md transition-shadow" />
             <span className="leading-tight hidden sm:block">
@@ -70,6 +71,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
           {/* تنقل سطح المكتب */}
           <nav className="hidden lg:flex items-center gap-1 mx-auto" aria-label="التنقل الرئيسي">
             {NAV.map(n => {
+              const NavIcon = n.icon;
               const active = n.to === "/" ? pathname === "/" : pathname.startsWith(n.to);
               return (
                 <Link
@@ -78,8 +80,16 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                   onPointerEnter={prefetch(n.to)}
                   onFocus={prefetch(n.to)}
                   aria-current={active ? "page" : undefined}
-                  className={`px-3 py-2 rounded-lg text-[13px] font-bold transition-colors ${active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`}
+                  className={`group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-bold transition-all duration-150 ${
+                    active
+                      ? "bg-primary text-white shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  }`}
                 >
+                  <NavIcon
+                    size={14}
+                    className={`shrink-0 transition-colors ${active ? "text-amber-300" : "text-primary/50 group-hover:text-primary"}`}
+                  />
                   {n.label}
                 </Link>
               );
@@ -109,17 +119,24 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
         {/* تنقل الجوال */}
         {open && (
           <nav className="lg:hidden border-t px-4 py-3 grid grid-cols-2 gap-1.5 bg-background" aria-label="قائمة الجوال">
-            {NAV.map(n => (
-              <Link
-                key={n.to}
-                to={n.to}
-                onClick={() => setOpen(false)}
-                onPointerEnter={prefetch(n.to)}
-                className={`px-3 py-2.5 rounded-lg text-[13px] font-bold ${n.to === "/" ? pathname === "/" : pathname.startsWith(n.to) ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent"}`}
-              >
-                {n.label}
-              </Link>
-            ))}
+            {NAV.map(n => {
+              const NavIcon = n.icon;
+              const active = n.to === "/" ? pathname === "/" : pathname.startsWith(n.to);
+              return (
+                <Link
+                  key={n.to}
+                  to={n.to}
+                  onClick={() => setOpen(false)}
+                  onPointerEnter={prefetch(n.to)}
+                  className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-[13px] font-bold transition-colors ${
+                    active ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:bg-accent"
+                  }`}
+                >
+                  <NavIcon size={14} className={active ? "text-amber-300 shrink-0" : "text-primary/50 shrink-0"} />
+                  {n.label}
+                </Link>
+              );
+            })}
           </nav>
         )}
       </header>

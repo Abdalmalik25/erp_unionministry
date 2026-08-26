@@ -37,9 +37,12 @@
     "backup": "node scripts/backup.mjs",
     "cleanup": "node scripts/cleanup.mjs",
     "db:migrate": "node scripts/migrate-sql.js",
+    "db:apply": "node scripts/apply-migration.mjs",
+    "db:drift": "node scripts/check-db-drift.mjs",
     "db:seed": "node scripts/seed-professions.js",
     "db:setup": "node scripts/migrate-sql.js && node scripts/seed-professions.js",
-    "start:prod": "node server/index.js"
+    "start:prod": "node server/index.js",
+    "readiness": "node scripts/production-readiness.mjs"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",

@@ -337,9 +337,9 @@ export function checkPasswordStrength(password: string): PasswordStrength {
     { met: /[A-Z]/.test(password), text: 'حرف كبير واحد على الأقل' },
     { met: /[a-z]/.test(password), text: 'حرف صغير واحد على الأقل' },
     { met: /\d/.test(password), text: 'رقم واحد على الأقل' },
-    { 
-      met: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password), 
-      text: 'رمز خاص واحد على الأقل' 
+    {
+      met: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password),
+      text: 'رمز خاص واحد على الأقل'
     },
   ];
 

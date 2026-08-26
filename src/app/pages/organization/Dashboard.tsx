@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router';
 import { Users, Activity, DollarSign, FileCheck, Calendar } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { PermissionGate } from '../../hooks/usePermissions';
 
 interface OrgStats {
   members: number;
@@ -100,41 +101,49 @@ export function OrganizationDashboard() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Link to="/organization/members" className="bg-card rounded-xl shadow-sm p-6 border border-border hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-info/15 rounded-lg"><Users className="text-primary" size={24} /></div>
-            <span className="text-xs text-muted-foreground">الأعضاء</span>
-          </div>
-          <h3 className="text-3xl font-bold text-heading mb-1">{loading ? '—' : stats.members.toLocaleString()}</h3>
-          <p className="text-sm text-muted-foreground">عضو مسجل</p>
-        </Link>
+        <PermissionGate permission="members:view" fallback={<div className="text-center py-6"><p className="text-sm text-muted-foreground">لا يمكنك عرض هذا القسم</p></div>}>
+          <Link to="/organization/members" className="bg-card rounded-xl shadow-sm p-6 border border-border hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-info/15 rounded-lg"><Users className="text-primary" size={24} /></div>
+              <span className="text-xs text-muted-foreground">الأعضاء</span>
+            </div>
+            <h3 className="text-3xl font-bold text-heading mb-1">{loading ? '—' : stats.members.toLocaleString()}</h3>
+            <p className="text-sm text-muted-foreground">عضو مسجل</p>
+          </Link>
+        </PermissionGate>
 
-        <Link to="/organization/activities" className="bg-card rounded-xl shadow-sm p-6 border border-border hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-gold/15 rounded-lg"><Activity className="text-gold-dark" size={24} /></div>
-            <span className="text-xs text-muted-foreground">الأنشطة</span>
-          </div>
-          <h3 className="text-3xl font-bold text-heading mb-1">{loading ? '—' : stats.activities.toLocaleString()}</h3>
-          <p className="text-sm text-muted-foreground">نشاط مسجل</p>
-        </Link>
+        <PermissionGate permission="activities:view" fallback={<div className="text-center py-6"><p className="text-sm text-muted-foreground">لا يمكنك عرض هذا القسم</p></div>}>
+          <Link to="/organization/activities" className="bg-card rounded-xl shadow-sm p-6 border border-border hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-gold/15 rounded-lg"><Activity className="text-gold-dark" size={24} /></div>
+              <span className="text-xs text-muted-foreground">الأنشطة</span>
+            </div>
+            <h3 className="text-3xl font-bold text-heading mb-1">{loading ? '—' : stats.activities.toLocaleString()}</h3>
+            <p className="text-sm text-muted-foreground">نشاط مسجل</p>
+          </Link>
+        </PermissionGate>
 
-        <Link to="/organization/documents" className="bg-card rounded-xl shadow-sm p-6 border border-border hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-success/15 rounded-lg"><DollarSign className="text-success" size={24} /></div>
-            <span className="text-xs text-muted-foreground">الوثائق</span>
-          </div>
-          <h3 className="text-3xl font-bold text-heading mb-1">{loading ? '—' : stats.documents.toLocaleString()}</h3>
-          <p className="text-sm text-muted-foreground">وثيقة مسجلة</p>
-        </Link>
+        <PermissionGate permission="documents:view" fallback={<div className="text-center py-6"><p className="text-sm text-muted-foreground">لا يمكنك عرض هذا القسم</p></div>}>
+          <Link to="/organization/documents" className="bg-card rounded-xl shadow-sm p-6 border border-border hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-success/15 rounded-lg"><DollarSign className="text-success" size={24} /></div>
+              <span className="text-xs text-muted-foreground">الوثائق</span>
+            </div>
+            <h3 className="text-3xl font-bold text-heading mb-1">{loading ? '—' : stats.documents.toLocaleString()}</h3>
+            <p className="text-sm text-muted-foreground">وثيقة مسجلة</p>
+          </Link>
+        </PermissionGate>
 
-        <Link to="/organization/services" className="bg-card rounded-xl shadow-sm p-6 border border-border hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-warning/15 rounded-lg"><FileCheck className="text-warning-dark" size={24} /></div>
-            <span className="text-xs text-muted-foreground">الخدمات</span>
-          </div>
-          <h3 className="text-3xl font-bold text-heading mb-1">{loading ? '—' : stats.pendingServices.toLocaleString()}</h3>
-          <p className="text-sm text-muted-foreground">طلب معلق</p>
-        </Link>
+        <PermissionGate permission="services:view" fallback={<div className="text-center py-6"><p className="text-sm text-muted-foreground">لا يمكنك عرض هذا القسم</p></div>}>
+          <Link to="/organization/services" className="bg-card rounded-xl shadow-sm p-6 border border-border hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-warning/15 rounded-lg"><FileCheck className="text-warning-dark" size={24} /></div>
+              <span className="text-xs text-muted-foreground">الخدمات</span>
+            </div>
+            <h3 className="text-3xl font-bold text-heading mb-1">{loading ? '—' : stats.pendingServices.toLocaleString()}</h3>
+            <p className="text-sm text-muted-foreground">طلب معلق</p>
+          </Link>
+        </PermissionGate>
       </div>
 
       {/* Chart + Tables */}
@@ -155,7 +164,9 @@ export function OrganizationDashboard() {
         <div className="bg-card rounded-xl shadow-sm p-6 border border-border">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-heading flex items-center gap-2"><Calendar size={20} />الأنشطة الأخيرة</h3>
-            <Link to="/organization/activities" className="text-xs text-primary font-semibold hover:underline">عرض الكل</Link>
+            <PermissionGate permission="activities:view" fallback={<span className="text-xs text-primary">لا يمكنك العرض</span>}>
+              <Link to="/organization/activities" className="text-xs text-primary font-semibold hover:underline">عرض الكل</Link>
+            </PermissionGate>
           </div>
           <div className="space-y-3">
             {loading ? (
@@ -181,7 +192,9 @@ export function OrganizationDashboard() {
       <div className="bg-card rounded-xl shadow-sm p-6 border border-border">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-heading flex items-center gap-2"><FileCheck size={20} />طلبات الخدمات المعلقة</h3>
-          <Link to="/organization/services" className="text-xs text-primary font-semibold hover:underline">عرض الكل</Link>
+          <PermissionGate permission="service-requests:view" fallback={<span className="text-xs text-primary">لا يمكنك العرض</span>}>
+            <Link to="/organization/services" className="text-xs text-primary font-semibold hover:underline">عرض الكل</Link>
+          </PermissionGate>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {loading ? (
@@ -204,22 +217,30 @@ export function OrganizationDashboard() {
       <div className="bg-card rounded-xl shadow-sm p-6 border border-border">
         <h3 className="text-lg font-bold text-heading mb-4">الإجراءات السريعة</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Link to="/organization/members" className="p-4 bg-info/10 hover:bg-info/15 rounded-lg transition-colors text-center">
-            <Users className="mx-auto mb-2 text-primary" size={24} />
-            <p className="text-sm font-semibold text-heading">إدارة الأعضاء</p>
-          </Link>
-          <Link to="/organization/activities" className="p-4 bg-gold/10 hover:bg-gold/15 rounded-lg transition-colors text-center">
-            <Activity className="mx-auto mb-2 text-gold-dark" size={24} />
-            <p className="text-sm font-semibold text-heading">إدارة الأنشطة</p>
-          </Link>
-          <Link to="/organization/documents" className="p-4 bg-success/10 hover:bg-success/15 rounded-lg transition-colors text-center">
-            <FileCheck className="mx-auto mb-2 text-success-dark" size={24} />
-            <p className="text-sm font-semibold text-heading">إدارة الوثائق</p>
-          </Link>
-          <Link to="/organization/services" className="p-4 bg-warning/10 hover:bg-warning/15 rounded-lg transition-colors text-center">
-            <Calendar className="mx-auto mb-2 text-warning-dark" size={24} />
-            <p className="text-sm font-semibold text-heading">طلب خدمة</p>
-          </Link>
+          <PermissionGate permission="members:view" fallback={<div className="opacity-50 cursor-not-allowed"><span className="text-xs">إدارة الأعضاء</span></div>}>
+            <Link to="/organization/members" className="p-4 bg-info/10 hover:bg-info/15 rounded-lg transition-colors text-center">
+              <Users className="mx-auto mb-2 text-primary" size={24} />
+              <p className="text-sm font-semibold text-heading">إدارة الأعضاء</p>
+            </Link>
+          </PermissionGate>
+          <PermissionGate permission="activities:view" fallback={<div className="opacity-50 cursor-not-allowed"><span className="text-xs">إدارة الأنشطة</span></div>}>
+            <Link to="/organization/activities" className="p-4 bg-gold/10 hover:bg-gold/15 rounded-lg transition-colors text-center">
+              <Activity className="mx-auto mb-2 text-gold-dark" size={24} />
+              <p className="text-sm font-semibold text-heading">إدارة الأنشطة</p>
+            </Link>
+          </PermissionGate>
+          <PermissionGate permission="documents:view" fallback={<div className="opacity-50 cursor-not-allowed"><span className="text-xs">إدارة الوثائق</span></div>}>
+            <Link to="/organization/documents" className="p-4 bg-success/10 hover:bg-success/15 rounded-lg transition-colors text-center">
+              <FileCheck className="mx-auto mb-2 text-success-dark" size={24} />
+              <p className="text-sm font-semibold text-heading">إدارة الوثائق</p>
+            </Link>
+          </PermissionGate>
+          <PermissionGate permission="services:view" fallback={<div className="opacity-50 cursor-not-allowed"><span className="text-xs">طلب خدمة</span></div>}>
+            <Link to="/organization/services" className="p-4 bg-warning/10 hover:bg-warning/15 rounded-lg transition-colors text-center">
+              <Calendar className="mx-auto mb-2 text-warning-dark" size={24} />
+              <p className="text-sm font-semibold text-heading">طلب خدمة</p>
+            </Link>
+          </PermissionGate>
         </div>
       </div>
     </div>

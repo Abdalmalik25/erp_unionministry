@@ -92,6 +92,7 @@ export const AUDIT_ACTION: Record<string, string> = {
 // ---------- أدوار المستخدمين ----------
 export const ROLE_LABEL: Record<string, string> = {
   ministry_admin: 'مدير الوزارة',
+  deputy_minister: 'وكيل الوزارة',
   ministry_staff: 'موظف الوزارة',
   union_admin: 'مدير النقابة',
   union_officer: 'موظف النقابة',

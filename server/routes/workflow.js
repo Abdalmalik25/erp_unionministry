@@ -1,6 +1,7 @@
 // server/routes/workflow.js — Universal Workflow + Case + SLA + Correspondence
 import express from 'express';
 import { pool, paginate } from '../middleware/shared.js';
+import { requirePermission } from '../middleware/rbac.js';
 
 const router = express.Router();
 
@@ -13,7 +14,7 @@ router.get('/api/v1/workflows/definitions', async (_req, res) => {
 });
 
 // ========== Workflow Instances ==========
-router.post('/api/v1/workflows/instances', async (req, res) => {
+router.post('/api/v1/workflows/instances', requirePermission('admin:system'), async (req, res) => {
   try {
     const { workflow_key, entity_type, entity_id, assigned_to, metadata } = req.body;
     if (!workflow_key || !entity_type || !entity_id) return res.status(400).json({ error: 'workflow_key, entity_type, entity_id مطلوبة' });

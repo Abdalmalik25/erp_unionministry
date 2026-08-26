@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { getLandingPath } from '../utils/portals';
 import { ProfessionalLoader } from './ui/SplashScreen';
+import { usePermissions } from '../hooks/usePermissions';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -10,6 +11,8 @@ interface ProtectedRouteProps {
   requireOrganization?: boolean;
   /** أدوار مسموح لها بالوصول — غير المصرح يُوجَّه لبوابته */
   requiredRoles?: string[];
+  /** صلاحيات مطلوبة — يُفحص باستخدام usePermissions */
+  requiredPermissions?: string[];
 }
 
 export function ProtectedRoute({
@@ -17,8 +20,10 @@ export function ProtectedRoute({
   requireMinistry = false,
   requireOrganization = false,
   requiredRoles,
+  requiredPermissions,
 }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
+  const { can } = usePermissions();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -44,7 +49,14 @@ export function ProtectedRoute({
     if (requiredRoles && !requiredRoles.includes(user.role)) {
       navigate(getLandingPath(user), { replace: true });
     }
-  }, [user, loading, navigate, requireMinistry, requireOrganization, requiredRoles]);
+    
+    if (requiredPermissions) {
+      const hasPerm = requiredPermissions.every((perm) => can(perm));
+      if (!hasPerm) {
+        navigate(getLandingPath(user), { replace: true });
+      }
+    }
+  }, [user, loading, navigate, requireMinistry, requireOrganization, requiredRoles, requiredPermissions]);
 
   if (loading) {
     return (
@@ -62,6 +74,10 @@ export function ProtectedRoute({
   if (requireMinistry && !isMinUser) return null;
   if (requireOrganization && !isOrgUser) return null;
   if (requiredRoles && !requiredRoles.includes(user.role)) return null;
+  if (requiredPermissions) {
+    const hasPerm = requiredPermissions.every((perm) => can(perm));
+    if (!hasPerm) return null;
+  }
 
   return <>{children}</>;
 }

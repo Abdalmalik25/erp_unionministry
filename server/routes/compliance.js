@@ -1,5 +1,6 @@
 import express from 'express';
 import { pool, paginate, countQuery, softDelete, softDeleteFilter, safeSetClause } from '../middleware/shared.js';
+import { requirePermission } from '../middleware/rbac.js';
 
 const router = express.Router();
 
@@ -30,7 +31,7 @@ router.get('/api/violations', async (req, res) => {
   }
 });
 
-router.post('/api/violations', async (req, res) => {
+router.post('/api/violations', requirePermission('violations:create'), async (req, res) => {
   try {
     const d = req.body;
     if (!d.entity_id) return res.status(400).json({ error: 'entity_id مطلوب' });
@@ -55,7 +56,7 @@ router.post('/api/violations', async (req, res) => {
   }
 });
 
-router.put('/api/violations/:id', async (req, res) => {
+router.put('/api/violations/:id', requirePermission('violations:edit'), async (req, res) => {
   try {
     const fields = [];
     const values = [];
@@ -87,7 +88,7 @@ router.put('/api/violations/:id', async (req, res) => {
   }
 });
 
-router.delete('/api/violations/:id', async (req, res) => {
+router.delete('/api/violations/:id', requirePermission('violations:delete'), async (req, res) => {
   try {
     const r = await softDelete('violations', req.params.id);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -133,7 +134,7 @@ router.get('/api/inspections', async (req, res) => {
   }
 });
 
-router.post('/api/inspections', async (req, res) => {
+router.post('/api/inspections', requirePermission('inspections:create'), async (req, res) => {
   try {
     const d = req.body;
     if (!d.enterprise_id) return res.status(400).json({ error: 'enterprise_id مطلوب' });
@@ -158,7 +159,7 @@ router.post('/api/inspections', async (req, res) => {
   }
 });
 
-router.put('/api/inspections/:id', async (req, res) => {
+router.put('/api/inspections/:id', requirePermission('inspections:edit'), async (req, res) => {
   try {
     const fields = [];
     const values = [];
@@ -196,7 +197,7 @@ router.put('/api/inspections/:id', async (req, res) => {
   }
 });
 
-router.delete('/api/inspections/:id', async (req, res) => {
+router.delete('/api/inspections/:id', requirePermission('inspections:delete'), async (req, res) => {
   try {
     const r = await softDelete('inspections', req.params.id);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -237,7 +238,7 @@ router.get('/api/risk-assessments', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.post('/api/risk-assessments', async (req, res) => {
+router.post('/api/risk-assessments', requirePermission('risk:create'), async (req, res) => {
   try {
     const d = req.body;
     const cols = ['entity_id','risk_type','risk_description','likelihood','impact','risk_score','risk_level','mitigation_plan','responsible_person','review_date','status'];
@@ -251,7 +252,7 @@ router.post('/api/risk-assessments', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.put('/api/risk-assessments/:id', async (req, res) => {
+router.put('/api/risk-assessments/:id', requirePermission('risk:edit'), async (req, res) => {
   try {
     const d = req.body;
     const valid = safeSetClause('risk_assessments', d);
@@ -265,7 +266,7 @@ router.put('/api/risk-assessments/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.delete('/api/risk-assessments/:id', async (req, res) => {
+router.delete('/api/risk-assessments/:id', requirePermission('risk:delete'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE risk_assessments SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -307,7 +308,7 @@ router.get('/api/compliance-matrices', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.post('/api/compliance-matrices', async (req, res) => {
+router.post('/api/compliance-matrices', requirePermission('compliance:create'), async (req, res) => {
   try {
     const d = req.body;
     const cols = ['enterprise_id','occupation_id','occupation_type','article_number','article_title','compliance_status','notes','checked_at','checked_by'];
@@ -321,7 +322,7 @@ router.post('/api/compliance-matrices', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.put('/api/compliance-matrices/:id', async (req, res) => {
+router.put('/api/compliance-matrices/:id', requirePermission('compliance:edit'), async (req, res) => {
   try {
     const d = req.body;
     const valid = safeSetClause('compliance_matrices', d);
@@ -335,7 +336,7 @@ router.put('/api/compliance-matrices/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.delete('/api/compliance-matrices/:id', async (req, res) => {
+router.delete('/api/compliance-matrices/:id', requirePermission('compliance:delete'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE compliance_matrices SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -374,7 +375,7 @@ router.get('/api/maturity-assessments', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.post('/api/maturity-assessments', async (req, res) => {
+router.post('/api/maturity-assessments', requirePermission('compliance:create'), async (req, res) => {
   try {
     const d = req.body;
     const cols = ['entity_id','overall_score','grade','identity_score','description_score','tasks_score','competencies_score','safety_score','career_score','governance_score','missing_count','red_flags','recommendations','assessment_date','assessed_by'];
@@ -388,7 +389,7 @@ router.post('/api/maturity-assessments', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.put('/api/maturity-assessments/:id', async (req, res) => {
+router.put('/api/maturity-assessments/:id', requirePermission('compliance:edit'), async (req, res) => {
   try {
     const d = req.body;
     const valid = safeSetClause('maturity_assessments', d);
@@ -402,7 +403,7 @@ router.put('/api/maturity-assessments/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.delete('/api/maturity-assessments/:id', async (req, res) => {
+router.delete('/api/maturity-assessments/:id', requirePermission('compliance:delete'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE maturity_assessments SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -457,7 +458,7 @@ router.get('/api/compliance-alerts/:id', async (req, res) => {
   }
 });
 
-router.post('/api/compliance-alerts', async (req, res) => {
+router.post('/api/compliance-alerts', requirePermission('compliance:create'), async (req, res) => {
   try {
     const d = req.body;
     if (!d.enterprise_id) return res.status(400).json({ error: 'enterprise_id مطلوب' });
@@ -479,7 +480,7 @@ router.post('/api/compliance-alerts', async (req, res) => {
   }
 });
 
-router.put('/api/compliance-alerts/:id', async (req, res) => {
+router.put('/api/compliance-alerts/:id', requirePermission('compliance:edit'), async (req, res) => {
   try {
     const fields = [];
     const values = [];
@@ -508,7 +509,7 @@ router.put('/api/compliance-alerts/:id', async (req, res) => {
   }
 });
 
-router.put('/api/compliance-alerts/:id/acknowledge', async (req, res) => {
+router.put('/api/compliance-alerts/:id/acknowledge', requirePermission('compliance:edit'), async (req, res) => {
   try {
     const r = await pool.query(
       `UPDATE compliance_alerts SET is_acknowledged = true, acknowledged_by = $1, acknowledged_at = NOW(), updated_at = NOW()
@@ -522,7 +523,7 @@ router.put('/api/compliance-alerts/:id/acknowledge', async (req, res) => {
   }
 });
 
-router.put('/api/compliance-alerts/:id/resolve', async (req, res) => {
+router.put('/api/compliance-alerts/:id/resolve', requirePermission('compliance:edit'), async (req, res) => {
   try {
     const r = await pool.query(
       `UPDATE compliance_alerts SET is_resolved = true, resolved_at = NOW(), resolved_by = $1, resolution_notes = $2, updated_at = NOW()
@@ -536,7 +537,7 @@ router.put('/api/compliance-alerts/:id/resolve', async (req, res) => {
   }
 });
 
-router.delete('/api/compliance-alerts/:id', async (req, res) => {
+router.delete('/api/compliance-alerts/:id', requirePermission('compliance:delete'), async (req, res) => {
   try {
     const r = await softDelete('compliance_alerts', req.params.id);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });

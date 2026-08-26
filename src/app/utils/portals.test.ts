@@ -83,7 +83,7 @@ describe('role integrity', () => {
   });
 
   it('includes the four national audiences: ministry staff, employers, unions, workers', () => {
-    expect(ROLE_META.employer_owner.userType).toBe('organization');
+    expect(ROLE_META.employer_admin.userType).toBe('organization');
     expect(ROLE_META.worker.userType).toBe('organization');
     expect(ROLE_META.union_president.userType).toBe('organization');
     expect(ROLE_META.ministry_admin.userType).toBe('ministry');

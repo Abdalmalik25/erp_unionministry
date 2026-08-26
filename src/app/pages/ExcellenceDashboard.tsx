@@ -3,6 +3,7 @@
  * مستهدفات الخدمة + مؤشرات القياس + النضج المؤسسي + التنبؤ
  */
 import { useEffect, useState } from "react";
+import { PermissionGate } from "../hooks/usePermissions";
 import { Card } from "../components/ui/Card";
 import { Badge } from "../components/ui/badge";
 import { Trophy, Activity, Target, TrendingUp, Zap, Shield, BrainCircuit, Layers } from "lucide-react";
@@ -17,17 +18,18 @@ export default function ExcellenceDashboard(){
     fetch('/api/v1/excellence/maturity').then(r=>r.json()).then(j=> setMaturity(j.data||j)).catch(()=>{});
   },[]);
   return (
-    <div className="space-y-6" dir="rtl">
-      <div className="bg-gradient-to-br from-violet-900 via-indigo-900 to-slate-900 text-white rounded-2xl p-6 shadow-xl">
+    <PermissionGate permission="view.dashboard">
+      <div className="space-y-6" dir="rtl">
+        <div className="bg-white rounded-2xl p-6 shadow-md border border-slate-200">
         <div className="flex items-center gap-2 text-amber-300 text-xs font-bold"><Trophy className="w-4 h-4"/> لوحة التميز المؤسسي</div>
         <h1 className="text-2xl font-black mt-1">منصة تضاهي Estonia X-Road و GOV.UK</h1>
         <p className="text-sm text-violet-100 mt-1">مستهدفات خدمة معتمدة • قياس لحظي • نضج مؤسسي • تنبؤ • حوكمة • استجابة فورية</p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Badge className="bg-white text-slate-900">جاهزية 99.9%</Badge>
-          <Badge className="bg-emerald-500">p95 210ms</Badge>
-          <Badge className="bg-amber-500">مستوى ناضج</Badge>
-          <Badge variant="outline" className="text-white border-white/30">WCAG AAA</Badge>
-        </div>
+<div className="mt-4 flex flex-wrap gap-2">
+            <Badge className="bg-white text-slate-900">جاهزية 99.9%</Badge>
+            <Badge className="bg-emerald-500 text-slate-900">p95 210ms</Badge>
+            <Badge className="bg-amber-500 text-slate-900">مستوى ناضج</Badge>
+            <Badge variant="outline" className="border-amber-400/30 text-amber-300">WCAG AAA</Badge>
+          </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -92,5 +94,6 @@ export default function ExcellenceDashboard(){
         <div className="p-4 bg-white border rounded-xl text-center"><Trophy className="w-6 h-6 mx-auto text-violet-600"/><div className="font-bold mt-1">Estonia+</div><div className="text-muted-foreground">مستوى عالمي</div></div>
       </div>
     </div>
+    </PermissionGate>
   );
 }

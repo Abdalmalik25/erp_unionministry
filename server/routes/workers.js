@@ -1,5 +1,6 @@
 import { pool, paginate, countQuery, softDelete, softDeleteFilter, auditLog } from '../middleware/shared.js';
 import express from 'express';
+import { requirePermission } from '../middleware/rbac.js';
 
 const router = express.Router();
 
@@ -30,7 +31,7 @@ router.get('/api/members', async (req, res) => {
   }
 });
 
-router.post('/api/members', async (req, res) => {
+router.post('/api/members', requirePermission('write:members'), async (req, res) => {
   try {
     const d = req.body;
     if (!d.entity_id) return res.status(400).json({ error: 'entity_id مطلوب' });
@@ -57,7 +58,7 @@ router.post('/api/members', async (req, res) => {
   }
 });
 
-router.put('/api/members/:id', async (req, res) => {
+router.put('/api/members/:id', requirePermission('write:members'), async (req, res) => {
   try {
     const fields = [];
     const values = [];
@@ -91,7 +92,7 @@ router.put('/api/members/:id', async (req, res) => {
   }
 });
 
-router.delete('/api/members/:id', async (req, res) => {
+router.delete('/api/members/:id', requirePermission('write:members'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE members SET deleted_at = NOW(), deleted_by = NULL WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -156,7 +157,7 @@ router.get('/api/worker-profiles/:id', async (req, res) => {
   }
 });
 
-router.post('/api/worker-profiles', async (req, res) => {
+router.post('/api/worker-profiles', requirePermission('write:members'), async (req, res) => {
   try {
     const d = req.body;
     if (!d.member_id) return res.status(400).json({ error: 'member_id مطلوب' });
@@ -182,7 +183,7 @@ router.post('/api/worker-profiles', async (req, res) => {
   }
 });
 
-router.put('/api/worker-profiles/:id', async (req, res) => {
+router.put('/api/worker-profiles/:id', requirePermission('write:members'), async (req, res) => {
   try {
     const fields = [];
     const values = [];
@@ -216,7 +217,7 @@ router.put('/api/worker-profiles/:id', async (req, res) => {
   }
 });
 
-router.delete('/api/worker-profiles/:id', async (req, res) => {
+router.delete('/api/worker-profiles/:id', requirePermission('write:members'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE worker_profiles SET deleted_at = NOW(), deleted_by = NULL WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -260,7 +261,7 @@ router.get('/api/dispatches', async (req, res) => {
   }
 });
 
-router.post('/api/dispatches', async (req, res) => {
+router.post('/api/dispatches', requirePermission('dispatches:create'), async (req, res) => {
   try {
     const d = req.body;
     const cols = [
@@ -285,7 +286,7 @@ router.post('/api/dispatches', async (req, res) => {
   }
 });
 
-router.put('/api/dispatches/:id', async (req, res) => {
+router.put('/api/dispatches/:id', requirePermission('dispatches:edit'), async (req, res) => {
   try {
     const fields = [];
     const values = [];
@@ -320,7 +321,7 @@ router.put('/api/dispatches/:id', async (req, res) => {
   }
 });
 
-router.put('/api/dispatches/:id/status', async (req, res) => {
+router.put('/api/dispatches/:id/status', requirePermission('dispatches:edit'), async (req, res) => {
   try {
     const { status, rejection_reason } = req.body;
     if (!status) return res.status(400).json({ error: 'الحالة مطلوبة' });
@@ -379,7 +380,7 @@ router.get('/api/reduction-requests', async (req, res) => {
   }
 });
 
-router.post('/api/reduction-requests', async (req, res) => {
+router.post('/api/reduction-requests', requirePermission('reduction:create'), async (req, res) => {
   try {
     const d = req.body;
     const cols = [
@@ -402,7 +403,7 @@ router.post('/api/reduction-requests', async (req, res) => {
   }
 });
 
-router.put('/api/reduction-requests/:id', async (req, res) => {
+router.put('/api/reduction-requests/:id', requirePermission('reduction:edit'), async (req, res) => {
   try {
     const fields = [];
     const values = [];
@@ -435,7 +436,7 @@ router.put('/api/reduction-requests/:id', async (req, res) => {
   }
 });
 
-router.put('/api/reduction-requests/:id/status', async (req, res) => {
+router.put('/api/reduction-requests/:id/status', requirePermission('reduction:edit'), async (req, res) => {
   try {
     const { status, rejection_reason, final_approver_notes } = req.body;
     if (!status) return res.status(400).json({ error: 'الحالة مطلوبة' });

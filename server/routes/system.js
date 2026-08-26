@@ -2,6 +2,7 @@ import '../lib/loadEnv.js';
 import express from 'express';
 import { pool, paginate, countQuery, softDeleteFilter, auditLog } from '../middleware/shared.js';
 import { hashPassword, verifyPassword, signToken } from '../middleware/auth.js';
+import { requirePermission } from '../middleware/rbac.js';
 
 const router = express.Router();
 
@@ -184,6 +185,7 @@ function requireAdmin(req, res, next) {
 
 const VALID_ROLES = [
   'ministry_admin',
+  'deputy_minister',
   'labor_inspector',
   'compliance_officer',
   'registry_officer',

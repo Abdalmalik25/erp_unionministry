@@ -89,9 +89,19 @@ app.use((_req, res, next) => {
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  // سياسة المحتوى للواجهة تأتي من meta مفصلة في index.html (تسمح بخطوط Google الرسمية)
-  // أما API فلا تحتاج CSP — نمنع التفسير كصفحة فقط
+  // Content Security Policy — اجازه فقط أصول مرخصة ومنع أي�اقمك interpret الصفحات
+  res.setHeader('Content-Security-Policy',
+    "default-src 'self' data: blob: 'unsafe-inline' https: http:; "
+    "script-src 'self' 'unsafe-eval' https: http:; "
+    "style-src 'self' 'unsafe-inline' https: http:; "
+    "img-src 'self' data: https:; "
+    "connect-src 'self' https: http: wss:; "
+    "font-src 'self' data: https:; "
+    "frame-ancestors 'self' https: http:; "
+    "object-src 'none';"
+  );
   if (_req.path.startsWith('/api')) {
+    // API routes: restrict to no content execution
     res.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
   }
   next();

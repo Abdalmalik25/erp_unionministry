@@ -1,5 +1,6 @@
 import express from 'express';
 import { pool, paginate, countQuery, softDeleteFilter, safeSetClause } from '../middleware/shared.js';
+import { requirePermission } from '../middleware/rbac.js';
 
 const router = express.Router();
 
@@ -39,7 +40,7 @@ router.get('/api/fee-payments/:id', async (req, res) => {
   }
 });
 
-router.post('/api/fee-payments', async (req, res) => {
+router.post('/api/fee-payments', requirePermission('fees:create'), async (req, res) => {
   try {
     const d = req.body;
     if (d.amount === undefined || d.amount === null) return res.status(400).json({ error: 'المبلغ مطلوب' });
@@ -61,7 +62,7 @@ router.post('/api/fee-payments', async (req, res) => {
   }
 });
 
-router.put('/api/fee-payments/:id', async (req, res) => {
+router.put('/api/fee-payments/:id', requirePermission('fees:edit'), async (req, res) => {
   try {
     const fields = [];
     const values = [];
@@ -91,7 +92,7 @@ router.put('/api/fee-payments/:id', async (req, res) => {
   }
 });
 
-router.delete('/api/fee-payments/:id', async (req, res) => {
+router.delete('/api/fee-payments/:id', requirePermission('fees:delete'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE fee_payments SET deleted_at = NOW(), deleted_by = NULL WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -138,7 +139,7 @@ router.get('/api/training-records', async (req, res) => {
   }
 });
 
-router.post('/api/training-records', async (req, res) => {
+router.post('/api/training-records', requirePermission('training:create'), async (req, res) => {
   try {
     const d = req.body;
     if (!d.enterprise_id) return res.status(400).json({ error: 'enterprise_id مطلوب' });
@@ -161,7 +162,7 @@ router.post('/api/training-records', async (req, res) => {
   }
 });
 
-router.put('/api/training-records/:id', async (req, res) => {
+router.put('/api/training-records/:id', requirePermission('training:edit'), async (req, res) => {
   try {
     const d = req.body;
     const valid = safeSetClause('training_records', d);
@@ -177,7 +178,7 @@ router.put('/api/training-records/:id', async (req, res) => {
   }
 });
 
-router.delete('/api/training-records/:id', async (req, res) => {
+router.delete('/api/training-records/:id', requirePermission('training:delete'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE training_records SET deleted_at = NOW(), deleted_by = NULL WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });

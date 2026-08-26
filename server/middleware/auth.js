@@ -1,11 +1,15 @@
 import '../lib/loadEnv.js';
 import crypto from 'crypto';
 
-// P0 Gate: fail-closed — production must not run with default secret
-const DEFAULT_SECRET = 'union-sphere-sector-rbac-secret';
-const SECRET = process.env.JWT_SECRET || DEFAULT_SECRET;
-if (process.env.NODE_ENV === 'production' && SECRET === DEFAULT_SECRET) {
-  console.error('[SECURITY] FATAL: JWT_SECRET is default in production — refusing to start (P0 Gate)');
+// JWT_SECRET must be set via environment variable — no defaults allowed
+// P0 Gate: fail-closed — production must have JWT_SECRET configured
+const SECRET = process.env.JWT_SECRET;
+if (!SECRET) {
+  console.error('[SECURITY] FATAL: JWT_SECRET is not set — refusing to start (P0 Gate)');
+  process.exit(1);
+}
+if (process.env.NODE_ENV === 'production' && SECRET.length < 32) {
+  console.error('[SECURITY] FATAL: JWT_SECRET too short for production — refusing to start (P0 Gate)');
   process.exit(1);
 }
 if (SECRET.length < 32) {

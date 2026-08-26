@@ -352,22 +352,33 @@ export function RootLayout() {
                 <div key={group.id} className="mb-2">
                   <button
                     onClick={() => sidebarOpen ? toggleGroup(group.id) : handleToggleSidebar()}
-                    className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer ${
+                    title={!sidebarOpen ? group.label : undefined}
+                    className={`relative flex items-center gap-2.5 w-full px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer group ${
                       hasActiveChild && !isGroupOpen
                         ? 'bg-blue-600/30 text-blue-300 font-bold border border-blue-500/30'
                         : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                     }`}
                   >
+                    {!sidebarOpen && hasActiveChild && (
+                      <span className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-1 h-5 rounded-full bg-amber-400" aria-hidden />
+                    )}
                     <GroupIcon size={17} className="text-amber-400 shrink-0" />
                     {sidebarOpen && (
                       <>
                         <span className="text-xs font-bold flex-1 text-right truncate">{group.label}</span>
                         {visibleItems.length > 1 && (
-                          <ChevronDown
-                            size={14}
-                            className={`transition-transform duration-200 text-slate-400 ${isGroupOpen ? 'rotate-0' : '-rotate-90'}`}
-                          />
+                          <span
+                            className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-md text-[10px] font-bold leading-none tabular-nums ${
+                              isGroupOpen ? 'bg-blue-500/20 text-blue-200' : 'bg-slate-800 text-slate-400'
+                            }`}
+                          >
+                            {visibleItems.length}
+                          </span>
                         )}
+                        <ChevronDown
+                          size={14}
+                          className={`transition-transform duration-200 text-slate-400 ${isGroupOpen ? 'rotate-0' : '-rotate-90'}`}
+                        />
                       </>
                     )}
                   </button>
