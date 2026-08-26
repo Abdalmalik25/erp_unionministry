@@ -2,7 +2,7 @@
  * Offline Context - سياق العمل دون اتصال
  * إدارة حالة الاتصال والبيانات المخزنة مؤقتاً
  */
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { db, initDB, cacheData } from '../utils/indexedDB';
 import { toast } from '../components/ui/Toast';
 interface OfflineContextType {
@@ -35,11 +35,14 @@ export function OfflineProvider({ children }: {
     const [pendingActions, setPendingActions] = useState(0);
     const [cacheSize] = useState(0);
     const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'error'>('idle');
+    // مراجع لأحدث دوال المزامنة — تُستخدم في مستمعي أحداث الاتصال لتفادي الإغلاق القديم
+    const syncAllRef = useRef<() => Promise<void>>(async () => {});
+    const autoSyncRef = useRef<() => Promise<void>>(async () => {});
     // تهيئة قاعدة البيانات
     useEffect(() => {
         initDB().then(() => {
             setIsOfflineReady(true);
-            if (import.meta.env.DEV) console.log('[Offline] IndexedDB initialized');
+            if (import.meta.env.DEV) console.warn('[Offline] IndexedDB initialized');
         }).catch((error) => {
             if (import.meta.env.DEV) console.error('[Offline] Failed to initialize IndexedDB:', error);
             toast.error('فشل تهيئة قاعدة البيانات المحلية');
@@ -47,12 +50,12 @@ export function OfflineProvider({ children }: {
     }, []);
     // مراقبة حالة الاتصال
     useEffect(() => {
-        const handleOnline = async () => {
+        const handleOnline = () => {
             setIsOnline(true);
             toast.success('تم استئناف الاتصال بالإنترنت');
             // المزامنة التلقائية عند عودة الاتصال
-            await syncAll();
-            await autoSyncPendingActions();
+            syncAllRef.current();
+            autoSyncRef.current();
         };
         const handleOffline = () => {
             setIsOnline(false);
@@ -229,7 +232,7 @@ export function OfflineProvider({ children }: {
         setSyncStatus('syncing');
         try {
             // لا توجد قناة مزامنة خارجية — تُنفذ العمليات عند توافر الخدمة المختصة
-            if (import.meta.env.DEV) console.info(`[Offline] ${pendingActions} عملية معلقة بانتظار التزامن`);
+            if (import.meta.env.DEV) console.warn(`[Offline] ${pendingActions} عملية معلقة بانتظار التزامن`);
             setSyncStatus('idle');
         }
         catch (error) {
@@ -237,6 +240,9 @@ export function OfflineProvider({ children }: {
             setSyncStatus('error');
         }
     }, [isOnline, pendingActions]);
+    // تحديث المراجع بأحدث نسخ الدوال عند كل render — ليستدعيها حدث online بنسخة حية
+    syncAllRef.current = syncAll;
+    autoSyncRef.current = autoSyncPendingActions;
     return (<OfflineContext.Provider value={{
             isOnline,
             isOfflineReady,

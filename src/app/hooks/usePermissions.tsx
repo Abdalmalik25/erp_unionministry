@@ -300,24 +300,21 @@ export function usePermissions() {
   const { user } = useAuth();
 
   const userRole = user?.role;
-  const userPermissions: string[] = userRole
-    ? (ROLE_PERMISSIONS[userRole] || (() => {
-        // fallback: try to find by alias
-        const aliasKey = Object.keys(ROLE_ALIASES).find(k => ROLE_ALIASES[k] === userRole);
+  const userPermissions: string[] = useMemo(() => {
+    if (!userRole)
+      return [];
+    return ROLE_PERMISSIONS[userRole] || (() => {
+      // fallback: try to find by alias
+      const aliasKey = Object.keys(ROLE_ALIASES).find(k => ROLE_ALIASES[k] === userRole);
       const permissions = aliasKey ? ROLE_PERMISSIONS[aliasKey] : undefined;
       return permissions || ROLE_PERMISSIONS[ROLES.REPORTS_VIEWER];
-      })())
-    : [];
-
-  const normalizedUserPermissions = useMemo(
-    () => new Set(userPermissions.map(normalizePermission)),
-    [userPermissions]
-  );
+    })();
+  }, [userRole]);
 
   const can = useCallback((permission: string): boolean => {
     if (!user) return false;
     return hasPermission(userPermissions, permission);
-  }, [user, userPermissions, normalizedUserPermissions]);
+  }, [user, userPermissions]);
 
   const canAny = useCallback((...permissions: string[]): boolean => {
     return permissions.some(p => can(p));

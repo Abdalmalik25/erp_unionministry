@@ -289,7 +289,7 @@ class IndexedDBWrapper {
                 await this.deletePendingAction(action.id);
                 synced++;
             }
-            catch (e) {
+            catch {
                 if (import.meta.env.DEV) console.warn('[IndexedDB] Sync retry later:', action.id);
             }
         }

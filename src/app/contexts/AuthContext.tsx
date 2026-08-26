@@ -59,6 +59,8 @@ export function AuthProvider({ children }: {
 
     useEffect(() => {
         restoreSession();
+        // تأثير جبل واحد لاستعادة الجلسة — لا يعاد تشغيله عند كل تحديث للمكوّن
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const restoreSession = async () => {

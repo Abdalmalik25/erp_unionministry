@@ -66,7 +66,7 @@ export function useOfflineList<T>(
           setData(result);
           toast.warning('عرض البيانات المخزنة محلياً (بدون اتصال)');
         }
-      } catch (offlineErr) {
+      } catch {
         toast.error('فشل جلب البيانات');
       }
     } finally {
@@ -78,7 +78,7 @@ export function useOfflineList<T>(
     try {
       await db.putMany(storeName, items);
       setData(items);
-    } catch (err) {
+    } catch {
       toast.error('فشل حفظ البيانات محلياً');
     }
   }, [storeName]);
@@ -130,7 +130,7 @@ export function useOfflineItem<T>(
     } finally {
       setIsLoading(false);
     }
-  }, [endpoint, id, isOnline]);
+  }, [endpoint, id, isOnline, storeName]);
 
   useEffect(() => {
     fetchData();

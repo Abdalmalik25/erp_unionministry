@@ -248,7 +248,7 @@ export default function LaborDisputesManagement() {
     } catch {
       toast.error('حدث خطأ أثناء حفظ البيانات');
     }
-  }, [editing, formValues, api, entities]);
+  }, [editing, formValues, api, entities, validate]);
 
   const handleDelete = useCallback(async (dispute: LaborDispute) => {
     const ok = await confirm({

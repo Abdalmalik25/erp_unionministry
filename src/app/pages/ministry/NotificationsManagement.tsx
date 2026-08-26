@@ -172,7 +172,7 @@ export default function NotificationsManagement() {
     } catch {
       toast.error('حدث خطأ أثناء إرسال الإشعار');
     }
-  }, [formValues, api]);
+  }, [formValues, api, validate]);
 
   const handleMarkAsRead = useCallback(async (notification: Notification) => {
     if (notification.is_read) return;

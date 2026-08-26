@@ -56,6 +56,8 @@ export function ProtectedRoute({
         navigate(getLandingPath(user), { replace: true });
       }
     }
+  // تأثير الجارديان: `can` غير مستقرة الهوية (تتغير كل render) فنستبعدها عمداً لمنع إعادة التشغيل المتكرر
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, loading, navigate, requireMinistry, requireOrganization, requiredRoles, requiredPermissions]);
 
   if (loading) {

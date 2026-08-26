@@ -235,7 +235,7 @@ export async function runHealthChecks(): Promise<HealthCheck[]> {
             responseTime: dbOpen,
         });
     }
-    catch (error) {
+    catch {
         checks.push({
             component: 'database',
             status: 'error',
@@ -255,7 +255,7 @@ export async function runHealthChecks(): Promise<HealthCheck[]> {
             lastCheck: Date.now(),
         });
     }
-    catch (error) {
+    catch {
         checks.push({
             component: 'localStorage',
             status: 'error',
@@ -282,7 +282,7 @@ export async function runHealthChecks(): Promise<HealthCheck[]> {
             lastCheck: Date.now(),
         });
     }
-    catch (error) {
+    catch {
         checks.push({
             component: 'backup',
             status: 'error',

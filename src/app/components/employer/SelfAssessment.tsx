@@ -60,7 +60,7 @@ export function SelfAssessment() {
   const pct = Math.round((total / maxScore) * 100);
   const level = levelOf(pct);
 
-  const gaps = useMemo(() => ITEMS.filter(it => (answers[it.id] || '') !== 'yes'), [answers]);
+  const gaps = useMemo(() => ITEMS.filter(it => (answers[it.id] || '') !== 'yes'), [answers, ITEMS]);
   const set = (id: string, v: Answer) => {
     setAnswers(p => ({ ...p, [id]: v }));
     setSubmitted(false);

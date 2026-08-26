@@ -97,7 +97,7 @@ async function checkServerConnection(showToast: boolean = true): Promise<boolean
             return false;
         }
     }
-    catch (error) {
+    catch {
         if (showToast) {
             toast.error('تعذر الاتصال بالخادم.');
         }

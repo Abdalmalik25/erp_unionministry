@@ -211,7 +211,7 @@ export default function BoardMembersManagement() {
         catch {
             toast.error('حدث خطأ أثناء حفظ البيانات');
         }
-    }, [editing, formValues, api, entities]);
+    }, [editing, formValues, api, entities, validate]);
     const handleDelete = useCallback(async (member: BoardMember) => {
         const ok = await confirm({
             title: 'حذف عضو المجلس',

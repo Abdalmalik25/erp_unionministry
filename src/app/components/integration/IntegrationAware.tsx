@@ -9,9 +9,10 @@ import { Wifi, WifiOff, Database, Clock } from "lucide-react";
 export function IntegrationAware({ code, payload, children, fallback }: { code: string; payload: any; children: (result:any, meta:any)=>React.ReactNode; fallback?: React.ReactNode }){
   const [state,setState]=useState<{mode:string; result:any; took?:number; cached?:boolean; queued?:boolean}|null>(null);
   const [loading,setLoading]=useState(true);
+  const payloadKey = JSON.stringify(payload || {});
   useEffect(()=>{
     let cancelled=false;
-    fetch(`/api/v1/integrations/${code}/verify`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload||{}) })
+    fetch(`/api/v1/integrations/${code}/verify`, { method:'POST', headers:{'Content-Type':'application/json'}, body: payloadKey })
       .then(r=>r.json()).then(j=>{
         if(cancelled) return;
         const d=j.data||j;
@@ -19,7 +20,7 @@ export function IntegrationAware({ code, payload, children, fallback }: { code: 
         setLoading(false);
       }).catch(()=> setLoading(false));
     return ()=>{ cancelled=true; };
-  },[code, JSON.stringify(payload)]);
+  },[code, payloadKey]);
   if(loading) return <div className="p-3 border rounded-xl bg-slate-50 text-xs flex items-center gap-2"><Clock className="w-4 h-4 animate-spin"/> جاري التحقق {code}...</div>;
   const meta = { mode: state?.mode, took: state?.took, cached: state?.cached, queued: state?.queued };
   return (

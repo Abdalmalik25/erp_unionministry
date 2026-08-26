@@ -219,7 +219,7 @@ export default function ExpatriateLicensesManagement() {
         catch {
             toast.error('حدث خطأ أثناء حفظ البيانات');
         }
-    }, [editing, formValues, api, entities]);
+    }, [editing, formValues, api, entities, validate]);
     const handleDelete = useCallback(async (license: ExpatriateLicense) => {
         const ok = await confirm({
             title: 'حذف الترخيص',

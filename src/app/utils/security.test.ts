@@ -11,10 +11,7 @@ import {
   createSession,
   getSession,
   refreshSession,
-  destroySession,
   getSessionTimeRemaining,
-  isSessionWarning,
-  isSessionExpired,
   sanitizeInput,
   sanitizeSQLInput,
   sanitizeObject,
@@ -22,10 +19,8 @@ import {
   escapeHTML,
   generateCSRFToken,
   validateCSRFToken,
-  getCSRFToken,
   logAudit,
   getAuditLog,
-  AuditAction,
 } from './security';
 
 describe('Rate Limiter', () => {
@@ -72,7 +67,7 @@ describe('Session Manager', () => {
   });
 
   it('should get active session', () => {
-    const session = createSession('user123', 'test@test.com', 'ministry');
+    createSession('user123', 'test@test.com', 'ministry');
     const retrieved = getSession();
     expect(retrieved).toBeDefined();
     expect(retrieved!.userId).toBe('user123');

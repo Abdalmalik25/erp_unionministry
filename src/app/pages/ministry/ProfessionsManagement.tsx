@@ -475,7 +475,7 @@ export default function ProfessionsManagement() {
   const professionAnalysis = useMemo(() => {
     if (!activeAnalysisItem) return null;
     return analyzeProfession(activeAnalysisItem);
-  }, [activeAnalysisItem, isEditingProfession, editForm]);
+  }, [activeAnalysisItem]);
 
   // Filtered Establishments in modal
   const filteredEstablishments = useMemo(() => {

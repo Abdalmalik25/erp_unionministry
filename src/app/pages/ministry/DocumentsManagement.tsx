@@ -178,7 +178,7 @@ export function DocumentsManagement() {
             console.error('خطأ في حفظ الوثيقة:', error);
             toast.error('حدث خطأ أثناء حفظ الوثيقة');
         }
-    }, [form, editingDoc, api]);
+    }, [form, editingDoc, api, cfDefs, customData]);
     // تصدير الوثائق مع الحقول المخصصة القابلة للتقرير
     const handleExportDocs = useCallback(() => {
         const reportable = cfDefs.filter(d => d.reportable !== false);

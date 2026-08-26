@@ -32,7 +32,7 @@ export default function CustomFieldManager({ entityType, open, onClose, onChange
     try {
       const r = await fetch(`/api/custom-field-definitions?entity_type=${encodeURIComponent(entityType)}`);
       if (r.ok) { const d = await r.json(); setDefs(d.data || []); }
-    } catch (e) { toast.error('فشل تحميل تعريفات الحقول'); }
+    } catch { toast.error('فشل تحميل تعريفات الحقول'); }
   }, [entityType]);
 
   useEffect(() => { if (open) load(); }, [open, load]);
