@@ -53,6 +53,22 @@ const injectCsp = () => ({
   },
 })
 
+/**
+ * حزم ثقيلة تُحمَّل كسولًّا داخل دوال التصدير (جُعلت dynamic import في PrintExportManager).
+ * نستبعدها من الـ modulepreload لئلّا يُفرَّغ تحميلها عند أول زيارة — يُجلب الأول مرة عند
+ * أول طلب تصدير فعلي فقط (يقلل الحجم المُنقَّان في مسار العرض الحرج).
+ */
+const HEAVY_DEFERRED_CHUNKS = /(vendor-pdf|xlsx|html2canvas)/
+
+const notHeavyDeferred = (
+  filename: string,
+  deps: Array<unknown>,
+): Array<unknown> =>
+  deps.filter((dep) => {
+    const ref = typeof dep === 'string' ? dep : (dep as { file?: string; name?: string }).file ?? (dep as { name?: string }).name ?? ''
+    return !HEAVY_DEFERRED_CHUNKS.test(ref)
+  })
+
 const getManualChunks = (id: string) => {
   if (id.includes('node_modules')) {
     if (id.includes('react') || id.includes('react-dom')) return 'vendor-react'
@@ -96,6 +112,9 @@ export default defineConfig({
     target: 'es2020',
     minify: 'esbuild',
     cssCodeSplit: true,
+    modulePreload: {
+      resolveDependencies: notHeavyDeferred,
+    },
     rollupOptions: {
       output: {
         manualChunks: getManualChunks,

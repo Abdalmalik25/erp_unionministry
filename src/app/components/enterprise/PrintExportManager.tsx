@@ -5,9 +5,8 @@
 
 import { useRef, useCallback } from 'react';
 import { Printer, FileSpreadsheet, FileText, X } from 'lucide-react';
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+// ملاحظة أداء: مكتبات xlsx/jspdf/jspdf-autotable تُحمَّل كسولًا داخل دوال التصدير نفسها
+// حتى لا تدخل في مسار العرض الحرج لأول زيارة (كانت تُحمَّل لكل زائر عبر modulepreload)
 import { BRAND } from '../../branding';
 import { BrandLogo } from '../ui/BrandLogo';
 import { getOfficialIdentity, useBranding } from '../../hooks/useBranding';
@@ -528,9 +527,30 @@ function FinancialSummaryReport({ options }: { options: PrintExportOptions }) {
 // دوال التصدير إلى Excel و PDF
 // ============================================================
 
+/**
+ * تسمية ملفات آمنة لبيئات المؤسسات:
+ * - يزيل أحرف المسار غير الصالحة (`/\:*?"<>|`) التي قد تسبب أخطاء أو مشاكل تنزيل
+ * - يقلّص المسافات المتعددة ويقطع الأسماء الطويلة مع الحفاظ على كود الترميز (arabic-safe)
+ * - يضمن اسم صالحًا دائماً حتى وإن أصبح العنوان فارغاً (fallback عام)
+ */
+function sanitizeFilename(raw: string, fallback = 'تقرير'): string {
+  const cleaned = raw
+    .replace(/[\\/:*?"<>|]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 80);
+  return (cleaned || fallback).replace(/ /g, '_');
+}
+
+/** صف مُصَدّر من بيانات جدول — استبدال صريح لأي صرامة typesafe بدل Record<string, any> في مسار التصدير */
+type ReportRow = Record<string, unknown>;
+
 export async function exportReportToExcel(options: PrintExportOptions) {
   const { title, data, columns = [], dateFrom, dateTo } = options;
   const identity = await getOfficialIdentity();
+
+  // تحميل كسول: xlsx لا يدخل مسار العرض الحرج ويُجلب فقط عند طلب تصدير فعلي
+  const XLSX = await import('xlsx');
 
   const meta = [
     [identity.countryAr],
@@ -574,13 +594,17 @@ export async function exportReportToExcel(options: PrintExportOptions) {
   ]);
   XLSX.utils.book_append_sheet(wb, metaWs, 'بيانات_وصفية');
 
-  const filename = `${title.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  const filename = `${sanitizeFilename(title)}_${new Date().toISOString().slice(0, 10)}.xlsx`;
   XLSX.writeFile(wb, filename);
 }
 
 export async function exportReportToPDF(options: PrintExportOptions) {
   const { title, data, columns = [], dateFrom, dateTo, orientation = 'landscape' } = options;
   const identity = await getOfficialIdentity();
+
+  // تحميل كسول: jsPDF + autoTable فقط عند طلب تصدير PDF فعلي
+  const { default: jsPDF } = await import('jspdf');
+  const { default: autoTable } = await import('jspdf-autotable');
 
   const doc = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
   const pw = doc.internal.pageSize.width;
@@ -620,23 +644,21 @@ export async function exportReportToPDF(options: PrintExportOptions) {
 
   // الجدول
   const tableColumns = columns.map(c => ({ header: c.label, dataKey: c.key }));
-  const tableRows = data.map((row, i) => ({
-    '#': i + 1,
-    ...Object.fromEntries(
-      columns.map(col => [col.key, col.format ? col.format(row[col.key]) : (row[col.key] ?? '—')])
-    ),
-  }));
+  // بناء صفوف PDF بتحويل نصّي معدّ مسبقًا (بلا تحويلات غير آمنة في البناء)
+  const formatCell = (row: ReportRow, col: (typeof columns)[number]): string =>
+    String(col.format ? col.format(row[col.key]) : (row[col.key] ?? '—'));
+  const pdfBody = data.map((row, i) => [String(i + 1), ...columns.map(col => formatCell(row, col))]);
 
   autoTable(doc, {
     startY: 44,
     head: [['#', ...tableColumns.map(c => c.header)]],
-    body: tableRows.map(r => ['#', ...columns.map(c => (r as Record<string, any>)[c.key] ?? '—').map(String)].map((v, i) => i === 0 ? String((r as Record<string, any>)['#']) : v)),
+    body: pdfBody,
     styles: { font: 'helvetica', fontSize: 8, halign: 'right', cellPadding: 2 },
     headStyles: { fillColor: [30, 58, 138], textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [239, 246, 255] },
     margin: { left: 14, right: 14 },
-    didDrawPage: (d) => {
-      const pageCount = (doc as any).internal.getNumberOfPages();
+    didDrawPage: (d: { pageNumber: number }) => {
+      const pageCount = doc.getNumberOfPages();
       doc.setFontSize(8);
       doc.setTextColor(150);
       doc.text(`${identity.ministryNameAr} — ${identity.systemNameAr}`, 14, doc.internal.pageSize.height - 8);
@@ -644,7 +666,7 @@ export async function exportReportToPDF(options: PrintExportOptions) {
     },
   });
 
-  const filename = `${title.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`;
+  const filename = `${sanitizeFilename(title)}_${new Date().toISOString().slice(0, 10)}.pdf`;
   doc.save(filename);
 }
 
@@ -662,6 +684,9 @@ export async function exportCertificatePDF(opts: {
 }) {
   const { type, entityName, entityNumber, issueDate, expiryDate, details } = opts;
   const identity = await getOfficialIdentity();
+
+  // تحميل كسول: jsPDF فقط عند طلب شهادة PDF فعلي
+  const { default: jsPDF } = await import('jspdf');
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pw = doc.internal.pageSize.width;
   const ph = doc.internal.pageSize.height;
@@ -762,7 +787,7 @@ export async function exportCertificatePDF(opts: {
   doc.setTextColor(240, 242, 248);
   doc.text(identity.ministryNameAr, pw / 2, ph / 2, { angle: 45, align: 'center' });
 
-  doc.save(`${titles[type]}_${entityName}_${new Date().toISOString().slice(0, 10)}.pdf`);
+  doc.save(`${sanitizeFilename(titles[type] || 'شهادة رسمية')}_${sanitizeFilename(entityName)}_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
 // ============================================================
