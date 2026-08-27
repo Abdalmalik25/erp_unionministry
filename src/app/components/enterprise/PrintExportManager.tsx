@@ -542,9 +542,6 @@ function sanitizeFilename(raw: string, fallback = 'تقرير'): string {
   return (cleaned || fallback).replace(/ /g, '_');
 }
 
-/** صف مُصَدّر من بيانات جدول — استبدال صريح لأي صرامة typesafe بدل Record<string, any> في مسار التصدير */
-type ReportRow = Record<string, unknown>;
-
 export async function exportReportToExcel(options: PrintExportOptions) {
   const { title, data, columns = [], dateFrom, dateTo } = options;
   const identity = await getOfficialIdentity();
@@ -645,7 +642,7 @@ export async function exportReportToPDF(options: PrintExportOptions) {
   // الجدول
   const tableColumns = columns.map(c => ({ header: c.label, dataKey: c.key }));
   // بناء صفوف PDF بتحويل نصّي معدّ مسبقًا (بلا تحويلات غير آمنة في البناء)
-  const formatCell = (row: ReportRow, col: (typeof columns)[number]): string =>
+  const formatCell = (row: Record<string, unknown>, col: (typeof columns)[number]): string =>
     String(col.format ? col.format(row[col.key]) : (row[col.key] ?? '—'));
   const pdfBody = data.map((row, i) => [String(i + 1), ...columns.map(col => formatCell(row, col))]);
 
