@@ -69,13 +69,13 @@ export function decryptField(ciphertext) {
   } catch { return null; }
 }
 
-// MFA hook — TOTP placeholder (MFA enabled by default for production)
-// Production: must set ENABLE_MFA='true' explicitly to disable
+// MFA hook — TOTP placeholder
+// ⚠️ لا يوجد تنفيذ حقيقي لـ TOTP بعد؛ فرضه افتراضياً كان يحجب كل طلبات
+// الإنتاج (بما فيها تسجيل الدخول و/health). الفرض الآن opt-in صريح:
+// اضبط ENABLE_MFA='enforced' فقط عند إطلاق تنفيذ MFA فعلي.
 export function requireMFA(req, res, next) {
-  if (process.env.NODE_ENV === 'production' && process.env.ENABLE_MFA === 'true') return next();
-  if (process.env.NODE_ENV === 'production' && process.env.ENABLE_MFA !== 'true') {
-    return res.status(403).json({ error:'مطلوب رمز MFA للعمليات الحساسة', code:'MFA_REQUIRED' });
+  if (process.env.ENABLE_MFA === 'enforced') {
+    return res.status(403).json({ error: 'مطلوب رمز MFA للعمليات الحساسة', code: 'MFA_REQUIRED' });
   }
-  // development: allow without MFA but log
   next();
 }
