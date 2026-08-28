@@ -41,6 +41,9 @@ export function parseUserAgent(ua = '') {
   else if (/Macintosh/i.test(s)) device_brand = 'Mac';
   else if (/Windows/i.test(s) && device_type === 'desktop') device_brand = 'PC';
 
+  return { browser, browser_version, os, os_version, device_type, device_brand };
+}
+
 /** تحليل Accept-Language — اللغات المفضلة مرتبة */
 export function parseLanguage(header = '') {
   if (!header) return null;
@@ -91,8 +94,6 @@ export function collectDeviceIntel(req) {
     ...geoFromHeaders(req),
     fingerprint: deviceFingerprint(req),
   };
-}
-  return { browser, browser_version, os, os_version, device_type, device_brand };
 }
 
 /**
