@@ -334,7 +334,7 @@ export default function EmployerOS() {
               <div className="p-4">
                 <div className="font-bold text-sm mb-2">التحقق الخارجي — السجل التجاري (ذكي)</div>
                 <IntegrationAware code="commercial_register" payload={{ commercial_register: establishments[0]?.commercial_register_number || 'CR-123' }}>
-                  {(res)=> <div className="text-xs">النتيجة: {res.valid?'مطابق':'غير مطابق'} — {res.owner||''} {res.source==='mock' && '(محاكاة — يعمل بدون linking)'}</div>}
+                  {(res)=> <div className="text-xs">النتيجة: {res?.valid?'مطابق':'غير مطابق'} — {res?.owner||''} {res?.source==='mock' && '(محاكاة — يعمل بدون linking)'}</div>}
                 </IntegrationAware>
               </div>
             </Card>
