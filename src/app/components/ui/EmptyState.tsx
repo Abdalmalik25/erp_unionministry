@@ -5,7 +5,7 @@
  */
 
 import { ReactNode } from 'react';
-import { Inbox } from 'lucide-react';
+import { FolderOpen } from 'lucide-react';
 import { cn } from './utils';
 
 interface EmptyStateProps {
@@ -13,7 +13,7 @@ interface EmptyStateProps {
   title?: string;
   /** نص توضيحي إضافي */
   description?: string;
-  /** أيقونة مخصصة (اختياري) */
+  /** أيقونة مخصصة (اختياري) — يُفضَّل أن تكون سياقية للشاشة */
   icon?: ReactNode;
   /** إجراء إضافي (زر) */
   action?: ReactNode;
@@ -62,8 +62,8 @@ export function EmptyState({
         className
       )}
     >
-      <div className={cn('mb-4 text-muted-foreground/70', s.icon)}>
-        {icon || <Inbox className="w-full h-full" />}
+      <div className={cn('mb-4 text-muted-foreground/70', s.icon)} aria-hidden>
+        {icon || <FolderOpen className="w-full h-full" />}
       </div>
       <h3 className={cn('font-bold text-muted-foreground mb-1', s.title)}>{title}</h3>
       {description && (

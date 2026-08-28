@@ -1,6 +1,6 @@
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
-import {} from './Button';
+import { cn } from './utils';
 
 interface ModalProps {
   isOpen: boolean;
@@ -9,6 +9,8 @@ interface ModalProps {
   children: ReactNode;
   footer?: ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  /** نص وصفي اختياري لقراء الشاشة */
+  description?: string;
 }
 
 export function Modal({
@@ -18,17 +20,33 @@ export function Modal({
   children,
   footer,
   size = 'md',
+  description,
 }: ModalProps) {
+  const titleId = useRef(`modal-title-${Math.random().toString(36).slice(2, 9)}`).current;
+  const descId = useRef(description ? `modal-desc-${Math.random().toString(36).slice(2, 9)}` : undefined).current;
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  // قفل تمرير الصفحة + التقاط مفتاح Escape + إعادة التركيز
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
+    if (!isOpen) return;
+    document.body.style.overflow = 'hidden';
+    const prevFocus = document.activeElement as HTMLElement | null;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKeyDown);
+
+    // نقل التركيز إلى زر الإغلاق عند الفتح (آمن)
+    const t = window.setTimeout(() => closeRef.current?.focus(), 50);
+
     return () => {
       document.body.style.overflow = 'unset';
+      document.removeEventListener('keydown', onKeyDown);
+      window.clearTimeout(t);
+      prevFocus?.focus?.();
     };
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -41,22 +59,35 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn"
+      className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in"
       dir="rtl"
-      onClick={onClose}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
-        className={`bg-card rounded-2xl shadow-2xl ${sizeClasses[size]} w-full max-h-[90vh] overflow-hidden animate-slideUp`}
-        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descId}
+        className={cn('bg-card rounded-2xl shadow-xl', sizeClasses[size], 'w-full max-h-[90vh] overflow-hidden animate-scale-in')}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-gradient-to-r from-primary/10 to-primary/5">
-          <h2 className="text-xl font-bold text-heading">{title}</h2>
+          <div className="min-w-0">
+            <h2 id={titleId} className="text-xl font-bold text-heading truncate">{title}</h2>
+            {description && (
+              <p id={descId} className="text-sm text-muted-foreground mt-0.5">{description}</p>
+            )}
+          </div>
           <button
+            ref={closeRef}
+            type="button"
             onClick={onClose}
-            className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+            aria-label="إغلاق النافذة"
+            className="p-2 hover:bg-white/50 dark:hover:bg-white/10 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <X size={20} className="text-muted-foreground" />
+            <X size={20} className="text-muted-foreground" aria-hidden />
           </button>
         </div>
 
@@ -75,36 +106,3 @@ export function Modal({
     </div>
   );
 }
-
-// Styles للأنيميشن
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  @keyframes slideUp {
-    from {
-      transform: translateY(20px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-
-  .animate-fadeIn {
-    animation: fadeIn 0.2s ease-out;
-  }
-
-  .animate-slideUp {
-    animation: slideUp 0.3s ease-out;
-  }
-`;
-document.head.appendChild(style);

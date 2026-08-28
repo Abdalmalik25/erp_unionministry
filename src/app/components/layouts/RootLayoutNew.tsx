@@ -309,21 +309,21 @@ export function RootLayout() {
   }, [confirm, signOut, navigate]);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex" dir="rtl">
+    <div className="min-h-screen bg-background flex" dir="rtl">
       {/* Pinned Systems Navigation Sidebar (بانل الأنظمة المثبت) */}
       <aside
         className={`${
           sidebarOpen ? 'w-72' : 'w-20'
-        } sticky top-0 h-screen bg-slate-900 text-slate-100 border-l border-slate-800 transition-all duration-300 flex flex-col z-30 shadow-2xl overflow-hidden shrink-0 select-none`}
+        } sticky top-0 h-screen bg-sidebar text-sidebar-foreground border-l border-sidebar-border transition-all duration-300 flex flex-col z-30 shadow-xl overflow-hidden shrink-0 select-none`}
       >
         {/* Header / Sovereign Branding */}
-        <div className="p-4 flex items-center justify-between border-b border-slate-800/80 bg-slate-950/40">
+        <div className="p-4 flex items-center justify-between border-b border-sidebar-border bg-black/20">
           {sidebarOpen ? (
             <div className="flex items-center gap-3">
               <BrandLogo size={44} rounded="xl" priority="high" className="shadow-lg border border-white/20" />
               <div className="overflow-hidden">
-                <h1 className="font-bold text-sm text-slate-100 leading-tight">الجمهورية اليمنية</h1>
-                <p className="text-[11px] text-slate-400 truncate">وزارة الشؤون الاجتماعية والعمل</p>
+                <h1 className="font-bold text-sm text-sidebar-foreground leading-tight">الجمهورية اليمنية</h1>
+                <p className="text-[11px] text-sidebar-foreground/70 truncate">وزارة الشؤون الاجتماعية والعمل</p>
               </div>
             </div>
           ) : (
@@ -332,7 +332,7 @@ export function RootLayout() {
           <button
             onClick={handleToggleSidebar}
             aria-label={sidebarOpen ? 'طي القائمة الجانبية' : 'توسيع وتثبيت القائمة الجانبية'}
-            className={`p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer ${!sidebarOpen ? 'hidden' : ''}`}
+            className={`p-2 text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent rounded-lg transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring ${!sidebarOpen ? 'hidden' : ''}`}
             title={sidebarOpen ? 'طي القائمة' : 'تثبيت وتوسيع القائمة'}
           >
             <Menu size={18} />
@@ -353,23 +353,23 @@ export function RootLayout() {
                   <button
                     onClick={() => sidebarOpen ? toggleGroup(group.id) : handleToggleSidebar()}
                     title={!sidebarOpen ? group.label : undefined}
-                    className={`relative flex items-center gap-2.5 w-full px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer group ${
+                    className={`relative flex items-center gap-2.5 w-full px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer group focus:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring ${
                       hasActiveChild && !isGroupOpen
-                        ? 'bg-blue-600/30 text-blue-300 font-bold border border-blue-500/30'
-                        : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                        ? 'bg-sidebar-accent text-sidebar-accent-foreground font-bold border border-sidebar-border'
+                        : 'text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground'
                     }`}
                   >
                     {!sidebarOpen && hasActiveChild && (
-                      <span className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-1 h-5 rounded-full bg-amber-400" aria-hidden />
+                      <span className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-1 h-5 rounded-full bg-gold" aria-hidden />
                     )}
-                    <GroupIcon size={17} className="text-amber-400 shrink-0" />
+                    <GroupIcon size={17} className="text-gold shrink-0" aria-hidden />
                     {sidebarOpen && (
                       <>
                         <span className="text-xs font-bold flex-1 text-right truncate">{group.label}</span>
                         {visibleItems.length > 1 && (
                           <span
                             className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-md text-[10px] font-bold leading-none tabular-nums ${
-                              isGroupOpen ? 'bg-blue-500/20 text-blue-200' : 'bg-slate-800 text-slate-400'
+                              isGroupOpen ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'bg-sidebar-accent/60 text-sidebar-foreground/70'
                             }`}
                           >
                             {visibleItems.length}
@@ -377,7 +377,7 @@ export function RootLayout() {
                         )}
                         <ChevronDown
                           size={14}
-                          className={`transition-transform duration-200 text-slate-400 ${isGroupOpen ? 'rotate-0' : '-rotate-90'}`}
+                          className={`transition-transform duration-200 text-sidebar-foreground/60 ${isGroupOpen ? 'rotate-0' : '-rotate-90'}`}
                         />
                       </>
                     )}
@@ -391,14 +391,14 @@ export function RootLayout() {
                           <Link
                             key={item.path}
                             to={item.path}
-                            className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all duration-200 ${
+                            className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring ${
                               isActive
-                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow-md border-r-4 border-amber-400'
-                                : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                                ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold border-r-4 border-gold'
+                                : 'text-sidebar-foreground/65 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground'
                             }`}
                             title={!sidebarOpen ? item.label : undefined}
                           >
-                            <Icon size={15} className={`shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                            <Icon size={15} className={`shrink-0 ${isActive ? 'text-sidebar-accent-foreground' : 'text-sidebar-foreground/60'}`} />
                             {sidebarOpen && <span className="text-xs truncate">{item.label}</span>}
                           </Link>
                         );
@@ -416,13 +416,14 @@ export function RootLayout() {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring ${
                     isActive
-                      ? 'bg-blue-600 text-white shadow-lg border-r-4 border-amber-400'
-                      : 'text-slate-400 hover:bg-slate-800/80 hover:text-white'
+                      ? 'bg-sidebar-accent text-sidebar-accent-foreground border-r-4 border-gold'
+                      : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground'
                   }`}
                 >
-                  <Icon size={18} className="shrink-0" />
+                  <Icon size={18} className="shrink-0" aria-hidden />
                   {sidebarOpen && <span className="text-xs font-semibold">{item.label}</span>}
                 </Link>
               );
@@ -431,14 +432,14 @@ export function RootLayout() {
         </nav>
 
         {/* Pinned Sidebar Footer */}
-        <div className="p-3 border-t border-slate-800/80 bg-slate-950/50 flex items-center justify-between">
+        <div className="p-3 border-t border-sidebar-border bg-black/25 flex items-center justify-between">
           {sidebarOpen && user && (
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/40 flex items-center justify-center shrink-0">
-                <User size={15} className="text-blue-300" />
+              <div className="w-8 h-8 rounded-full bg-sidebar-accent border border-gold/40 flex items-center justify-center shrink-0">
+                <User size={15} className="text-sidebar-accent-foreground" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-bold text-slate-100 truncate">{user.name}</p>
+                <p className="text-xs font-bold text-sidebar-foreground truncate">{user.name}</p>
                 <span className={`inline-block mt-0.5 px-1.5 py-px rounded-md border text-[9px] font-bold truncate max-w-full ${roleColorClass}`}>
                   {meta(user.role)?.label || user.role}
                 </span>
@@ -447,7 +448,7 @@ export function RootLayout() {
           )}
           <button
             onClick={handleToggleSidebar}
-            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer mx-auto"
+            className="p-1.5 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent rounded-lg transition-colors cursor-pointer mx-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
             title={sidebarOpen ? 'طي القائمة' : 'توسيع وتثبيت القائمة'}
           >
             {sidebarOpen ? <ChevronLeft size={16} /> : <Menu size={18} />}
@@ -458,13 +459,13 @@ export function RootLayout() {
       {/* Main Framework & Content Area (إطار العمل الموحد مع شريط التمرير) */}
       <div className="flex-1 flex flex-col min-h-screen min-w-0 overflow-x-hidden">
         {/* Top Header Bar */}
-        <header className="sticky top-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-6 py-3.5 shadow-sm z-20">
+        <header className="sticky top-0 bg-card/95 dark:bg-card/95 backdrop-blur-md border-b border-border px-6 py-3.5 shadow-sm z-20">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight truncate">
+              <h2 className="text-base sm:text-lg font-bold text-heading tracking-tight truncate">
                 {portalHeader.title}
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">
+              <p className="text-xs text-muted-foreground font-medium truncate">
                 {portalHeader.subtitle}
               </p>
             </div>
@@ -474,30 +475,32 @@ export function RootLayout() {
               <div className="relative">
                 <button
                   onClick={() => setToolsMenuOpen(!toolsMenuOpen)}
-                  className="flex items-center gap-2 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer"
+                  aria-expanded={toolsMenuOpen}
+                  aria-haspopup="menu"
+                  className="flex items-center gap-2 px-3.5 py-2 bg-muted hover:bg-accent text-foreground rounded-xl text-xs font-bold transition-colors border border-border shadow-sm cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   title="الأدوات المساعدة والإعدادات والحوكمة"
                 >
-                  <Settings2 size={16} className="text-amber-500 shrink-0" />
+                  <Settings2 size={16} className="text-gold-dark dark:text-gold-light shrink-0" aria-hidden />
                   <span className="hidden sm:inline">الأدوات المساعدة</span>
-                  <ChevronDown size={14} className={`transition-transform duration-200 text-slate-400 ${toolsMenuOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={14} className={`transition-transform duration-200 text-muted-foreground ${toolsMenuOpen ? 'rotate-180' : ''}`} aria-hidden />
                 </button>
 
                 {toolsMenuOpen && (
-                  <div className="absolute left-0 mt-2 w-72 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-2 z-50 animate-in fade-in-50 duration-150">
-                    <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800/80 mb-1">
-                      <p className="text-xs font-bold text-slate-900 dark:text-white">الأدوات والخدمات المساعدة</p>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400">الإعدادات، الصلاحيات، التطبيق، الرقابة</p>
+                  <div className="absolute left-0 mt-2 w-72 bg-popover text-popover-foreground rounded-2xl shadow-xl border border-border p-2 z-50 animate-in fade-in-50 duration-150" role="menu">
+                    <div className="px-3 py-2 border-b border-border mb-1">
+                      <p className="text-xs font-bold text-heading">الأدوات والخدمات المساعدة</p>
+                      <p className="text-[11px] text-muted-foreground">الإعدادات، الصلاحيات، التطبيق، الرقابة</p>
                     </div>
 
                     <Link
                       to={isMinistry ? '/ministry/profile' : '/organization/profile'}
                       onClick={() => setToolsMenuOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium transition-colors"
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-xs font-medium transition-colors"
                     >
-                      <Settings size={16} className="text-blue-500 shrink-0" />
+                      <Settings size={16} className="text-primary-bright shrink-0" aria-hidden />
                       <div className="text-right flex-1">
-                        <p className="font-semibold text-slate-900 dark:text-white">الإعدادات العامة والملف</p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400">تخصيص الحساب وبيانات الاعتماد</p>
+                        <p className="font-semibold text-foreground">الإعدادات العامة والملف</p>
+                        <p className="text-[10px] text-muted-foreground">تخصيص الحساب وبيانات الاعتماد</p>
                       </div>
                     </Link>
 
@@ -505,46 +508,46 @@ export function RootLayout() {
                       <Link
                         to="/ministry/users"
                         onClick={() => setToolsMenuOpen(false)}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium transition-colors"
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-xs font-medium transition-colors"
                       >
-                        <Users size={16} className="text-emerald-500 shrink-0" />
+                        <Users size={16} className="text-success-dark dark:text-success-light shrink-0" aria-hidden />
                         <div className="text-right flex-1">
-                          <p className="font-semibold text-slate-900 dark:text-white">إدارة المستخدمين والصلاحيات</p>
-                          <p className="text-[10px] text-slate-500 dark:text-slate-400">مصفوفة التحكم والأدوار المؤسسية</p>
+                          <p className="font-semibold text-foreground">إدارة المستخدمين والصلاحيات</p>
+                          <p className="text-[10px] text-muted-foreground">مصفوفة التحكم والأدوار المؤسسية</p>
                         </div>
                       </Link>
                     )}
 
                     <button
                       onClick={() => { setToolsMenuOpen(false); setDownloadModalOpen(true); }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium transition-colors text-right cursor-pointer"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-xs font-medium transition-colors text-right cursor-pointer"
                     >
-                      <Download size={16} className="text-teal-500 shrink-0" />
+                      <Download size={16} className="text-primary-bright shrink-0" aria-hidden />
                       <div className="text-right flex-1">
-                        <p className="font-semibold text-slate-900 dark:text-white">تنزيل وتثبيت التطبيق</p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400">تثبيت التطبيق على الويندوز والموبايل</p>
+                        <p className="font-semibold text-foreground">تنزيل وتثبيت التطبيق</p>
+                        <p className="text-[10px] text-muted-foreground">تثبيت التطبيق على الويندوز والموبايل</p>
                       </div>
                     </button>
 
                     <button
                       onClick={() => { setToolsMenuOpen(false); setAiModalOpen(true); }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium transition-colors text-right cursor-pointer"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-xs font-medium transition-colors text-right cursor-pointer"
                     >
-                      <BrainCircuit size={16} className="text-indigo-500 shrink-0" />
+                      <BrainCircuit size={16} className="text-primary-bright shrink-0" aria-hidden />
                       <div className="text-right flex-1">
-                        <p className="font-semibold text-slate-900 dark:text-white">ذكاء واستشراف سوق العمل AI</p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400">تحليلات التوطين ومؤشرات العمالة</p>
+                        <p className="font-semibold text-foreground">ذكاء واستشراف سوق العمل AI</p>
+                        <p className="text-[10px] text-muted-foreground">تحليلات التوطين ومؤشرات العمالة</p>
                       </div>
                     </button>
 
                     <button
                       onClick={() => { setToolsMenuOpen(false); setGuideOpen(true); }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium transition-colors text-right cursor-pointer"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-xs font-medium transition-colors text-right cursor-pointer"
                     >
-                      <BookOpen size={16} className="text-violet-500 shrink-0" />
+                      <BookOpen size={16} className="text-gold-dark dark:text-gold-light shrink-0" aria-hidden />
                       <div className="text-right flex-1">
-                        <p className="font-semibold text-slate-900 dark:text-white">دليل المستخدم الرسمي</p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400">دورة العمل الكاملة حسب دورك الوظيفي</p>
+                        <p className="font-semibold text-foreground">دليل المستخدم الرسمي</p>
+                        <p className="text-[10px] text-muted-foreground">دورة العمل الكاملة حسب دورك الوظيفي</p>
                       </div>
                     </button>
 
@@ -552,23 +555,23 @@ export function RootLayout() {
                       <Link
                         to="/ministry/audit"
                         onClick={() => setToolsMenuOpen(false)}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium transition-colors"
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-xs font-medium transition-colors"
                       >
-                        <FileSearch size={16} className="text-amber-500 shrink-0" />
+                        <FileSearch size={16} className="text-warning-dark dark:text-warning-light shrink-0" aria-hidden />
                         <div className="text-right flex-1">
-                          <p className="font-semibold text-slate-900 dark:text-white">سجل الرقابة والتدقيق الأمني</p>
-                          <p className="text-[10px] text-slate-500 dark:text-slate-400">تتبع العمليات والمحاضر الرقابية</p>
+                          <p className="font-semibold text-foreground">سجل الرقابة والتدقيق الأمني</p>
+                          <p className="text-[10px] text-muted-foreground">تتبع العمليات والمحاضر الرقابية</p>
                         </div>
                       </Link>
                     )}
 
-                    <div className="my-1 border-t border-slate-100 dark:border-slate-800/80" />
+                    <div className="my-1 border-t border-border" />
 
                     <button
                       onClick={() => { setToolsMenuOpen(false); handleLogout(); }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 text-xs font-semibold transition-colors text-right cursor-pointer"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-error/10 text-error text-xs font-semibold transition-colors text-right cursor-pointer"
                     >
-                      <LogOut size={16} className="shrink-0" />
+                      <LogOut size={16} className="shrink-0" aria-hidden />
                       <span>تسجيل الخروج الآمن</span>
                     </button>
                   </div>
@@ -584,20 +587,21 @@ export function RootLayout() {
                   onClick={() => setNotificationsOpen(!notificationsOpen)}
                   aria-label="التنبيهات والإشعارات"
                   aria-expanded={notificationsOpen}
-                  className="relative p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                  aria-haspopup="true"
+                  className="relative p-2 hover:bg-accent rounded-xl transition-colors cursor-pointer text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   title="التنبيهات والإشعارات"
                 >
-                  <Bell size={18} className="text-slate-600 dark:text-slate-300" />
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                  <Bell size={18} className="text-muted-foreground" aria-hidden />
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-success rounded-full animate-pulse" aria-hidden />
                 </button>
 
                 {notificationsOpen && (
-                  <div className="absolute left-0 mt-2 w-80 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 z-50 p-4">
-                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2 mb-3">
+                  <div className="absolute left-0 mt-2 w-80 bg-popover text-popover-foreground rounded-2xl shadow-xl border border-border z-50 p-4">
+                    <div className="flex items-center justify-between border-b border-border pb-2 mb-3">
                       <h3 className="font-bold text-xs">التنبيهات والإشعارات</h3>
-                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full font-bold">النظام محدث</span>
+                      <span className="text-[10px] text-success dark:text-success-light bg-success/10 px-2 py-0.5 rounded-full font-bold">النظام محدث</span>
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 text-center py-4">
+                    <p className="text-xs text-muted-foreground text-center py-4">
                       جميع السجلات والمزامنات بحالة تشغيل ممتازة
                     </p>
                   </div>
@@ -606,12 +610,12 @@ export function RootLayout() {
 
               {/* User Profile Badge */}
               {user && (
-                <div className="hidden md:flex items-center gap-2.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <div className="w-7 h-7 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg flex items-center justify-center shadow-sm">
-                    <User size={14} className="text-white" />
+                <div className="hidden md:flex items-center gap-2.5 px-3 py-1.5 bg-muted rounded-xl border border-border">
+                  <div className="w-7 h-7 bg-gradient-to-br from-primary to-primary-dark rounded-lg flex items-center justify-center shadow-sm">
+                    <User size={14} className="text-white" aria-hidden />
                   </div>
                   <div className="text-right">
-                    <p className="text-xs font-bold text-slate-900 dark:text-white leading-tight">{user.name}</p>
+                    <p className="text-xs font-bold text-foreground leading-tight">{user.name}</p>
                     <span className={`inline-block px-1.5 py-px rounded-md border text-[9px] font-bold ${roleColorClass}`}>
                       {meta(user.role)?.label || user.role}
                     </span>
@@ -637,7 +641,7 @@ export function RootLayout() {
                 <Link
                   to={profilePath}
                   onClick={() => { setPwdBannerDismissed(true); sessionStorage.setItem('pwd_banner_dismissed', '1'); }}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-black shadow transition-colors"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-warning-dark hover:bg-warning text-white text-xs font-black shadow transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-warning"
                 >
                   <Lock size={13} /> تغيير كلمة المرور الآن
                 </Link>
@@ -658,8 +662,8 @@ export function RootLayout() {
         </main>
 
         {/* Footer */}
-        <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-6 py-3.5">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+        <footer className="bg-card border-t border-border px-6 py-3.5">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
             <p>© 2026 {BRAND.systemShort} — {BRAND.ministry}</p>
             <SystemStatusPill />
             <p className="font-medium">{BRAND.systemName} • v2.0</p>

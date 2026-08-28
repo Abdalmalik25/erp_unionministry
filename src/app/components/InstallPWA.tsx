@@ -68,25 +68,27 @@ export function InstallPWA() {
 
   return (
     <div
-      className="fixed bottom-5 left-5 right-5 md:left-auto md:right-5 md:w-96 bg-[#0f1c31] border border-blue-500/30 text-white rounded-2xl shadow-2xl p-5 z-50 animate-slideUp backdrop-blur-xl"
+      className="fixed bottom-5 left-5 right-5 md:left-auto md:right-5 md:w-96 bg-card border border-border text-foreground rounded-2xl shadow-2xl p-5 z-50 animate-slideInUp"
       dir="rtl"
+      role="dialog"
+      aria-label="عرض تثبيت التطبيق"
     >
       <button
         onClick={handleDismiss}
-        className="absolute top-3 left-3 p-1 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+        className="absolute top-3 left-3 p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors focus-visible:outline-2 focus-visible:outline-ring"
         aria-label="إغلاق"
       >
         <X size={16} />
       </button>
 
       <div className="flex items-start gap-3.5 mb-3.5">
-        <div className="w-12 h-12 bg-blue-900/50 border border-blue-500/40 rounded-xl flex items-center justify-center flex-shrink-0 text-amber-400 shadow-md">
+        <div className="w-12 h-12 bg-primary/10 border border-primary/30 rounded-xl flex items-center justify-center flex-shrink-0 text-primary shadow-md">
           <Download size={22} />
         </div>
 
         <div className="flex-1">
-          <h3 className="font-bold text-sm text-white mb-0.5">تثبيت المنظومة كتطبيق مستقل</h3>
-          <p className="text-xs text-slate-300 leading-relaxed">
+          <h3 className="font-bold text-sm text-foreground mb-0.5">تثبيت المنظومة كتطبيق مستقل</h3>
+          <p className="text-xs text-muted-foreground leading-relaxed">
             للحصول على أداء فائق وسرعة مضاعفة وتشغيل محلي مباشر على جهازك.
           </p>
         </div>
@@ -95,7 +97,7 @@ export function InstallPWA() {
       <div className="flex gap-2">
         <button
           onClick={handleInstall}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-4 py-2.5 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-900/40 cursor-pointer"
+          className="flex-1 bg-primary text-primary-foreground hover:bg-primary-dark active:bg-primary-dark px-4 py-2.5 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring cursor-pointer"
         >
           <Download size={15} />
           <span>تثبيت التطبيق الآن</span>
@@ -103,16 +105,16 @@ export function InstallPWA() {
 
         <button
           onClick={handleDismiss}
-          className="px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+          className="px-3.5 py-2.5 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-2 focus-visible:outline-ring"
         >
           لاحقاً
         </button>
       </div>
 
-      <div className="mt-3.5 pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
-        <span className="flex items-center gap-1"><Check size={13} className="text-emerald-400" /> يعمل محلياً</span>
-        <span className="flex items-center gap-1"><Check size={13} className="text-emerald-400" /> بدون إطار متصفح</span>
-        <span className="flex items-center gap-1"><Check size={13} className="text-emerald-400" /> أداء أقصى</span>
+      <div className="mt-3.5 pt-3 border-t border-border flex items-center justify-between text-[11px] text-muted-foreground">
+        <span className="flex items-center gap-1"><Check size={13} className="text-success" /> يعمل محلياً</span>
+        <span className="flex items-center gap-1"><Check size={13} className="text-success" /> بدون إطار متصفح</span>
+        <span className="flex items-center gap-1"><Check size={13} className="text-success" /> أداء أقصى</span>
       </div>
     </div>
   );

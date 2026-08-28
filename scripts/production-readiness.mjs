@@ -24,7 +24,12 @@ function exec(cmd, opts = {}) {
   return execSync(cmd, { stdio: ['ignore', 'pipe', 'pipe'], shell: true, encoding: 'utf8', ...opts });
 }
 function execQuiet(cmd) {
-  return execSync(cmd, { stdio: ['ignore', 'ignore', 'pipe'], shell: true, encoding: 'utf8' });
+  try {
+    return String(execSync(cmd, { stdio: ['ignore', 'pipe', 'pipe'], shell: true, encoding: 'utf8' }) ?? '');
+  } catch (e) {
+    // أعِد المخرجات المجمّعة حتى عند فشل الأمر (مثل --error-unmatch) — المهم عدم العودة بـ null
+    return String(((e && e.stdout) || '') + ((e && e.stderr) || ''));
+  }
 }
 
 function gate(name, fn) {
@@ -59,8 +64,8 @@ gate('تشغيل الاختبارات الواحدة (vitest run) — كل ال�
 });
 
 gate('تحقق لنت — لا أخطاء ESLint (warnings مقبولة)', () => {
-  let out = execQuiet('npm run lint --silent');
-  const errorsMatch = out.match(/✖\s*\d+\s*problems\s*\((\d+)\s*errors/i);
+  const out = execQuiet('npm run lint --silent');
+  const errorsMatch = out.match(/problems?\s*\((\d+)\s*errors?/i);
   if (errorsMatch && Number(errorsMatch[1]) > 0) {
     throw new Error(`يحتوي اللنت على ${errorsMatch[1]} خطأ`);
   }

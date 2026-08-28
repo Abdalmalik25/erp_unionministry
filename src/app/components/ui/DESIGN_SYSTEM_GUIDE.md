@@ -164,23 +164,31 @@ pnpm build
 # التحقق من البيئة
 pnpm dev
 ```
-</arg_value>
-<task_progress>
-- [x] تحليل بنية المشروع الحالية
-- [x] فحص نظام التصميل والمكونات العامة
-- [x] تحديد الفجوات والنواقص
-- [x] تحسين نظام التصميل الموحّد (designSystem.ts)
-- [x] تحسين StatusBadge ليتوافق مع نظام التصميل الموحّد
-- [x] إنشاء مكوّن EmptyState الموحّد
-- [x] إنشاء مكوّن FilterBar الموحّد
-- [x] إنشاء مكوّن ActionButtons الموحّد
-- [x] التحقق من سلامة DataTable.tsx
-- [x] ربط المكونات مع شاشة MembersManagementNew
-- [x] تحديث ElectionsManagement.tsx بالكامل
-- [x] تحديث ServicesManagement.tsx بالكامل
-- [x] تحديث ActivitiesManagement.tsx
-- [x] تحديث ViolationsManagement.tsx
-- [x] إنشاء ملف ui/index.ts الموحّد
-- [x] إضافة processing إلى STATUS_STYLES والترجمة
-- [x] كتابة وثيقة نظام التصمين
-- [ ] التشغيل النهائي للتحقق من البناء (tsc)</arg_value></tool_call>
+
+---
+
+## 8. الرموز الدلالية والحالات (إصدار الهوية 2026)
+
+> طبّق في 2026-08: تحويل شارات الحالات وأزرار الإجراءات من ألوان لوحة خام
+> (emerald/gray/blue…) إلى **رموز دلالية متكيّفة مع الوضعين**:
+> `bg-success/10` · `text-warning-dark` · `border-error/40` …
+> — أي قيمة تلوين في نظام الحالات تمر عبر `--color-*` فتضيء صحيحة
+> في الليل والنهار دون لمس إضافي.
+
+| الحالة | دلالة | الأصناف |
+|--------|-------|---------|
+| active / approved / completed | نجاح | `bg-success/10 text-success dark:text-success-light` |
+| suspended / pending / medium | تحذير | `bg-warning/10 text-warning-dark dark:text-warning-light` |
+| dissolved / rejected / expired | خطأ | `bg-error/10 text-error-dark dark:text-error-light` |
+| under_review / submitted / ongoing | معلومات | `bg-info/10 text-info-dark dark:text-info-light` |
+| planned / postponed / appealed | أساسي | `bg-primary/10 text-primary-bright dark:text-primary-light` |
+| draft / archived / closed | محايد | `bg-muted text-muted-foreground` |
+
+**قاعدة إمكانية الوصول:** كل `StatusBadge` تعرض **نقطة لونية افتراضياً** +
+نصاً دلالياً — لا يُعتمد على اللون وحده. أزرار `ActionButtons` تحمل
+`aria-label` وعناوين قياسية من `ACTION_LABELS` (عرض/تعديل/حذف…) ومناطق
+لمس ≥ 36px (sm) أو 44px (md).
+
+### أماكن الرموز الدلالية المرجعية
+- `designSystem.ts` ← `STATUS_STYLES` · `ACTION_BUTTON_STYLES` · `ACTION_LABELS`
+- `src/styles/index.css` ← `--color-*` (مصدر الحقيقة للعرض بضوء/ظلام)</tool_call>

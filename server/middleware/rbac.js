@@ -41,7 +41,7 @@ export const PERMISSIONS = {
 
 // Map client role keys to server role strings for consistency
 // This ensures ProtectedRoute checks and server RBAC use the same strings
-export const ROLE_ALIASES: Record<string, string> = {
+export const ROLE_ALIASES = {
   // Client role keys -> server role strings
   ministry_admin: ROLES.MINISTRY_ADMIN,
   supervisory_director: ROLES.SUPERVISORY_DIRECTOR,

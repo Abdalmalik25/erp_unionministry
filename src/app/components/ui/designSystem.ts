@@ -7,24 +7,27 @@
 // ============================================================
 // الثوابت الأساسية
 // ============================================================
+// ملاحظة: هذه القيم مرآةٌ لرموز CSS الدلالية في src/styles/index.css
+// (مصدر الحقيقة الفعلي للعرض — light-dark()). تُستخدم هنا للتوثيق
+// والقيم البرمجية الخالصة فقط، ولم يعد يُعتمد عليها في التلوين.
 
 export const DESIGN_TOKENS = {
-  /** لون الوزارة الأساسي */
-  primary: '#0A2540',
+  /** لون الوزارة الأساسي (كحلي) */
+  primary: '#0a2540',
   /** اللون الأساسي الفاتح */
-  primaryLight: '#1A4B8C',
+  primaryLight: '#1a4b8c',
   /** اللون الأساسي الساطح (للتركيز والحالات النشطة) */
-  primaryBright: '#1D4ED8',
+  primaryBright: '#1d4ed8',
   /** اللون الذهبي (للتكريم والتميز) */
-  gold: '#C9A84C',
+  gold: '#c9a84c',
   /** لون النجاح */
-  success: '#16A34A',
+  success: '#16a34a',
   /** لون التحذير */
-  warning: '#F59E0B',
+  warning: '#f59e0b',
   /** لون الخطأ */
-  error: '#DC2626',
+  error: '#dc2626',
   /** لون المعلومات */
-  info: '#1D4ED8',
+  info: '#1d4ed8',
 } as const;
 
 // ============================================================
@@ -55,38 +58,52 @@ export const COMMON = {
 } as const;
 
 // ============================================================
-// حالات النصائح القياسية
+// حالات النصائح القياسية — دلالية (Semantic) بالكامل
 // ============================================================
+// التمييز لا يعتمد على اللون وحده: كل حالة تحمل نصاً + نقطة لونية
+// (dot) تُعرض افتراضياً داخل StatusBadge. الألوان مشتقة من رموز
+// CSS الدلالية (--color-success/-warning/-error/-info) فتتكيف
+// تلقائياً مع الوضع الفاتح/المظلم.
+
+const SEMANTIC = {
+  success:  { bg: 'bg-success/10',        text: 'text-success dark:text-success-light',        border: 'border-success/30',   dot: 'bg-success' },
+  warning:  { bg: 'bg-warning/10',        text: 'text-warning-dark dark:text-warning-light',   border: 'border-warning/40',   dot: 'bg-warning' },
+  error:    { bg: 'bg-error/10',          text: 'text-error-dark dark:text-error-light',       border: 'border-error/30',     dot: 'bg-error' },
+  info:     { bg: 'bg-info/10',           text: 'text-info-dark dark:text-info-light',         border: 'border-info/30',      dot: 'bg-info' },
+  primary:  { bg: 'bg-primary/10',        text: 'text-primary-bright dark:text-primary-light', border: 'border-primary/30',   dot: 'bg-primary-bright' },
+  neutral:  { bg: 'bg-muted',             text: 'text-muted-foreground',                       border: 'border-border',       dot: 'bg-muted-foreground' },
+  neutralLow: { bg: 'bg-muted/60',        text: 'text-muted-foreground',                       border: 'border-border/80',    dot: 'bg-gray-400' },
+} as const;
 
 export const STATUS_STYLES: Record<string, { bg: string; text: string; border: string; dot?: string }> = {
-  active:         { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-500' },
-  inactive:       { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200', dot: 'bg-gray-400' },
-  suspended:      { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', dot: 'bg-amber-500' },
-  dissolved:      { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500' },
-  under_review:   { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-400' },
-  approved:       { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
-  rejected:       { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
-  draft:          { bg: 'bg-gray-100', text: 'text-gray-600', border: 'border-gray-200' },
-  submitted:      { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
-  archived:       { bg: 'bg-gray-50', text: 'text-gray-500', border: 'border-gray-100' },
-  planned:        { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200' },
-  ongoing:        { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500' },
-  completed:      { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
-  cancelled:      { bg: 'bg-gray-100', text: 'text-gray-600', border: 'border-gray-200' },
-  postponed:      { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
-  open:           { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500' },
-  resolved:       { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
-  closed:         { bg: 'bg-gray-100', text: 'text-gray-600', border: 'border-gray-200' },
-  appealed:       { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
-  low:            { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
-  medium:         { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200' },
-  high:           { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' },
-  critical:       { bg: 'bg-red-100', text: 'text-red-800', border: 'border-red-300', dot: 'bg-red-600' },
-  active_member:  { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
-  pending:        { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200' },
-  expiring:       { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' },
-  expired:        { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
-  processing:     { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500' },
+  active:         { ...SEMANTIC.success,   dot: 'bg-success' },
+  inactive:       { ...SEMANTIC.neutralLow },
+  suspended:      SEMANTIC.warning,
+  dissolved:      SEMANTIC.error,
+  under_review:   SEMANTIC.info,
+  approved:       SEMANTIC.success,
+  rejected:       SEMANTIC.error,
+  draft:          SEMANTIC.neutral,
+  submitted:      SEMANTIC.info,
+  archived:       SEMANTIC.neutralLow,
+  planned:        SEMANTIC.primary,
+  ongoing:        SEMANTIC.info,
+  completed:      SEMANTIC.success,
+  cancelled:      SEMANTIC.neutral,
+  postponed:      SEMANTIC.primary,
+  open:           SEMANTIC.error,
+  resolved:       SEMANTIC.success,
+  closed:         SEMANTIC.neutral,
+  appealed:       SEMANTIC.primary,
+  low:            SEMANTIC.success,
+  medium:         SEMANTIC.warning,
+  high:           SEMANTIC.warning,
+  critical:       SEMANTIC.error,
+  active_member:  SEMANTIC.success,
+  pending:        SEMANTIC.warning,
+  expiring:       SEMANTIC.warning,
+  expired:        SEMANTIC.error,
+  processing:     SEMANTIC.info,
 } as const;
 
 // ============================================================
@@ -95,14 +112,25 @@ export const STATUS_STYLES: Record<string, { bg: string; text: string; border: s
 
 export type ActionType = 'view' | 'edit' | 'delete' | 'export' | 'approve' | 'reject' | 'archive';
 
-export const ACTION_BUTTON_STYLES: Record<ActionType, { color: string; hover: string }> = {
-  view:    { color: 'text-blue-600',     hover: 'hover:bg-blue-50' },
-  edit:    { color: 'text-green-600',    hover: 'hover:bg-green-50' },
-  delete:  { color: 'text-red-500',      hover: 'hover:bg-red-50' },
-  export:  { color: 'text-emerald-600',  hover: 'hover:bg-emerald-50' },
-  approve: { color: 'text-green-600',    hover: 'hover:bg-green-50' },
-  reject:  { color: 'text-red-600',      hover: 'hover:bg-red-50' },
-  archive: { color: 'text-gray-500',     hover: 'hover:bg-gray-100' },
+/** العناوين الوصفية القياسية لكل إجراء (للقارئات الصوتية والأدلة) */
+export const ACTION_LABELS: Record<ActionType, string> = {
+  view: 'عرض التفاصيل',
+  edit: 'تعديل السجل',
+  delete: 'حذف السجل',
+  export: 'تصدير البيانات',
+  approve: 'اعتماد السجل',
+  reject: 'رفض السجل',
+  archive: 'أرشفة السجل',
+};
+
+export const ACTION_BUTTON_STYLES: Record<ActionType, { color: string; hover: string; active: string }> = {
+  view:    { color: 'text-info-dark dark:text-info-light',      hover: 'hover:bg-info/10',    active: 'active:bg-info/15' },
+  edit:    { color: 'text-success-dark dark:text-success-light', hover: 'hover:bg-success/10', active: 'active:bg-success/15' },
+  delete:  { color: 'text-error-dark dark:text-error-light',    hover: 'hover:bg-error/10',    active: 'active:bg-error/15' },
+  export:  { color: 'text-primary-bright dark:text-primary-light', hover: 'hover:bg-primary/10', active: 'active:bg-primary/15' },
+  approve: { color: 'text-success-dark dark:text-success-light', hover: 'hover:bg-success/10', active: 'active:bg-success/15' },
+  reject:  { color: 'text-error-dark dark:text-error-light',    hover: 'hover:bg-error/10',    active: 'active:bg-error/15' },
+  archive: { color: 'text-muted-foreground',                      hover: 'hover:bg-muted',      active: 'active:bg-accent' },
 };
 
 // ============================================================
