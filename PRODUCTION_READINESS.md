@@ -1,6 +1,10 @@
 # Production Readiness Assessment
-# UnionSphere Enterprise Platform - Version 2.1.0
+# UnionSphere Enterprise Platform - Version 2.2.0
 # Ministry of Social Affairs and Labor - Work Sector
+
+> مصدر الإصدار الوحيد: `server/lib/version.js` (`APP_VERSION`) — تُستهلك منه نقاط
+> `/api/health` و`/api/health/detailed`، ويطابق `package.json` و`VITE_APP_VERSION`.
+
 
 ## 0. DATABASE PRODUCTION STATE (Neon PostgreSQL)
 
@@ -184,11 +188,17 @@ All permissions follow consistent format:
 ✅ All P0 security gates enforce proper environment configuration
 ✅ Client and server role definitions are unified (single source of truth)
 ✅ 20+ API services implemented in the service layer
-✅ Permission enforcement on >50 API routes across all route files
+✅ Permission enforcement on 65 API route handlers via requirePermission (RBAC middleware)
+✅ Global authentication middleware on ALL /api routes (fail-closed, JWT verified)
 ✅ CSP and security headers on all HTTP responses
 ✅ Jurisdiction enforcement at governorate + directorate levels
 ✅ Fail-closed production gates (system won't start with defaults)
 ```
+
+> ملاحظة دقة (v2.2.0): 65 من أصل ~311 معالج مسار محمية بتوليفة صلاحيات دقيقة.
+> باقي المسارات محمية بالمصادقة العامة على مستوى الخادم (JWT إلزامي لكل `/api/*`
+> ما عدا login/health) وحدّ الطلبات وسجل التدقيق. توسيع `requirePermission`
+> على المسارات المتبقية مسجَّل كعمل مستقبلي في `docs/SECURITY.md`.
 
 ## 8. PRODUCTION READINESS STATUS: READY ✅
 

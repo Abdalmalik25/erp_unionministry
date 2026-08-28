@@ -3,6 +3,7 @@ import express from 'express';
 import { pool, paginate, countQuery, softDeleteFilter, auditLog } from '../middleware/shared.js';
 import { hashPassword, verifyPassword, signToken } from '../middleware/auth.js';
 import { requirePermission } from '../middleware/rbac.js';
+import APP_VERSION from '../lib/version.js';
 
 const router = express.Router();
 
@@ -15,7 +16,7 @@ router.get('/api/health', async (_req, res) => {
     res.json({
       status: 'healthy',
       service: 'المنظومة الوطنية لإدارة قطاع العمل',
-      version: '2.5.0',
+      version: APP_VERSION,
       database: {
         status: 'connected',
         name: r.rows[0].db,

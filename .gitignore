@@ -8,14 +8,8 @@ node_modules/
 # Vite output
 dist/
 
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-# Server & application runtime logs (never commit runtime output)
+# Logs (single rule covers all — npm/yarn/pnpm debug + runtime + temp logs)
 *.log
-/server/*.log
 
 # Editor directories
 .vscode/
@@ -29,7 +23,7 @@ pnpm-debug.log*
 Thumbs.db
 .vercel
 
-# Local pnpm store (must never be committed)
+# مجلد مخزن pnpm المحلي (اسمه الحرفي على القرص "%LOCALAPPDATA%") — يجب ألا يُرفع
 %LOCALAPPDATA%/
 
 # Temporary build/audit artifacts
@@ -41,5 +35,5 @@ build_output.txt
 check.txt
 dbquery*_temp.mjs
 
-# ??? ???????? ????? � ?????? ??????? ????? ?? ?????
+# النسخ الاحتياطية — لا تُرفع أبداً
 backups/

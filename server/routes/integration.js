@@ -1,6 +1,7 @@
 // server/routes/integration.js — National Labor Integration Gateway + Unified Search + Health
 import express from 'express';
 import { pool } from '../middleware/shared.js';
+import APP_VERSION from '../lib/version.js';
 
 const router = express.Router();
 
@@ -73,7 +74,7 @@ router.get('/api/health/detailed', async (_req,res)=>{
   const checks={};
   try { await pool.query('SELECT 1'); checks.db='up'; } catch(e){ checks.db='down'; checks.db_error=e.message; }
   checks.cache='up'; // memory
-  checks.version='2.0.0-national';
+  checks.version=APP_VERSION;
   checks.features={ regulatory:true, workflow:true, contracts:true, offline:true, rag:'explainable' };
   const healthy = checks.db==='up';
   res.status(healthy?200:503).json({ status: healthy?'healthy':'degraded', checks, timestamp: new Date().toISOString(), correlationId: `hlth-${Date.now()}` });

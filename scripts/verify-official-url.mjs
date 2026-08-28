@@ -9,22 +9,32 @@ console.log('CSP header:', csp ? csp.substring(0, 120) + '...' : 'MISSING');
 console.log('  frame-ancestors:', csp?.includes("frame-ancestors 'none'") ? 'YES(GOOD)' : 'NO');
 console.log('  X-Frame-Options:', home.headers.get('x-frame-options'));
 
-// 2. صحة الـ API
-const h = await fetch(base + '/api/health').then(r => r.json());
-console.log('health:', h.data.status, '| db:', h.data.database.status);
+// 2. صحة الـ API (تحليل دفاعي — يفشل بأمان بدل TypeError)
+const h = await fetch(base + '/api/health').then(r => r.json()).catch(() => null);
+const db = h?.data?.database ?? h?.database;
+if (!db) {
+  console.error('health: FAILED — استجابة غير متوقعة من /api/health');
+} else {
+  const status = h?.data?.status ?? h?.status;
+  console.log('health:', status, '| db:', db.status, '| version:', h?.data?.version ?? 'n/a');
+}
 
-// 3. الدخول
+// 3. الدخول (تحليل دفاعي)
 const login = await fetch(base + '/api/auth/login', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ email: 'sys.admin@mosal.gov.ye', password: 'M0sal!Admin#2026' }),
-}).then(r => r.json());
-const tok = login.data?.token;
-console.log('login:', tok ? 'OK (' + login.data.user.role + ')' : 'FAILED');
+}).then(r => r.json()).catch(() => null);
+const tok = login?.data?.token ?? login?.token;
+console.log('login:', tok ? 'OK (' + (login.data?.user?.role ?? login.user?.role) + ')' : 'FAILED');
 
-// 4. سجل التدقيق
-const a = await fetch(base + '/api/audit-log?limit=1', { headers: { Authorization: `Bearer ${tok}` } });
-console.log('audit-log:', a.status);
+// 4. سجل التدقيق (يعمل فقط عند توفر توكن)
+if (tok) {
+  const a = await fetch(base + '/api/audit-log?limit=1', { headers: { Authorization: `Bearer ${tok}` } });
+  console.log('audit-log:', a.status);
+} else {
+  console.log('audit-log: SKIPPED (no token)');
+}
 
 // 5. السجلات المطورة أُطفئت في الحزمة؟
 const html = await home.text();
