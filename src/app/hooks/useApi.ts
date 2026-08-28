@@ -22,7 +22,7 @@ export function useApi<T = Record<string, unknown>>() {
     setError(null);
 
     try {
-      const headers: HeadersInit = {
+      const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
 
@@ -31,6 +31,12 @@ export function useApi<T = Record<string, unknown>>() {
         headers['Authorization'] = `Bearer ${token}`;
       } else if (requireAuth && publicAnonKey) {
         headers['Authorization'] = `Bearer ${publicAnonKey}`;
+      }
+
+      // CSRF (double-submit): إرجاع قيمة الكوكي في الرأس للطلبات غير الآمنة
+      if (method !== 'GET' && typeof document !== 'undefined') {
+        const m = document.cookie.match(/(?:^|;\s*)csrf=([^;]+)/);
+        if (m) headers['x-csrf-token'] = m[1];
       }
 
       const config: RequestInit = {

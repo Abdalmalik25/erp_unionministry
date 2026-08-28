@@ -19,6 +19,16 @@ export function csrfMiddleware(req, res, next) {
   next();
 }
 
+// إصلاح دين تقني: الكوكي لم يكن يُصدر أبدًا (issueCsrfToken غير موصول بأي مسار)
+// ما كان يجعل كل الطلبات غير الآمنة تفشل 403 في الإنتاج. يُصدر الكوكي عند غيابه
+// على الطلبات الآمنة (GET/HEAD/OPTIONS) فقط — ولا يُعاد توليده وهو موجود
+// تجنّبًا لإبطال توكنات طلبات POST متزامنة قيد الطيران.
+export function ensureCsrfCookie(req, res, next) {
+  const existing = req.headers.cookie?.match(/(?:^|;\s*)csrf=([^;]+)/)?.[1];
+  if (existing) return next();
+  return issueCsrfToken(req, res, next);
+}
+
 export function issueCsrfToken(_req, res, next) {
   const token = crypto.randomBytes(32).toString('hex');
   res.cookie?.('csrf', token, { httpOnly:false, sameSite:'strict', secure: process.env.NODE_ENV==='production' });

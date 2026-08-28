@@ -4,7 +4,21 @@
  * جميع عمليات المنصة تمر عبر هذه الطبقة لضمان الاتساق والأمان
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || '/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || import.meta.env?.VITE_API_BASE || '/api';
+
+/** قراءة كوكي CSRF (نمط double-submit) لإرساله في رأس x-csrf-token */
+function getCsrfToken(): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(/(?:^|;\s*)csrf=([^;]+)/);
+  return match ? match[1] : null;
+}
+
+/** تطبيع المسار: يمنع ازدواج البادئة '/api' (مثال: '/api' + '/api/v1/x' كان ينتج '/api/api/v1/x') */
+function normalizePath(path: string): string {
+  if (!API_BASE || API_BASE === '/') return path.startsWith('/') ? path : `/${path}`;
+  if (path.startsWith(`${API_BASE}/`) || path === API_BASE) return path;
+  return `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`;
+}
 
 /** تحويل خطأ الاستجابة إلى كائن خطأ موحد */
 function handleResponse<T>(res: Response): Promise<T> {
@@ -89,7 +103,7 @@ async function fetchJson<T>(
   const { signal, clear } = createTimeoutSignal(init.signal);
   try {
     const makeFetch = (): Promise<Response> =>
-      fetch(`${API_BASE}${path}`, { ...init, signal } as RequestInit);
+      fetch(normalizePath(path), { ...init, signal } as RequestInit);
     const res = retry ? await withRetry(makeFetch) : await makeFetch();
     return await handleResponse<T>(res);
   } finally {
@@ -107,6 +121,11 @@ function defaultHeaders(extra: Record<string, string> = {}): Record<string, stri
   const token = getAuthToken();
   if (token) {
     headers.Authorization = `Bearer ${token}`;
+  }
+  // CSRF (double-submit): إرجاع قيمة الكوكي في الرأس — يلزم لكل الطلبات غير الآمنة
+  const csrf = getCsrfToken();
+  if (csrf) {
+    headers['x-csrf-token'] = csrf;
   }
   return headers;
 }

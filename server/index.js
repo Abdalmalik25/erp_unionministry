@@ -23,11 +23,13 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 // Security hardening (sanitization + CSRF + MFA) — TD-006/022/028/029
-import { sanitizeBody, csrfMiddleware, requireMFA } from './middleware/security.js';
+import { sanitizeBody, csrfMiddleware, ensureCsrfCookie, requireMFA } from './middleware/security.js';
 import { sanitizeQuery } from './middleware/validation.js';
 import { structuredLogger, metricsEndpoint, errorHandler } from './middleware/observability.js';
 app.use(sanitizeQuery);
 app.use(sanitizeBody);
+// إصدار كوكي CSRF على الطلبات الآمنة حتى يتوفر للعميل ما يُرجعه في رأس x-csrf-token
+app.use(ensureCsrfCookie);
 app.use(csrfMiddleware);
 app.use(requireMFA);
 app.use(structuredLogger);
