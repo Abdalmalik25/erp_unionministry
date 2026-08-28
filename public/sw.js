@@ -343,6 +343,18 @@ self.addEventListener('message', (event) => {
         });
       }
       break;
+
+    case 'PRECACHE_ALL':
+      // تجهيز كامل للعمل دون اتصال — يخزن الأصول الأساسية + قائمة URLs اختيارية
+      caches.open(CACHE_NAME).then(cache => {
+        const urls = data?.urls?.length ? data.urls : CORE_ASSETS;
+        return cache.addAll(urls).catch(err => {
+          console.warn('[SW] PRECACHE_ALL partial failure:', err);
+        });
+      }).then(() => {
+        event.source?.postMessage({ type: 'PRECACHE_DONE', count: data?.urls?.length || CORE_ASSETS.length });
+      });
+      break;
     
     case 'GET_CACHE_SIZE':
       getCacheSize().then(size => {
