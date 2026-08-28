@@ -3,6 +3,7 @@
 import express from 'express';
 import { pool, paginate } from '../middleware/shared.js';
 import { guard } from '../middleware/rbacFactory.js';
+import { embed, toPgVector } from '../lib/embeddings.js';
 
 const router = express.Router();
 
@@ -48,8 +49,10 @@ router.post('/api/v1/legal/articles', guard('regulatory','write'), async (req, r
     const { legal_source_id, chapter_id, article_number, title_ar, content_ar, scope, penalties } = req.body;
     if (!legal_source_id || !article_number || !title_ar) return res.status(400).json({ error: 'legal_source_id, article_number, title_ar مطلوبة' });
     const r = await pool.query(
-      `INSERT INTO legal_articles (legal_source_id, chapter_id, article_number, title_ar, content_ar, scope, penalties) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-      [legal_source_id, chapter_id || null, article_number, title_ar, content_ar, scope, penalties]
+      `INSERT INTO legal_articles (legal_source_id, chapter_id, article_number, title_ar, content_ar, scope, penalties, embedding)
+       VALUES ($1,$2,$3,$4,$5,$6,$7, $8::vector) RETURNING *`,
+      [legal_source_id, chapter_id || null, article_number, title_ar, content_ar, scope, penalties,
+       toPgVector(embed(`${title_ar || ''} ${content_ar || ''}`))]
     );
     res.status(201).json(r.rows[0]);
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }

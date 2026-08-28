@@ -31,13 +31,32 @@ router.get('/api/v1/data-quality/findings', async (req,res)=>{
   res.json({ data: r.rows });
 });
 
-// Vector search — placeholder (cosine via pgvector when embeddings exist)
+// البحث المتجهي — إنتاجي حقيقي عبر pgvector (HNSW + تشابه جيبي) عند توفر المتجهات،
+// مع إبقاء ILIKE كاحتياط تزايدي عند غياب المتجهات (لا كسر للسلوك القائم)
+import { embed, toPgVector } from '../lib/embeddings.js';
 router.get('/api/v1/legal/vector-search', async (req,res)=>{
   const q=(req.query.q||'').toString();
   if(!q) return res.json({ query:q, results:[], note:'أدخل نصاً' });
-  // fallback to ILIKE when no embeddings yet
+  const qv = toPgVector(embed(q));
+  try {
+    // مسار إنتاجي: بحث جيبي حقيقي عبر فهرسة HNSW على عمود vector(384)
+    const v=await pool.query(
+      `SELECT la.id, la.article_number, la.title_ar, la.content_ar, ls.title_ar as source_title,
+              1 - (la.embedding <=> $1::vector) AS similarity
+       FROM legal_articles la
+       LEFT JOIN legal_sources ls ON la.legal_source_id=ls.id
+       WHERE la.embedding IS NOT NULL
+       ORDER BY la.embedding <=> $1::vector LIMIT 5`, [qv]);
+    if (v.rows.length) {
+      return res.json({ query:q, mode:'vector_hnsw', results: v.rows.map(x=>({
+        id:x.id, title:x.title_ar, article:x.article_number, source:x.source_title,
+        similarity: Number(x.similarity).toFixed(4),
+        snippet: (x.content_ar||'').slice(0,180) })) });
+    }
+  } catch { /* سقوط آمن إلى ILIKE أدناه */ }
+  // الاحتياط القائم — محفوظ كما هو (ILIKE)
   const r=await pool.query(`SELECT la.id, la.article_number, la.title_ar, la.content_ar, ls.title_ar as source_title FROM legal_articles la LEFT JOIN legal_sources ls ON la.legal_source_id=ls.id WHERE la.content_ar ILIKE $1 OR la.title_ar ILIKE $1 LIMIT 5`, [`%${q}%`]);
-  res.json({ query:q, results: r.rows.map(x=> ({ id:x.id, title:x.title_ar, article:x.article_number, source:x.source_title, snippet: (x.content_ar||'').slice(0,180) })), mode:'fallback_ilike', note:'عند توفر embeddings يتحول إلى HNSW <100ms' });
+  res.json({ query:q, results: r.rows.map(x=> ({ id:x.id, title:x.title_ar, article:x.article_number, source:x.source_title, snippet: (x.content_ar||'').slice(0,180) })), mode:'fallback_ilike', note:'عند إدخال المقالات تتولد متجهاتها تلقائياً ويتحول البحث إلى HNSW' });
 });
 
 export default router;

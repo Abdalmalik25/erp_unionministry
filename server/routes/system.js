@@ -4,6 +4,7 @@ import { pool, paginate, countQuery, softDeleteFilter, auditLog } from '../middl
 import { hashPassword, verifyPassword, signToken } from '../middleware/auth.js';
 import { requirePermission } from '../middleware/rbac.js';
 import APP_VERSION from '../lib/version.js';
+import { generateSecret, otpauthUrl, verifyTotp } from '../lib/totp.js';
 
 const router = express.Router();
 
@@ -116,6 +117,17 @@ router.post('/api/auth/login', async (req, res) => {
       await pool.query(`INSERT INTO login_attempts (email_attempted, user_id, success, reason, ip_address, user_agent) VALUES ($1,$2,false,'bad_password',$3,$4)`, [emailNorm, u.id, ip, ua]);
       return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' });
     }
+    // MFA تزايدي: إن كان الحساب مُسجّلاً في TOTP يُشترط الرمز السداسي في mfa_code
+    if (u.mfa_enabled && u.mfa_secret) {
+      const mfaCode = String(req.body.mfa_code || '').trim();
+      if (!mfaCode) {
+        return res.status(401).json({ error: 'مطلوب رمز MFA', code: 'MFA_CODE_REQUIRED', mfa_required: true });
+      }
+      if (!verifyTotp(u.mfa_secret, mfaCode)) {
+        await pool.query(`INSERT INTO login_attempts (email_attempted, user_id, success, reason, ip_address, user_agent) VALUES ($1,$2,false,'mfa_failed',$3,$4)`, [emailNorm, u.id, ip, ua]);
+        return res.status(401).json({ error: 'رمز MFA غير صالح', code: 'MFA_INVALID', mfa_required: true });
+      }
+    }
     await pool.query('UPDATE sector_users SET last_login = NOW() WHERE id = $1', [u.id]);
     // فتح جلسة عمل رسمية قابلة للتتبع
     const sess = await pool.query(
@@ -141,6 +153,75 @@ router.post('/api/auth/heartbeat', async (req, res) => {
     await pool.query(`UPDATE user_sessions SET last_activity_at = NOW() WHERE id = $1 AND is_active = true`, [sid]);
     res.json({ ok: true });
   } catch { res.json({ ok: false }); }
+});
+
+// ===================== MFA — TOTP حقيقي (RFC 6238) =====================
+// تسجيل: يولّد سراً ويعيد otpauth:// لمسحه من تطبيق مصادقة (السر لا يُعرض مجدداً)
+router.post('/api/auth/mfa/setup', async (req, res) => {
+  try {
+    if (!req.user?.sub) return res.status(401).json({ error: 'غير مصرح', code: 'UNAUTHORIZED' });
+    if (req.user.email && req.user.email.endsWith('@mfa-disabled')) {
+      return res.status(403).json({ error: 'MFA معطل لهذا الحساب', code: 'FORBIDDEN' });
+    }
+    const secret = generateSecret();
+    await pool.query(
+      'UPDATE sector_users SET mfa_secret=$2, mfa_enabled=false, mfa_enrolled_at=NULL WHERE id=$1 AND deleted_at IS NULL',
+      [req.user.sub, secret]);
+    const u = await pool.query('SELECT email FROM sector_users WHERE id=$1', [req.user.sub]);
+    const url = otpauthUrl(secret, u.rows[0]?.email || req.user.email || 'user', 'MoSAL-ERP');
+    await auditLog('mfa_setup', 'auth', req.user.sub, {});
+    res.json({ secret, otpauth_url: url, note: 'امسح الرمز بتطبيق المصادقة ثم أكّد عبر /api/auth/mfa/enable' });
+  } catch { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
+});
+
+// تفعيل: يتحقق من رمز فعلي من تطبيق المصادقة ثم يشغّل MFA على الحساب
+router.post('/api/auth/mfa/enable', async (req, res) => {
+  try {
+    if (!req.user?.sub) return res.status(401).json({ error: 'غير مصرح', code: 'UNAUTHORIZED' });
+    const u = await pool.query(
+      'SELECT mfa_secret, mfa_enabled FROM sector_users WHERE id=$1 AND deleted_at IS NULL', [req.user.sub]);
+    const row = u.rows[0];
+    if (!row?.mfa_secret) return res.status(400).json({ error: 'لم يتم تسجيل MFA بعد — ابدأ بـ setup', code: 'MFA_NOT_SETUP' });
+    if (row.mfa_enabled) return res.status(400).json({ error: 'MFA مُفعّل مسبقاً', code: 'MFA_ALREADY_ENABLED' });
+    if (!verifyTotp(row.mfa_secret, req.body?.code)) {
+      return res.status(400).json({ error: 'الرمز غير صالح — تأكد من وقت جهازك وحاول مجدداً', code: 'MFA_INVALID' });
+    }
+    await pool.query(
+      'UPDATE sector_users SET mfa_enabled=true, mfa_enrolled_at=NOW() WHERE id=$1', [req.user.sub]);
+    await auditLog('mfa_enable', 'auth', req.user.sub, {});
+    res.json({ success: true, mfa_enabled: true });
+  } catch { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
+});
+
+// تعطيل: يتطلب كلمة المرور + رمزاً صالحاً — لا تبرم مزدوجة
+router.post('/api/auth/mfa/disable', async (req, res) => {
+  try {
+    if (!req.user?.sub) return res.status(401).json({ error: 'غير مصرح', code: 'UNAUTHORIZED' });
+    const u = await pool.query(
+      'SELECT mfa_secret, mfa_enabled, password_hash, salt FROM sector_users WHERE id=$1 AND deleted_at IS NULL', [req.user.sub]);
+    const row = u.rows[0];
+    if (!row?.mfa_enabled) return res.status(400).json({ error: 'MFA غير مُفعّل', code: 'MFA_NOT_ENABLED' });
+    if (!verifyPassword(String(req.body?.password || ''), row.salt, row.password_hash)) {
+      return res.status(401).json({ error: 'كلمة المرور غير صحيحة', code: 'BAD_PASSWORD' });
+    }
+    if (!verifyTotp(row.mfa_secret, req.body?.code)) {
+      return res.status(401).json({ error: 'رمز MFA غير صالح', code: 'MFA_INVALID' });
+    }
+    await pool.query(
+      'UPDATE sector_users SET mfa_enabled=false, mfa_secret=NULL, mfa_enrolled_at=NULL WHERE id=$1', [req.user.sub]);
+    await auditLog('mfa_disable', 'auth', req.user.sub, {});
+    res.json({ success: true, mfa_enabled: false });
+  } catch { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
+});
+
+// حالة MFA للحساب الحالي
+router.get('/api/auth/mfa/status', async (req, res) => {
+  try {
+    if (!req.user?.sub) return res.status(401).json({ error: 'غير مصرح', code: 'UNAUTHORIZED' });
+    const u = await pool.query(
+      'SELECT mfa_enabled, mfa_enrolled_at FROM sector_users WHERE id=$1', [req.user.sub]);
+    res.json({ mfa_enabled: u.rows[0]?.mfa_enabled || false, enrolled_at: u.rows[0]?.mfa_enrolled_at || null });
+  } catch { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 // تسجيل خروج — إغلاق الجلسة وتوثيق المدة

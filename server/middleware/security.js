@@ -79,13 +79,31 @@ export function decryptField(ciphertext) {
   } catch { return null; }
 }
 
-// MFA hook — TOTP placeholder
-// ⚠️ لا يوجد تنفيذ حقيقي لـ TOTP بعد؛ فرضه افتراضياً كان يحجب كل طلبات
-// الإنتاج (بما فيها تسجيل الدخول و/health). الفرض الآن opt-in صريح:
-// اضبط ENABLE_MFA='enforced' فقط عند إطلاق تنفيذ MFA فعلي.
-export function requireMFA(req, res, next) {
-  if (process.env.ENABLE_MFA === 'enforced') {
+// MFA — TOTP حقيقي (RFC 6238) عبر server/lib/totp.js
+// سلوك تزايدي: دون ENABLE_MFA='enforced' يمر الطلب كما كان (لا تغيير على الوضع الحالي).
+// عند التفعيل: يُشترط رأس x-mfa-token صالح ضد سر المستخدم المُسجّل (mfa_enabled=true).
+import { pool } from './shared.js';
+import { verifyTotp } from '../lib/totp.js';
+
+export async function requireMFA(req, res, next) {
+  if (process.env.ENABLE_MFA !== 'enforced') return next();
+  if (!req.user?.sub) {
     return res.status(403).json({ error: 'مطلوب رمز MFA للعمليات الحساسة', code: 'MFA_REQUIRED' });
   }
-  next();
+  try {
+    const u = await pool.query(
+      'SELECT mfa_secret, mfa_enabled FROM sector_users WHERE id=$1 AND deleted_at IS NULL',
+      [req.user.sub]);
+    const row = u.rows[0];
+    if (!row?.mfa_enabled || !row.mfa_secret) {
+      return res.status(403).json({ error: 'MFA غير مُسجّل لهذا الحساب', code: 'MFA_NOT_ENROLLED' });
+    }
+    const token = req.headers['x-mfa-token'];
+    if (!verifyTotp(row.mfa_secret, token)) {
+      return res.status(403).json({ error: 'رمز MFA غير صالح أو منتهي', code: 'MFA_INVALID' });
+    }
+    next();
+  } catch {
+    return res.status(500).json({ error: 'خطأ في التحقق من MFA', code: 'MFA_ERROR' });
+  }
 }

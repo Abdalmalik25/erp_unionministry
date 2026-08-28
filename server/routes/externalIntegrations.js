@@ -39,20 +39,62 @@ router.post('/api/v1/integrations/:code/verify', async (req,res)=>{
     await pool.query(`INSERT INTO external_cache (cache_key, integration_code, response, expires_at) VALUES ($1,$2,$3,NOW()+INTERVAL '5 minutes') ON CONFLICT (cache_key) DO UPDATE SET response=$3`, [cacheKey, code, JSON.stringify(mock)]);
     return res.json({ mode:'mock', result: mock, took_ms: Date.now()-start, note:'يعمل بدون ربط فعلي — سد الفجوة' });
   }
-  // Live attempt with timeout + retry (circuit breaker)
+  // Live attempt — استدعاء HTTP حقيقي لـ base_url مع مهلة + إعادة محاولة + تحديث حالة الطرف
   try{
+    if(!cfg.base_url) throw new Error('no_base_url_configured');
+    const endpoint = LIVE_ENDPOINTS[code] || '/verify';
+    const url = cfg.base_url.replace(/\/+$/,'') + endpoint;
+    const headers = { 'Content-Type':'application/json' };
+    if (cfg.config?.api_key) headers['Authorization'] = `Bearer ${cfg.config.api_key}`;
+    if (cfg.config?.api_key_header && cfg.config?.api_key) headers[cfg.config.api_key_header] = cfg.config.api_key;
     const controller=new AbortController();
     const t=setTimeout(()=> controller.abort(), cfg.timeout_ms||5000);
-    // In production: fetch(cfg.base_url, { signal: controller.signal, ... })
-    // Here simulate live that may fail → fallback to queue
+    let resp=null, lastErr=null;
+    const attempts = 1 + Math.min(Number(cfg.retry_count)||0, 3);
+    for(let a=0; a<attempts; a++){
+      try{
+        resp = await fetch(url, { method:'POST', signal:controller.signal, headers, body: JSON.stringify(payload) });
+        break;
+      }catch(e){ lastErr=e; }
+    }
     clearTimeout(t);
-    throw new Error('external_not_reachable_in_demo');
+    if(!resp) throw lastErr || new Error('upstream_unreachable');
+    if(!resp.ok) throw new Error(`upstream_${resp.status}`);
+    const upstream = await resp.json();
+    await pool.query(`UPDATE external_integrations SET last_check_at=NOW(), last_error=NULL WHERE code=$1`, [code]);
+    const result = normalizeLive(code, upstream);
+    await pool.query(`INSERT INTO external_cache (cache_key, integration_code, response, expires_at) VALUES ($1,$2,$3,NOW()+INTERVAL '5 minutes') ON CONFLICT (cache_key) DO UPDATE SET response=$3`, [cacheKey, code, JSON.stringify(result)]);
+    return res.json({ mode:'live', result, took_ms: Date.now()-start });
   }catch(e){
+    await pool.query(`UPDATE external_integrations SET last_check_at=NOW(), last_error=$2 WHERE code=$1`, [code, String(e?.message||e).slice(0,300)]);
+    // السقوط الآمن القائم — طابور مزامنة + استجابة محلية (محفوظ تزايدياً)
     await pool.query(`INSERT INTO external_sync_queue (integration_code, payload, operation, status, next_retry_at) VALUES ($1,$2,'verify','pending', NOW()+INTERVAL '5 minutes')`, [code, JSON.stringify(payload)]);
     const mock = mockVerify(code, payload);
     return res.json({ mode:'fallback', result: mock, took_ms: Date.now()-start, queued:true, warning:'الطرف الخارجي غير متاح — تمت المعالجة محلياً وستتم المزامنة لاحقاً' });
   }
 });
+
+// نقاط النهاية القياسية لكل طرف حسب بروتوكولاته المتعارف عليها
+const LIVE_ENDPOINTS = {
+  civil_id: '/verify/identity',
+  commercial_register: '/verify/commercial-register',
+  social_insurance: '/verify/insurance',
+  chamber: '/verify/membership',
+};
+
+// تطبيع استجابة الطرف الخارجي إلى الشكل الموحد الذي تستهلكه الواجهة
+function normalizeLive(code, upstream){
+  const d = upstream?.data || upstream?.result || upstream || {};
+  if(code==='civil_id'){
+    return { valid: d.valid ?? d.verified ?? d.match ?? false, national_id: d.national_id ?? d.id_number, full_name: d.full_name ?? d.name ?? null, status: d.status ?? 'verified', source: 'live' };
+  }
+  if(code==='commercial_register'){
+    return { valid: d.valid ?? d.exists ?? d.active ?? false, commercial_register: d.commercial_register ?? d.registration_number, owner: d.owner ?? d.entity_name ?? null, status: d.status ?? 'verified', source: 'live' };
+  }
+  if(code==='social_insurance') return { insured: d.insured ?? d.registered ?? false, status: d.status ?? 'active', source: 'live' };
+  if(code==='chamber') return { member: d.member ?? d.is_member ?? false, status: d.status ?? 'active', source: 'live' };
+  return { ok: d.ok ?? true, ...d, source: 'live' };
+}
 
 function mockVerify(code, payload){
   if(code==='civil_id'){

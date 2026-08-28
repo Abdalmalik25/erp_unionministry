@@ -313,6 +313,8 @@ app.use(dataQualityRouter);
 app.use(chronologyRouter);
 app.use(externalIntegrationsRouter);
 app.use(intelligenceRouter);
+import uploadsRouter from './routes/uploads.js';
+app.use(uploadsRouter);
 
 // ===================== Dashboard (inline — uses shared pool) =====================
 import { pool, paginate, countQuery } from './middleware/shared.js';
