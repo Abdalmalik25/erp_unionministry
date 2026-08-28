@@ -5,6 +5,8 @@ import { hashPassword, verifyPassword, signToken } from '../middleware/auth.js';
 import { requirePermission } from '../middleware/rbac.js';
 import APP_VERSION from '../lib/version.js';
 import { generateSecret, otpauthUrl, verifyTotp } from '../lib/totp.js';
+import { collectDeviceIntel, assessSessionRisk } from '../lib/device.js';
+import { invalidateSessionCache } from '../lib/sessions.js';
 
 const router = express.Router();
 
@@ -129,15 +131,36 @@ router.post('/api/auth/login', async (req, res) => {
       }
     }
     await pool.query('UPDATE sector_users SET last_login = NOW() WHERE id = $1', [u.id]);
-    // فتح جلسة عمل رسمية قابلة للتتبع
+    // استخبارات الجهاز والموقع — تحليل عميق ثم تقييم مخاطر مقارن بالتاريخ
+    const intel = collectDeviceIntel(req);
+    const risk = await assessSessionRisk(pool, {
+      userId: u.id, fingerprint: intel.fingerprint, country: intel.country,
+      city: intel.city, latitude: intel.latitude, longitude: intel.longitude, deviceType: intel.device_type,
+    });
+    // فتح جلسة عمل رسمية قابلة للتتبع — بهوية الجهاز والموقع والمخاطر
     const sess = await pool.query(
-      `INSERT INTO user_sessions (user_id, ip_address, user_agent) VALUES ($1,$2,$3) RETURNING id`,
-      [u.id, ip, ua]);
+      `INSERT INTO user_sessions (user_id, ip_address, user_agent, device_fingerprint, device_type, device_brand,
+         browser, browser_version, os, os_version, language, timezone, country, region, city, latitude, longitude,
+         risk_score, risk_flags)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING id`,
+      [u.id, intel.ip, intel.user_agent, intel.fingerprint, intel.device_type, intel.device_brand,
+       intel.browser, intel.browser_version, intel.os, intel.os_version, intel.language, intel.timezone,
+       intel.country, intel.region, intel.city, intel.latitude, intel.longitude, risk.score, JSON.stringify(risk.flags)]);
+    // سجل الأجهزة — upsert: تحديث آخر ظهور للجهاز المعروف
+    await pool.query(
+      `INSERT INTO device_registry (user_id, fingerprint, device_type, device_brand, browser, os, os_version, label, last_seen_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW())
+       ON CONFLICT (user_id, fingerprint) DO UPDATE SET last_seen_at=NOW(), browser=EXCLUDED.browser, os=EXCLUDED.os`,
+      [u.id, intel.fingerprint, intel.device_type, intel.device_brand, intel.browser, intel.os, intel.os_version,
+       `${intel.device_type} · ${intel.browser} · ${intel.os}`]);
     const token = signToken({ sub: u.id, email: u.email, role: u.role, userType: u.user_type, organizationId: u.organization_id, sid: sess.rows[0].id });
-    await pool.query(`INSERT INTO login_attempts (email_attempted, user_id, success, reason, ip_address, user_agent) VALUES ($1,$2,true,'ok',$3,$4)`, [emailNorm, u.id, ip, ua]);
-    await auditLog('login', 'auth', u.id, { email: u.email });
+    await pool.query(`INSERT INTO login_attempts (email_attempted, user_id, success, reason, ip_address, user_agent) VALUES ($1,$2,true,'ok',$3,$4)`, [emailNorm, u.id, intel.ip, intel.user_agent]);
+    await auditLog('login', 'auth', u.id, { email: u.email, ip: intel.ip, user_agent: intel.user_agent, session_id: sess.rows[0].id });
     res.json({
       success: true,
+      session: { id: sess.rows[0].id, risk_score: risk.score, risk_flags: risk.flags,
+        device: { type: intel.device_type, brand: intel.device_brand, browser: intel.browser, os: `${intel.os} ${intel.os_version || ''}`.trim() },
+        location: { country: intel.country, city: intel.city } },
       token,
       sessionId: sess.rows[0].id,
       user: { id: u.id, email: u.email, name: u.name, role: u.role, userType: u.user_type, organizationId: u.organization_id },
@@ -569,7 +592,199 @@ router.post('/api/audit-logs', async (req, res) => {
   }
 });
 
+// ===================== جلساتي (خدمة ذاتية) — أجهزتي ومواقعي =====================
+router.get('/api/auth/my-sessions', async (req, res) => {
+  try {
+    if (!req.user?.sub) return res.status(401).json({ error: 'غير مصرح', code: 'UNAUTHORIZED' });
+    const r = await pool.query(
+      `SELECT id, login_at, logout_at, last_activity_at, is_active, ip_address,
+              device_type, device_brand, browser, browser_version, os, os_version,
+              country, region, city, risk_score, risk_flags
+       FROM user_sessions WHERE user_id=$1 ORDER BY login_at DESC LIMIT 30`, [req.user.sub]);
+    res.json({ data: r.rows, current: req.user.sid });
+  } catch { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
+});
+
+// إبطال جلسة من مستخدمها (جهاز مفقود/مشتبه به)
+router.post('/api/auth/my-sessions/:sid/revoke', async (req, res) => {
+  try {
+    if (!req.user?.sub) return res.status(401).json({ error: 'غير مصرح', code: 'UNAUTHORIZED' });
+    const r = await pool.query(
+      `UPDATE user_sessions SET is_active=false, logout_at=NOW(), revoked_by=$2, revoked_reason='self_revoke'
+       WHERE id=$1 AND user_id=$3 AND is_active=true RETURNING id`,
+      [req.params.sid, req.user.sub, req.user.sub]);
+    if (!r.rows.length) return res.status(404).json({ error: 'الجلسة غير موجودة أو مغلقة مسبقاً', code: 'NOT_FOUND' });
+    invalidateSessionCache(req.params.sid);
+    await auditLog('SESSION_REVOKE_SELF', 'auth', req.user.sub, { session_id: req.params.sid });
+    res.json({ success: true });
+  } catch { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
+});
+
+// ===================== مركز التحكم بالجلسات — صلاحية وزارة/مدير نظام =====================
+const ADMIN_ROLES = ['super_admin', 'ministry_admin'];
+const adminGuard = (req, res) => {
+  if (!req.user?.sub) { res.status(401).json({ error: 'غير مصرح', code: 'UNAUTHORIZED' }); return false; }
+  if (!ADMIN_ROLES.includes(req.user.role)) { res.status(403).json({ error: 'صلاحية إدارية مطلوبة', code: 'FORBIDDEN' }); return false; }
+  return true;
+};
+
+// الجلسات النشطة (والملغاة) بكل استخباراتها الجهازية والموقعية
+router.get('/api/admin/sessions', async (req, res) => {
+  if (!adminGuard(req, res)) return;
+  try {
+    const { state, user_id, risk_min, search, limit = 50, offset = 0 } = req.query;
+    const conds = []; const params = []; let i = 1;
+    if (state === 'active') conds.push(`s.is_active = true`);
+    if (state === 'closed') conds.push(`s.is_active = false`);
+    if (user_id) { conds.push(`s.user_id = $${i++}`); params.push(user_id); }
+    if (risk_min) { conds.push(`s.risk_score >= $${i++}`); params.push(Number(risk_min)); }
+    if (search) {
+      conds.push(`(u.email ILIKE $${i} OR s.ip_address ILIKE $${i} OR s.city ILIKE $${i} OR s.device_brand ILIKE $${i})`);
+      params.push(`%${search}%`); i++;
+    }
+    const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
+    const total = await pool.query(
+      `SELECT COUNT(*)::int AS c FROM user_sessions s LEFT JOIN sector_users u ON u.id = s.user_id ${where}`, params);
+    const rows = await pool.query(
+      `SELECT s.id, s.user_id, u.email, u.full_name, s.login_at, s.last_activity_at, s.is_active,
+              s.ip_address, s.device_type, s.device_brand, s.browser, s.browser_version, s.os, s.os_version,
+              s.country, s.region, s.city, s.language, s.timezone, s.risk_score, s.risk_flags,
+              s.revoked_reason, s.revoked_by
+       FROM user_sessions s LEFT JOIN sector_users u ON u.id = s.user_id
+       ${where} ORDER BY s.login_at DESC LIMIT $${i++} OFFSET $${i++}`,
+      [...params, Math.min(Number(limit) || 50, 200), Number(offset) || 0]);
+    res.json({ data: rows.rows, total: total.rows[0].c });
+  } catch { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
+});
+
+// إبطال جلسة محددة — يسري خلال ثوانٍ عبر الكاش
+router.post('/api/admin/sessions/:sid/revoke', async (req, res) => {
+  if (!adminGuard(req, res)) return;
+  try {
+    const reason = String(req.body?.reason || 'admin_revoke').slice(0, 200);
+    const r = await pool.query(
+      `UPDATE user_sessions SET is_active=false, logout_at=NOW(), revoked_by=$2, revoked_reason=$3
+       WHERE id=$1 AND is_active=true RETURNING user_id`,
+      [req.params.sid, req.user.sub, reason]);
+    if (!r.rows.length) return res.status(404).json({ error: 'الجلسة غير موجودة أو مغلقة مسبقاً', code: 'NOT_FOUND' });
+    invalidateSessionCache(req.params.sid);
+    await auditLog('SESSION_REVOKE', 'auth', r.rows[0].user_id, { session_id: req.params.sid, reason, by: req.user.sub });
+    res.json({ success: true, revoked: req.params.sid });
+  } catch { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
+});
+
+// إبطال كل جلسات مستخدم — قفل حساب فوري شامل
+router.post('/api/admin/sessions/revoke-all', async (req, res) => {
+  if (!adminGuard(req, res)) return;
+  try {
+    const { user_id } = req.body || {};
+    if (!user_id) return res.status(400).json({ error: 'user_id مطلوب', code: 'BAD_REQUEST' });
+    const r = await pool.query(
+      `UPDATE user_sessions SET is_active=false, logout_at=NOW(), revoked_by=$2, revoked_reason='admin_revoke_all'
+       WHERE user_id=$1 AND is_active=true RETURNING id`,
+      [user_id, req.user.sub]);
+    r.rows.forEach(row => invalidateSessionCache(row.id));
+    await auditLog('SESSION_REVOKE_ALL', 'auth', user_id, { count: r.rows.length, by: req.user.sub });
+    res.json({ success: true, revoked_count: r.rows.length });
+  } catch { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
+});
+
+// سجل الأجهزة — هوية كل جهاز لدى المستخدمين مع حالة الثقة
+router.get('/api/admin/devices', async (req, res) => {
+  if (!adminGuard(req, res)) return;
+  try {
+    const { user_id, search, limit = 50, offset = 0 } = req.query;
+    const conds = []; const params = []; let i = 1;
+    if (user_id) { conds.push(`d.user_id = $${i++}`); params.push(user_id); }
+    if (search) {
+      conds.push(`(u.email ILIKE $${i} OR d.label ILIKE $${i} OR d.fingerprint ILIKE $${i})`);
+      params.push(`%${search}%`); i++;
+    }
+    const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
+    const total = await pool.query(
+      `SELECT COUNT(*)::int AS c FROM device_registry d LEFT JOIN sector_users u ON u.id = d.user_id ${where}`, params);
+    const rows = await pool.query(
+      `SELECT d.*, u.email, u.full_name,
+              (SELECT COUNT(*)::int FROM user_sessions s WHERE s.user_id = d.user_id AND s.device_fingerprint = d.fingerprint) AS sessions_count
+       FROM device_registry d LEFT JOIN sector_users u ON u.id = d.user_id
+       ${where} ORDER BY d.last_seen_at DESC LIMIT $${i++} OFFSET $${i++}`,
+      [...params, Math.min(Number(limit) || 50, 200), Number(offset) || 0]);
+    res.json({ data: rows.rows, total: total.rows[0].c });
+  } catch { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
+});
+
+// الوثوق بجهاز — يخفض مخاطر جلساته القادمة
+router.post('/api/admin/devices/:id/trust', async (req, res) => {
+  if (!adminGuard(req, res)) return;
+  try {
+    const r = await pool.query(
+      `UPDATE device_registry SET trusted=true WHERE id=$1 RETURNING user_id, fingerprint`, [req.params.id]);
+    if (!r.rows.length) return res.status(404).json({ error: 'غير موجود', code: 'NOT_FOUND' });
+    await auditLog('DEVICE_TRUST', 'auth', r.rows[0].user_id, { fingerprint: r.rows[0].fingerprint, by: req.user.sub });
+    res.json({ success: true });
+  } catch { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
+});
+
+// إبطال جهاز — يمنع جلسات جديدة منه ويغلق جلساته النشطة
+router.post('/api/admin/devices/:id/revoke', async (req, res) => {
+  if (!adminGuard(req, res)) return;
+  try {
+    const r = await pool.query(
+      `UPDATE device_registry SET revoked=true, trusted=false WHERE id=$1 RETURNING user_id, fingerprint`, [req.params.id]);
+    if (!r.rows.length) return res.status(404).json({ error: 'غير موجود', code: 'NOT_FOUND' });
+    const closed = await pool.query(
+      `UPDATE user_sessions SET is_active=false, logout_at=NOW(), revoked_by=$2, revoked_reason='device_revoked'
+       WHERE user_id=$1 AND device_fingerprint=$3 AND is_active=true RETURNING id`,
+      [r.rows[0].user_id, req.user.sub, r.rows[0].fingerprint]);
+    closed.rows.forEach(row => invalidateSessionCache(row.id));
+    await auditLog('DEVICE_REVOKE', 'auth', r.rows[0].user_id, { fingerprint: r.rows[0].fingerprint, by: req.user.sub, closed_sessions: closed.rows.length });
+    res.json({ success: true, closed_sessions: closed.rows.length });
+  } catch { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
+});
+
 // ===================== Push Notifications =====================
+// تتبع الأثر — سجل التدقيق مقروناً بجهاز وموقع الجلسة المصدر
+router.get('/api/admin/activity-trail', async (req, res) => {
+  if (!adminGuard(req, res)) return;
+  try {
+    const { user_id, limit = 50, offset = 0 } = req.query;
+    const conds = []; const params = []; let i = 1;
+    if (user_id) { conds.push(`al.actor_id = $${i++}`); params.push(user_id); }
+    const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
+    const total = await pool.query(`SELECT COUNT(*)::int AS c FROM audit_log al ${where}`, params);
+    const rows = await pool.query(
+      `SELECT al.id, al.action, al.table_name, al.record_id, al.actor_id, al.actor_email, al.actor_role,
+              al.notes, al.created_at, al.ip_address, al.user_agent, al.session_id,
+              s.device_type, s.device_brand, s.browser, s.os, s.country, s.region, s.city, s.risk_score, s.risk_flags
+       FROM audit_log al
+       LEFT JOIN user_sessions s ON s.id::text = al.session_id
+       ${where} ORDER BY al.created_at DESC LIMIT $${i++} OFFSET $${i++}`,
+      [...params, Math.min(Number(limit) || 50, 200), Number(offset) || 0]);
+    res.json({ data: rows.rows, total: total.rows[0].c });
+  } catch { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
+});
+
+// لوحة إحصاءات الرقابة الجهازية — نظرة قيادية فورية
+router.get('/api/admin/session-stats', async (req, res) => {
+  if (!adminGuard(req, res)) return;
+  try {
+    const r = await pool.query(`
+      SELECT
+        (SELECT COUNT(*)::int FROM user_sessions WHERE is_active=true) AS active_sessions,
+        (SELECT COUNT(*)::int FROM user_sessions WHERE is_active=true AND risk_score >= 5) AS high_risk_active,
+        (SELECT COUNT(*)::int FROM user_sessions WHERE login_at > NOW() - INTERVAL '24 hours') AS logins_24h,
+        (SELECT COUNT(*)::int FROM device_registry WHERE revoked=true) AS revoked_devices,
+        (SELECT COUNT(*)::int FROM device_registry WHERE trusted=true) AS trusted_devices,
+        (SELECT COUNT(*)::int FROM user_sessions WHERE risk_flags::text LIKE '%impossible_travel%' AND login_at > NOW() - INTERVAL '7 days') AS impossible_travel_7d,
+        (SELECT COUNT(DISTINCT country)::int FROM user_sessions WHERE country IS NOT NULL AND login_at > NOW() - INTERVAL '30 days') AS countries_30d`);
+    const geo = await pool.query(`
+      SELECT COALESCE(country,'?') AS country, COUNT(*)::int AS sessions
+      FROM user_sessions WHERE login_at > NOW() - INTERVAL '30 days'
+      GROUP BY country ORDER BY sessions DESC LIMIT 10`);
+    res.json({ ...r.rows[0], top_countries: geo.rows });
+  } catch { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
+});
+// ===================== Push Notifications (routes) =====================
 router.post('/api/push/subscribe', async (req, res) => {
   try {
     const { endpoint, keys } = req.body;

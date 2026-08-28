@@ -169,6 +169,7 @@ app.use((req, res, next) => {
 // ===================== Auth Middleware (enforced) =====================
 import { verifyToken } from './middleware/auth.js';
 import { auditContext } from './middleware/rbac.js';
+import { isSessionActive } from './lib/sessions.js';
 const AUTH_ENABLED = process.env.ENABLE_AUTH === 'true';
 
 // P0 Gate: fail-closed in production — never allow unauthenticated sensitive APIs
@@ -177,7 +178,7 @@ if (process.env.NODE_ENV === 'production' && !AUTH_ENABLED) {
   process.exit(1);
 }
 
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
   req.user = null;
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -186,6 +187,10 @@ app.use((req, res, next) => {
     if (payload) {
       if (payload.iss && payload.iss !== 'national-labor-platform') {
         return res.status(401).json({ error: 'جهة إصدار غير صالحة', code: 'INVALID_ISSUER' });
+      }
+      // جلسة ملغاة أو مغلقة = توكن ميت فوراً (تتبع الأثر والتحكم الفعلي بالجلسات)
+      if (payload.sid && !(await isSessionActive(payload.sid))) {
+        return res.status(401).json({ error: 'الجلسة أُلغيت — يرجى تسجيل الدخول مجدداً', code: 'SESSION_REVOKED' });
       }
       req.user = { id: payload.sub, email: payload.email, role: payload.role, userType: payload.userType, organizationId: payload.organizationId, governorate: payload.governorate, directorate: payload.directorate, sid: payload.sid };
     }

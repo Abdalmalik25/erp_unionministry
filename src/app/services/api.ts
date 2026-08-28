@@ -127,6 +127,10 @@ function defaultHeaders(extra: Record<string, string> = {}): Record<string, stri
   if (csrf) {
     headers['x-csrf-token'] = csrf;
   }
+  // استخبارات الجهاز والموقع: المنطقة الزمنية تُقرأ في الخادم لتحديد الموقع الجغرافي وتقييم مخاطر الجلسة
+  try {
+    headers['x-client-timezone'] = Intl.DateTimeFormat().resolvedOptions().timeZone || 'unknown';
+  } catch { /* متصفح قديم — يُهمل بهدوء */ }
   return headers;
 }
 

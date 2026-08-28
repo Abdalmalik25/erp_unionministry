@@ -90,9 +90,15 @@ async function auditLog(action, resource, userId, details = {}) {
     await c.query('SELECT pg_advisory_xact_lock($1)', [918273461]);
     // السلسلة (prev_hash/row_hash/sequence) يولدها المشغّل trg_audit_hash في قاعدة البيانات —
     // لا يحسبها التطبيق إطلاقاً؛ أي محاولة تزوير القيم هنا ستُستبدل داخل القاعدة
+    // تتبع الأثر الكامل: ip/user_agent/session_id تُكتب عند توفرها في التفاصيل
+    // تطهير IP — العمود inet صارم؛ أي قيمة غير سليمة تُهمل بدل كسر السجل كله
+    const rawIp = details?.ip || null;
+    const ip = rawIp && /^(\d{1,3}(\.\d{1,3}){3}|[0-9a-fA-F:]+)$/.test(String(rawIp).trim()) ? String(rawIp).trim() : null;
     await c.query(
-      `INSERT INTO audit_log (action, table_name, actor_id, notes, created_at) VALUES ($1, $2, $3, $4, NOW())`,
-      [act, resource, userId || null, JSON.stringify(details)]
+      `INSERT INTO audit_log (action, table_name, actor_id, notes, ip_address, user_agent, session_id, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
+      [act, resource, userId || null, JSON.stringify(details),
+       ip, details?.user_agent || null, details?.session_id ? String(details.session_id) : null]
     );
     await c.query('COMMIT');
   } catch (e) {
