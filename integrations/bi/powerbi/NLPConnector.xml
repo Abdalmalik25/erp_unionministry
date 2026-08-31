@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Power BI Custom Connector metadata for the Yemen National Labor Platform
+  This file is required for Power BI to recognize the connector
+-->
+<TextFile>
+    <version>1.0.0</version>
+    <author>National Labor Platform BI Team</author>
+    <description>Custom connector for accessing the Yemen National Labor Platform OData v4 endpoints
+        from Power BI, Excel, and Power Query.</description>
+    <icon>icon.png</icon>
+    <permissions>
+        <resource>
+            <name>Web</name>
+            <needed>Read</needed>
+        </resource>
+    </permissions>
+    <dependencies>
+        <dependency>
+            <name>OData</name>
+            <version>4.0</version>
+        </dependency>
+    </dependencies>
+    <capabilities>
+        <capability>
+            <name>Filtering</name>
+            <supported>true</supported>
+        </capability>
+        <capability>
+            <name>Navigation</name>
+            <supported>true</supported>
+        </capability>
+        <capability>
+            <name>QueryFolding</name>
+            <supported>true</supported>
+        </capability>
+        <capability>
+            <name>DirectQuery</name>
+            <supported>true</supported>
+        </capability>
+    </capabilities>
+    <supportedLocales>
+        <locale>en-US</locale>
+        <locale>ar-YE</locale>
+    </supportedLocales>
+    <apiEndpoint>https://api.yourplatform.ye/api/odata/v4/</apiEndpoint>
+    <serviceRoot>https://api.yourplatform.ye</serviceRoot>
+    <oauth>
+        <authorizationUrl>https://api.yourplatform.ye/oauth/authorize</authorizationUrl>
+        <tokenUrl>https://api.yourplatform.ye/oauth/token</tokenUrl>
+        <refreshUrl>https://api.yourplatform.ye/oauth/refresh</refreshUrl>
+        <scopes>
+            <scope>read:workers</scope>
+            <scope>read:employers</scope>
+            <scope>read:inspections</scope>
+            <scope>read:violations</scope>
+            <scope>read:licenses</scope>
+            <scope>read:contracts</scope>
+            <scope>read:payments</scope>
+            <scope>read:disputes</scope>
+            <scope>read:training</scope>
+            <scope>read:audit</scope>
+        </scopes>
+    </oauth>
+</TextFile>

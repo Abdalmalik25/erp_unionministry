@@ -51,3 +51,34 @@ export function verifyToken(token) {
     return null;
   }
 }
+
+// Express middleware: authenticates the request from the Authorization header
+// and populates req.user with a consistent shape (id = sub + pass-through claims).
+// Used as router.use(getAuthUser) by scoped routers (contracts, disputes,
+// inspections, cross-portal, ...).
+export function getAuthUser(req, res, next) {
+  req.user = null;
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const payload = verifyToken(authHeader.slice(7));
+    if (payload) {
+      req.user = {
+        id: payload.sub,
+        sub: payload.sub,
+        email: payload.email,
+        role: payload.role,
+        userType: payload.userType,
+        organizationId: payload.organizationId,
+        governorate: payload.governorate,
+        directorate: payload.directorate,
+        sid: payload.sid,
+        full_name: payload.full_name,
+        portal: payload.portal,
+      };
+    }
+  }
+  if (!req.user) {
+    return res.status(401).json({ error: 'غير مصرح — يرجى تسجيل الدخول', code: 'UNAUTHORIZED' });
+  }
+  return next();
+}

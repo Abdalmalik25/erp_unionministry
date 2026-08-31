@@ -3,6 +3,7 @@
  * المنظومة الوطنية لإدارة قطاع العمل | وزارة الشؤون الاجتماعية والعمل
  */
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useDebounce } from '../../hooks/useDebounce';
 import { Plus, Search, Filter, Edit2, Trash2, CheckCircle, X, ChevronRight, ChevronLeft, Users, Calendar, Mail, Phone, Download, } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { useConfirm } from '../../components/ui/ConfirmDialog';
@@ -92,6 +93,7 @@ export default function BoardMembersManagement() {
     const [showModal, setShowModal] = useState(false);
     const [editing, setEditing] = useState<BoardMember | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const debouncedSearch = useDebounce(searchQuery, 300);
     const [entityFilter, setEntityFilter] = useState('all');
     const [positionFilter, setPositionFilter] = useState<string>('all');
     const [currentPage, setCurrentPage] = useState(1);
@@ -127,13 +129,13 @@ export default function BoardMembersManagement() {
     // التصفية
     const filtered = useMemo(() => {
         return members.filter(m => {
-            const q = searchQuery.trim();
+            const q = debouncedSearch.trim();
             const matchSearch = !q || m.member_name.includes(q) || m.entity_name.includes(q);
             const matchEntity = entityFilter === 'all' || m.entity_id === entityFilter;
             const matchPosition = positionFilter === 'all' || m.position === positionFilter;
             return matchSearch && matchEntity && matchPosition;
         });
-    }, [members, searchQuery, entityFilter, positionFilter]);
+    }, [members, debouncedSearch, entityFilter, positionFilter]);
     const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
     const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
     const stats = useMemo(() => ({

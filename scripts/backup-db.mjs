@@ -81,6 +81,7 @@ console.log(`  SHA-256: ${sha.slice(0, 16)}…`);
 const backups = fs.readdirSync('backups').filter(f => f.endsWith('.enc')).sort();
 for (const old of backups.slice(0, -8)) {
   fs.unlinkSync(path.join('backups', old));
-  fs.existsSync(path.join('backups', `${old}.sha256`)) && fs.unlinkSync(path.join('backups', `${old}.sha256`));
+  const shaPath = path.join('backups', `${old}.sha256`);
+  if (fs.existsSync(shaPath)) fs.unlinkSync(shaPath);
   console.log(`🧹 حُذفت النسخة القديمة: ${old}`);
 }

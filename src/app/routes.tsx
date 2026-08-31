@@ -6,9 +6,12 @@ import { DashboardSkeleton } from "./components/ui/LoadingSkeleton";
 
 // Eager Loading للصفحات الأساسية
 import { Login } from "./pages/Login";
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword").then(m => ({ default: m.ForgotPassword })));
+const Register = lazy(() => import("./pages/Register").then(m => ({ default: m.Register })));
 
 // الموقع التعريفي العام — يتصفحه الجميع قبل الدخول
 const PublicHome = lazy(() => import("./pages/public/PublicHome").then(m => ({ default: m.PublicHome })));
+const ProductShowcase = lazy(() => import("./pages/ProductShowcase").then(m => ({ default: m.default })));
 const AboutPage = lazy(() => import("./pages/public/PublicPages").then(m => ({ default: m.AboutPage })));
 const ServicesPage = lazy(() => import("./pages/public/PublicPages").then(m => ({ default: m.ServicesPage })));
 const RegistriesPage = lazy(() => import("./pages/public/PublicPages").then(m => ({ default: m.RegistriesPage })));
@@ -19,6 +22,7 @@ const ContactPage = lazy(() => import("./pages/public/PublicPages").then(m => ({
 
 // Lazy Loading لباقي الصفحات
 const MinistryDashboard = lazy(() => import("./pages/ministry/DashboardNewEnhanced").then(m => ({ default: m.DashboardNewEnhanced })));
+const MinistryDashboardNew = lazy(() => import("./pages/ministry/MinistryDashboardNew").then(m => ({ default: m.default })));
 const CommercialEstablishmentsManagement = lazy(() => import("./pages/ministry/CommercialEstablishmentsManagement").then(m => ({ default: m.CommercialEstablishmentsManagement })));
 const OrganizationDashboard = lazy(() => import("./pages/organization/Dashboard").then(m => ({ default: m.OrganizationDashboard })));
 const UnionsManagement = lazy(() => import("./pages/ministry/UnionsManagementNew").then(m => ({ default: m.UnionsManagementNew })));
@@ -48,6 +52,10 @@ const BoardMembersManagement = lazy(() => import("./pages/ministry/BoardMembersM
 const SectorUsersManagement = lazy(() => import("./pages/ministry/SectorUsersManagement").then(m => ({ default: m.SectorUsersManagement })));
 const NotificationsManagement = lazy(() => import("./pages/ministry/NotificationsManagement"));
 const LaborDisputesManagement = lazy(() => import("./pages/ministry/LaborDisputesManagement"));
+const ContractManager = lazy(() => import("./pages/ministry/ContractManager").then(m => ({ default: m.ContractManager })));
+const EmployerSelfService = lazy(() => import("./pages/ministry/EmployerSelfService").then(m => ({ default: m.EmployerSelfService })));
+const OSHIncidentsPage = lazy(() => import("./pages/ministry/OSHIncidentsPage").then(m => ({ default: m.OSHIncidentsPage })));
+const WorkerPassportPage = lazy(() => import("./pages/ministry/WorkerPassportPage").then(m => ({ default: m.WorkerPassportPage })));
 const ExpatriateLicensesManagement = lazy(() => import("./pages/ministry/ExpatriateLicensesManagement"));
 const LegalReferencesManagement = lazy(() => import("./pages/ministry/LegalReferencesManagement").then(m => ({ default: m.LegalReferencesManagement })));
 const RiskAssessmentsManagement = lazy(() => import("./pages/ministry/RiskAssessmentsManagement").then(m => ({ default: m.RiskAssessmentsManagement })));
@@ -119,6 +127,10 @@ export const router = createBrowserRouter([
     element: <LazyPage><PublicHome /></LazyPage>,
   },
   {
+    path: "/showcase",
+    element: <LazyPage><ProductShowcase /></LazyPage>,
+  },
+  {
     path: "/about",
     element: <LazyPage><AboutPage /></LazyPage>,
   },
@@ -152,12 +164,24 @@ export const router = createBrowserRouter([
     Component: Login,
   },
   {
+    path: "/forgot-password",
+    element: <LazyPage><ForgotPassword /></LazyPage>,
+  },
+  {
+    path: "/register",
+    element: <LazyPage><Register /></LazyPage>,
+  },
+  {
     path: "/ministry",
     Component: MinistryRoutes,
     children: [
       {
         index: true,
         element: <LazyPage><MinistryDashboard /></LazyPage>
+      },
+      {
+        path: "new",
+        element: <LazyPage><MinistryDashboardNew /></LazyPage>
       },
       {
         path: "commercial",
@@ -262,6 +286,22 @@ export const router = createBrowserRouter([
       {
         path: "labor-disputes",
         element: <LazyPage><LaborDisputesManagement /></LazyPage>
+      },
+      {
+        path: "contracts",
+        element: <LazyPage><ContractManager /></LazyPage>
+      },
+      {
+        path: "employer-self-service",
+        element: <LazyPage><EmployerSelfService /></LazyPage>
+      },
+      {
+        path: "osh-incidents",
+        element: <LazyPage><OSHIncidentsPage /></LazyPage>
+      },
+      {
+        path: "worker-passports",
+        element: <LazyPage><WorkerPassportPage /></LazyPage>
       },
       {
         path: "expatriate-licenses",
@@ -402,7 +442,7 @@ export const router = createBrowserRouter([
   // بوابة أصحاب العمل والمنشآت — Employer Portal
   {
     path: "/employer",
-    element: <PortalRoutes requiredRoles={['employer_owner']} />,
+    element: <PortalRoutes requiredRoles={['employer_admin']} />,
     children: [
       {
         index: true,

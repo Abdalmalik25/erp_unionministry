@@ -1,394 +1,381 @@
 /**
- * Service Worker - للعمل دون اتصال
- * تخزين مؤقت ذكي ومزامنة في الخلفية
- * النسخة المحسنة v3 - دعم IndexedDB متقدم
+ * Service Worker — Full Offline Support
+ * Yemen National Labor Platform
+ * Strategy: Stale-While-Revalidate for API, Cache-First for assets
  */
 
-const CACHE_VERSION = 'v7';
-const CACHE_NAME = `unionsphere-${CACHE_VERSION}`;
-const DB_NAME = 'UnionSphereDB';
-const DB_VERSION = 1;
+const CACHE_VERSION = 'v1.1.0';
+const STATIC_CACHE = `${CACHE_VERSION}-static`;
+const API_CACHE = `${CACHE_VERSION}-api`;
+const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 
-// الملفات الأساسية للتخزين المؤقت
-const CORE_ASSETS = [
+// Static assets to precache (matches Vite build output)
+const PRECACHE_URLS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/favicon.ico',
-  '/favicon-32x32.png',
-  '/android-chrome-192x192.png',
-  '/android-chrome-512x512.png',
-  '/apple-touch-icon.png',
+  '/base.css',
   '/theme-init.js',
-  // الخطوط الرسمية ذاتية الاستضافة — عمل دون اتصال بهوية كاملة
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+  '/browserconfig.xml',
   '/fonts/IBMPlexSansArabic-400-arabic.woff2',
-  '/fonts/IBMPlexSansArabic-700-arabic.woff2',
-  '/fonts/Cairo-800-arabic.woff2',
+  '/fonts/IBMPlexSansArabic-600-arabic.woff2',
 ];
 
-// استراتيجيات التخزين المؤقت
-const CACHE_STRATEGIES = {
-  // Cache First - للملفات الثابتة
-  cacheFirst: async (request) => {
-    const cache = await caches.open(CACHE_NAME);
-    const cached = await cache.match(request);
-    if (cached) return cached;
+// API routes to cache with stale-while-revalidate
+const API_ROUTES = [
+  '/api/health',
+  '/api/metrics',
+  '/api/system/branding',
+];
 
-    try {
-      const response = await fetch(request);
-      cache.put(request, response.clone());
-      return response;
-    } catch (error) {
-      return cached;
-    }
-  },
-
-  // Network First - للبيانات الديناميكية
-  networkFirst: async (request) => {
-    try {
-      const response = await fetch(request);
-      const cache = await caches.open(CACHE_NAME);
-      cache.put(request, response.clone());
-      return response;
-    } catch (error) {
-      const cached = await caches.match(request);
-      if (cached) return cached;
-      
-      // إذا كانت بيانات API وفشل الاتصال، نعيد بيانات فارغة
-      if (request.url.includes('/api/')) {
-        return new Response(JSON.stringify([]), {
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-      throw error;
-    }
-  },
-
-  // Stale While Revalidate - للبيانات المتوسطة
-  staleWhileRevalidate: async (request) => {
-    const cache = await caches.open(CACHE_NAME);
-    const cached = await cache.match(request);
-
-    const fetchPromise = fetch(request).then((response) => {
-      cache.put(request, response.clone());
-      return response;
-    }).catch(() => cached);
-
-    return cached || fetchPromise;
-  },
-};
-
-// فتح قاعدة البيانات
-function openIndexedDB() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-  });
-}
-
-// إعداد قاعدة البيانات
-function setupIndexedDB(db) {
-  const stores = ['unions', 'members', 'activities', 'documents', 'pendingActions', 'cache', 'backups', 'sync_history'];
-  stores.forEach(storeName => {
-    if (!db.objectStoreNames.contains(storeName)) {
-      db.createObjectStore(storeName, { keyPath: 'id' });
-    }
-  });
-}
-
-// التثبيت
+// Install: precache critical assets
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing...');
-  
-  // تخطي الانتظار فوراً
-  self.skipWaiting();
-
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Caching core assets');
-      return cache.addAll(CORE_ASSETS).catch(err => {
-        console.warn('[SW] Some assets failed to cache:', err);
+    caches.open(STATIC_CACHE).then((cache) => {
+      console.log('[SW] Precaching static assets');
+      return cache.addAll(PRECACHE_URLS).catch((err) => {
+        console.warn('[SW] Some precache URLs failed, continuing...', err);
       });
-    })
+    }).then(() => self.skipWaiting())
   );
 });
 
-// التفعيل
+// Activate: clean old caches
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating...');
-
+  const currentCaches = [STATIC_CACHE, API_CACHE, DYNAMIC_CACHE];
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((name) => name !== CACHE_NAME)
+          .filter((name) => !currentCaches.includes(name))
           .map((name) => {
             console.log('[SW] Deleting old cache:', name);
             return caches.delete(name);
           })
       );
-    }).then(() => {
-      // اختيار العملاء
-      return self.clients.claim();
-    })
+    }).then(() => self.clients.claim())
   );
 });
 
-// معالجة الطلبات
+// Fetch: intelligent routing
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // تجاهل الطلبات الخارجية
-  if (url.origin !== location.origin) {
+  // Skip non-GET requests
+  if (request.method !== 'GET') return;
+
+  // Skip cross-origin requests (only handle same-origin)
+  if (url.origin !== self.location.origin) return;
+
+  // Skip chrome-extension and other special protocols
+  if (!url.protocol.startsWith('http')) return;
+
+  // Route: API requests → stale-while-revalidate
+  if (url.pathname.startsWith('/api/')) {
+    // For health/metrics/branding: network-first with cache fallback
+    if (API_ROUTES.some((route) => url.pathname.startsWith(route))) {
+      event.respondWith(networkFirstWithCache(request, API_CACHE));
+    } else {
+      // Other API: network-only (always fresh)
+      return;
+    }
     return;
   }
 
-  // تخطي الطلبات غير GET
-  if (request.method !== 'GET') {
-    return;
-  }
-
-  // التنقل بين الصفحات (SPA) - Network First مع الرجوع للصفحة المخزنة
-  // يضمن استمرار العمل دون اتصال وعدم تعليق الملاحة
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put('/', copy).catch(() => {});
-          });
-          return response;
-        })
-        .catch(() =>
-          caches.match('/').then((cached) => cached || caches.match('/index.html'))
-        )
-    );
-    return;
-  }
-
-  // اختيار الاستراتيجية المناسبة
-  let strategy;
-
-  if (request.url.includes('/api/')) {
-    // API requests - Network First مع fallback للبيانات الفارغة
-    strategy = CACHE_STRATEGIES.networkFirst;
-  } else if (
-    request.url.match(/\.(js|css|png|jpg|jpeg|svg|woff2)$/)
+  // Route: static assets → cache-first
+  if (
+    request.destination === 'script' ||
+    request.destination === 'style' ||
+    request.destination === 'image' ||
+    request.destination === 'font' ||
+    request.destination === 'document'
   ) {
-    // Static assets - Cache First
-    strategy = CACHE_STRATEGIES.cacheFirst;
-  } else {
-    // HTML and dynamic content - Stale While Revalidate
-    strategy = CACHE_STRATEGIES.staleWhileRevalidate;
+    event.respondWith(cacheFirst(request, STATIC_CACHE));
+    return;
   }
 
-  event.respondWith(strategy(request));
+  // Route: HTML pages → network-first (for fresh navigation)
+  if (request.mode === 'navigate') {
+    event.respondWith(networkFirstWithCache(request, DYNAMIC_CACHE));
+    return;
+  }
+
+  // Default: stale-while-revalidate
+  event.respondWith(staleWhileRevalidate(request, DYNAMIC_CACHE));
 });
 
-// المزامنة في الخلفية
+// ─────────────────────────────────────────────────
+// Strategy Implementations
+// ─────────────────────────────────────────────────
+
+/**
+ * Cache-First — best for versioned static assets
+ */
+async function cacheFirst(request, cacheName) {
+  const cached = await caches.match(request);
+  if (cached) {
+    // Revalidate in background
+    fetchAndCache(request, cacheName).catch(() => {});
+    return cached;
+  }
+  return fetchAndCache(request, cacheName);
+}
+
+/**
+ * Network-First — best for API health checks
+ */
+async function networkFirstWithCache(request, cacheName) {
+  try {
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
+      const cache = await caches.open(cacheName);
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch {
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    // Return offline fallback for navigation requests
+    if (request.mode === 'navigate') {
+      return caches.match('/index.html');
+    }
+    throw new Error('No network and no cache');
+  }
+}
+
+/**
+ * Stale-While-Revalidate — best for dynamic content
+ */
+async function staleWhileRevalidate(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cachedResponse = await cache.match(request);
+
+  const fetchPromise = fetchAndCache(request, cacheName).catch(() => {});
+
+  return cachedResponse || fetchPromise;
+}
+
+/**
+ * Fetch and cache a response
+ */
+async function fetchAndCache(request, cacheName) {
+  const response = await fetch(request);
+  if (response.ok) {
+    const cache = await caches.open(cacheName);
+    cache.put(request, response.clone());
+  }
+  return response;
+}
+
+// ─────────────────────────────────────────────────
+// Background Sync — queue failed mutations
+// ─────────────────────────────────────────────────
+
+const SYNC_TAG = 'nlp-sync-queue';
+
 self.addEventListener('sync', (event) => {
-  console.log('[SW] Background sync:', event.tag);
-
-  if (event.tag === 'sync-data') {
-    event.waitUntil(syncPendingData());
-  } else if (event.tag === 'sync-unions') {
-    event.waitUntil(syncSpecificTable('unions'));
-  } else if (event.tag === 'sync-members') {
-    event.waitUntil(syncSpecificTable('members'));
-  } else if (event.tag === 'sync-activities') {
-    event.waitUntil(syncSpecificTable('activities'));
+  if (event.tag === SYNC_TAG) {
+    event.waitUntil(processSyncQueue());
   }
 });
 
-// إشعارات Push
+async function processSyncQueue() {
+  // Open IndexedDB to get pending operations
+  const db = await openDB();
+  const tx = db.transaction('sync-queue', 'readwrite');
+  const store = tx.objectStore('sync-queue');
+  const allKeys = await getAllKeys(store);
+
+  for (const key of allKeys) {
+    const op = await getItem(store, key);
+    try {
+      const response = await fetch(op.url, {
+        method: op.method,
+        headers: { 'Content-Type': 'application/json', ...op.headers },
+        body: JSON.stringify(op.body),
+      });
+      if (response.ok) {
+        // Remove from queue on success
+        await deleteItem(store, key);
+        // Notify clients
+        const clients = await self.clients.matchAll();
+        clients.forEach((client) => {
+          client.postMessage({ type: 'SYNC_SUCCESS', operation: op });
+        });
+      }
+    } catch (err) {
+      console.warn('[SW] Sync failed for operation:', op, err);
+      // Leave in queue for next sync attempt
+    }
+  }
+}
+
+/**
+ * Queue an operation for background sync
+ */
+async function queueOperation(operation) {
+  const db = await openDB();
+  const tx = db.transaction('sync-queue', 'readwrite');
+  const store = tx.objectStore('sync-queue');
+  await addItem(store, {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    ...operation,
+    queuedAt: Date.now(),
+  });
+  // Request background sync
+  if ('sync' in self.registration) {
+    await self.registration.sync.register(SYNC_TAG);
+  }
+}
+
+// ─────────────────────────────────────────────────
+// Push Notifications
+// ─────────────────────────────────────────────────
+
 self.addEventListener('push', (event) => {
-  console.log('[SW] Push received:', event);
+  if (!event.data) return;
 
-  const data = event.data ? event.data.json() : {};
-  const title = data.title || 'UnionSphere';
-  const options = {
-    body: data.body || 'لديك إشعار جديد',
-    icon: '/android-chrome-192x192.png',
-    badge: '/android-chrome-192x192.png',
-    vibrate: [200, 100, 200],
-    data: data.data || {},
-    actions: data.actions || [],
-    dir: 'rtl',
-    lang: 'ar',
-  };
-
-  event.waitUntil(self.registration.showNotification(title, options));
-});
-
-// النقر على الإشعار
-self.addEventListener('notificationclick', (event) => {
-  console.log('[SW] Notification click:', event);
-
-  event.notification.close();
-
-  const urlToOpen = event.notification.data?.url || '/';
+  let notification;
+  try {
+    notification = event.data.json();
+  } catch {
+    notification = {
+      title: 'إشعار من منظومة العمل',
+      body: event.data.text(),
+      icon: '/icons/icon-192.png',
+      badge: '/icons/badge-32.png',
+    };
+  }
 
   event.waitUntil(
-    clients
-      .matchAll({ type: 'window', includeUncontrolled: true })
-      .then((clientList) => {
-        // إذا كان التطبيق مفتوحاً، استخدمه
-        for (const client of clientList) {
-          if (client.url === urlToOpen && 'focus' in client) {
-            return client.focus();
-          }
-        }
-
-        // وإلا افتح نافذة جديدة
-        if (clients.openWindow) {
-          return clients.openWindow(urlToOpen);
-        }
-      })
+    self.registration.showNotification(notification.title, {
+      body: notification.body,
+      icon: notification.icon || '/icons/icon-192.png',
+      badge: notification.badge || '/icons/badge-32.png',
+      tag: notification.tag || 'nlp-notification',
+      requireInteraction: notification.requireInteraction || false,
+      data: notification.data,
+    })
   );
 });
 
-// مزامنة البيانات المعلقة
-async function syncPendingData() {
-  try {
-    // جلب البيانات المعلقة من IndexedDB
-    const db = await openIndexedDB();
-    const pending = await getPendingActions(db);
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
 
-    // إرسال كل عملية معلقة
-    for (const action of pending) {
-      try {
-        const response = await fetch(action.url, {
-          method: action.method,
-          headers: action.headers,
-          body: action.body,
-        });
-
-        if (response.ok) {
-          // حذف العملية بعد النجاح
-          await deletePendingAction(db, action.id);
-          console.log('[SW] Synced action:', action.id);
-        } else {
-          console.error('[SW] Sync failed for action:', action.id, response.status);
+  const urlToOpen = event.notification.data?.url || '/';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // Focus existing window if available
+      for (const client of clientList) {
+        if (client.url === urlToOpen && 'focus' in client) {
+          return client.focus();
         }
-      } catch (error) {
-        console.error('[SW] Sync error for action:', action.id, error);
       }
-    }
+      // Open new window
+      return self.clients.openWindow(urlToOpen);
+    })
+  );
+});
 
-    // إبلاغ التطبيق بالانتهاء
-    const clients = await self.clients.matchAll();
-    clients.forEach(client => {
-      client.postMessage({
-        type: 'SYNC_COMPLETED',
-        synced: pending.length,
-      });
-    });
+// ─────────────────────────────────────────────────
+// Message Handler — for communication with main app
+// ─────────────────────────────────────────────────
 
-    console.log('[SW] Sync completed');
-  } catch (error) {
-    console.error('[SW] Sync error:', error);
-  }
-}
-
-// مزامنة جدول محدد
-async function syncSpecificTable(tableName) {
-  console.log('[SW] Syncing table:', tableName);
-  
-  // يمكن توسيع هذه الوظيفة لاحقاً
-  // حالياً نعيد استخدام syncPendingData
-  return syncPendingData();
-}
-
-// IndexedDB helpers
-function getPendingActions(db) {
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['pendingActions'], 'readonly');
-    const store = transaction.objectStore('pendingActions');
-    const request = store.getAll();
-
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-  });
-}
-
-function deletePendingAction(db, id) {
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['pendingActions'], 'readwrite');
-    const store = transaction.objectStore('pendingActions');
-    const request = store.delete(id);
-
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve();
-  });
-}
-
-// رسائل من التطبيق
 self.addEventListener('message', (event) => {
-  console.log('[SW] Message received:', event.data);
-
-  const { type, data } = event.data;
+  const { type, payload } = event.data || {};
 
   switch (type) {
     case 'SKIP_WAITING':
       self.skipWaiting();
       break;
-    
-    case 'CACHE_URLS':
-      if (data?.urls) {
-        caches.open(CACHE_NAME).then(cache => {
-          cache.addAll(data.urls);
-        });
-      }
+
+    case 'QUEUE_OPERATION':
+      queueOperation(payload);
       break;
 
-    case 'PRECACHE_ALL':
-      // تجهيز كامل للعمل دون اتصال — يخزن الأصول الأساسية + قائمة URLs اختيارية
-      caches.open(CACHE_NAME).then(cache => {
-        const urls = data?.urls?.length ? data.urls : CORE_ASSETS;
-        return cache.addAll(urls).catch(err => {
-          console.warn('[SW] PRECACHE_ALL partial failure:', err);
-        });
-      }).then(() => {
-        event.source?.postMessage({ type: 'PRECACHE_DONE', count: data?.urls?.length || CORE_ASSETS.length });
+    case 'CLEAR_API_CACHE':
+      caches.delete(API_CACHE).then(() => {
+        event.ports[0]?.postMessage({ ok: true });
       });
       break;
-    
-    case 'GET_CACHE_SIZE':
-      getCacheSize().then(size => {
-        event.source?.postMessage({ type: 'CACHE_SIZE', size });
+
+    case 'CLEAR_ALL_CACHE':
+      Promise.all([
+        caches.delete(STATIC_CACHE),
+        caches.delete(API_CACHE),
+        caches.delete(DYNAMIC_CACHE),
+      ]).then(() => {
+        event.ports[0]?.postMessage({ ok: true });
       });
       break;
-    
+
+    case 'GET_CACHE_STATUS':
+      Promise.all([
+        caches.open(STATIC_CACHE).then((c) => c.keys().then((k) => ({ name: STATIC_CACHE, count: k.length }))),
+        caches.open(API_CACHE).then((c) => c.keys().then((k) => ({ name: API_CACHE, count: k.length }))),
+        caches.open(DYNAMIC_CACHE).then((c) => c.keys().then((k) => ({ name: DYNAMIC_CACHE, count: k.length }))),
+      ]).then((stats) => {
+        event.ports[0]?.postMessage({ ok: true, stats });
+      });
+      break;
+
     default:
-      console.log('[SW] Unknown message type:', type);
+      console.warn('[SW] Unknown message type:', type);
   }
 });
 
-// حساب حجم الكاش
-async function getCacheSize() {
-  try {
-    const cacheNames = await caches.keys();
-    let totalSize = 0;
+// ─────────────────────────────────────────────────
+// IndexedDB Helpers
+// ─────────────────────────────────────────────────
 
-    for (const name of cacheNames) {
-      const cache = await caches.open(name);
-      const keys = await cache.keys();
-
-      for (const request of keys) {
-        const response = await cache.match(request);
-        if (response) {
-          const blob = await response.blob();
-          totalSize += blob.size;
-        }
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('nlp-offline', 1);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains('sync-queue')) {
+        db.createObjectStore('sync-queue', { keyPath: 'id' });
       }
-    }
+      if (!db.objectStoreNames.contains('pending-uploads')) {
+        db.createObjectStore('pending-uploads', { keyPath: 'id', autoIncrement: true });
+      }
+    };
+  });
+}
 
-    return totalSize;
-  } catch (error) {
-    console.error('[SW] Get cache size error:', error);
-    return 0;
-  }
+function getAllKeys(store) {
+  return new Promise((resolve, reject) => {
+    const request = store.getAllKeys();
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+  });
+}
+
+function getItem(store, key) {
+  return new Promise((resolve, reject) => {
+    const request = store.get(key);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+  });
+}
+
+function addItem(store, item) {
+  return new Promise((resolve, reject) => {
+    const request = store.add(item);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+  });
+}
+
+function deleteItem(store, key) {
+  return new Promise((resolve, reject) => {
+    const request = store.delete(key);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve();
+  });
 }

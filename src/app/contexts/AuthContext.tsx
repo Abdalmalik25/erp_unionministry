@@ -101,7 +101,7 @@ export function AuthProvider({ children }: {
             }
 
             // 2. Fallback: حساب Demo للتنمية المحلية (لا يُستخدم في الإنتاج)
-            if (demoUser && process.env.NODE_ENV !== 'production') {
+            if (demoUser && import.meta.env.MODE !== 'production') {
                 try {
                     const u = demoUser;
                     const sus = createSession(u.id, u.email, u.userType || 'ministry');

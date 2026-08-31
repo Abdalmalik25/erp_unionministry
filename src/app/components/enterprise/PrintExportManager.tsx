@@ -595,6 +595,20 @@ export async function exportReportToExcel(options: PrintExportOptions) {
   XLSX.writeFile(wb, filename);
 }
 
+// ── CSV export (TD-006 enhancement) ──────────────────────────────────────────────
+export async function exportReportToCSV(options: PrintExportOptions) {
+  const { title, data, columns = [], dateFrom, dateTo } = options;
+  const { downloadCSV } = await import('../../utils/exportCSV');
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const dateRange = [dateFrom, dateTo].filter(Boolean).join('_');
+  const safeTitle = title.replace(/[^a-zA-Z0-9أ-ي_\s-]/g, '').trim();
+  const filename = dateRange
+    ? `${safeTitle}_${dateRange}_${dateStr}.csv`
+    : `${safeTitle}_${dateStr}.csv`;
+  const csvCols = columns.map(c => ({ key: String(c.key), label: c.label }));
+  downloadCSV(data as Record<string, unknown>[], csvCols, filename);
+}
+
 export async function exportReportToPDF(options: PrintExportOptions) {
   const { title, data, columns = [], dateFrom, dateTo, orientation = 'landscape' } = options;
   const identity = await getOfficialIdentity();

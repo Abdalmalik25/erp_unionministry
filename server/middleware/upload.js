@@ -75,3 +75,25 @@ export function fileSecurityMiddleware(req,res,next){
   }
   next();
 }
+
+/**
+ * Multer-compatible upload adapter.
+ * This project uploads files via the raw-body system (server/routes/uploads.js,
+ * metadata in X-File-Name / X-File-Mime headers) rather than multer. These
+ * multer-style guards (uploadMiddleware.any(), .single(), etc.) exist for
+ * API-compatibility with existing route definitions and do not break JSON
+ * bodies — JSON/urlencoded payloads are already parsed by express.json()/
+ * express.urlencoded(). Multipart requests still flow through; file parsing is
+ * delegated to the dedicated raw-body upload pipelines.
+ */
+function passthroughMulterMethod() {
+  return (_req, _res, next) => next();
+}
+
+export const uploadMiddleware = {
+  any: passthroughMulterMethod,
+  single: passthroughMulterMethod,
+  array: passthroughMulterMethod,
+  fields: passthroughMulterMethod,
+  none: passthroughMulterMethod,
+};

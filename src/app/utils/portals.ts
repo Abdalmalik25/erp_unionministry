@@ -54,6 +54,7 @@ export function getAudience(id: Audience): AudienceInfo {
 /** البوابة الافتراضية لكل دور وظيفي */
 const ROLE_LANDING: Record<string, string> = {
   worker: '/worker',
+  employer_admin: '/employer',
   employer_owner: '/employer',
 };
 

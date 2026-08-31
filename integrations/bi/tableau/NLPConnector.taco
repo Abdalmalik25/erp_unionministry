@@ -1,0 +1,309 @@
+{
+  "version": "1.0.0",
+  "name": "National Labor Platform",
+  "description": "Yemen National Labor Platform OData v4 connector for Tableau",
+  "vendor": "Ministry of Labor - Yemen",
+  "vendorUrl": "https://www.yourplatform.ye",
+  "apiDiscoveryUrl": "https://api.yourplatform.ye/api/odata/v4/",
+  "authType": "custom",
+  "oauthConfig": {
+    "authorizationUrl": "https://api.yourplatform.ye/oauth/authorize",
+    "accessTokenUrl": "https://api.yourplatform.ye/oauth/token",
+    "refreshTokenUrl": "https://api.yourplatform.ye/oauth/refresh",
+    "clientIdName": "NLP Client ID",
+    "clientSecretName": "NLP Client Secret",
+    "scopes": [
+      "read:workers",
+      "read:employers",
+      "read:inspections",
+      "read:violations",
+      "read:licenses",
+      "read:contracts",
+      "read:payments",
+      "read:disputes",
+      "read:training",
+      "read:audit"
+    ]
+  },
+  "info": {
+    "supportsIncrementalRefresh": true,
+    "supportsPagination": true,
+    "supportsAggregation": true,
+    "supportsFilter": true,
+    "maxRowsPerRequest": 10000,
+    "defaultRowsPerRequest": 1000,
+    "dataPreviewRowLimit": 100
+  },
+  "supportedLocales": ["en-US", "ar-YE"],
+  "tables": [
+    {
+      "tableName": "Workers",
+      "tableAlias": "Workers",
+      "tableDescription": "Individual worker profiles",
+      "connectionFields": ["id"],
+      "fields": [
+        {"fieldName": "id", "fieldAlias": "Worker ID", "fieldType": "int64", "isKey": true},
+        {"fieldName": "full_name_ar", "fieldAlias": "Full Name (Arabic)", "fieldType": "string"},
+        {"fieldName": "full_name_en", "fieldAlias": "Full Name (English)", "fieldType": "string"},
+        {"fieldName": "national_id", "fieldAlias": "National ID", "fieldType": "string"},
+        {"fieldName": "passport_number", "fieldAlias": "Passport Number", "fieldType": "string"},
+        {"fieldName": "date_of_birth", "fieldAlias": "Date of Birth", "fieldType": "date"},
+        {"fieldName": "gender", "fieldAlias": "Gender", "fieldType": "string"},
+        {"fieldName": "nationality", "fieldAlias": "Nationality", "fieldType": "string"},
+        {"fieldName": "profession", "fieldAlias": "Profession", "fieldType": "string"},
+        {"fieldName": "specialization", "fieldAlias": "Specialization", "fieldType": "string"},
+        {"fieldName": "qualification", "fieldAlias": "Qualification", "fieldType": "string"},
+        {"fieldName": "years_experience", "fieldAlias": "Years of Experience", "fieldType": "int32"},
+        {"fieldName": "monthly_salary", "fieldAlias": "Monthly Salary", "fieldType": "decimal"},
+        {"fieldName": "currency", "fieldAlias": "Currency", "fieldType": "string"},
+        {"fieldName": "contract_type", "fieldAlias": "Contract Type", "fieldType": "string"},
+        {"fieldName": "contract_start_date", "fieldAlias": "Contract Start Date", "fieldType": "date"},
+        {"fieldName": "contract_end_date", "fieldAlias": "Contract End Date", "fieldType": "date"},
+        {"fieldName": "governorate", "fieldAlias": "Governorate", "fieldType": "string", "geographicRole": "Province"},
+        {"fieldName": "district", "fieldAlias": "District", "fieldType": "string", "geographicRole": "City"},
+        {"fieldName": "status", "fieldAlias": "Status", "fieldType": "string"},
+        {"fieldName": "employer_id", "fieldAlias": "Employer ID", "fieldType": "int64", "isForeignKey": true},
+        {"fieldName": "created_at", "fieldAlias": "Created At", "fieldType": "datetime"},
+        {"fieldName": "updated_at", "fieldAlias": "Updated At", "fieldType": "datetime"}
+      ]
+    },
+    {
+      "tableName": "Employers",
+      "tableAlias": "Employers",
+      "tableDescription": "Business establishments and organizations",
+      "connectionFields": ["id"],
+      "fields": [
+        {"fieldName": "id", "fieldAlias": "Employer ID", "fieldType": "int64", "isKey": true},
+        {"fieldName": "name_ar", "fieldAlias": "Name (Arabic)", "fieldType": "string"},
+        {"fieldName": "name_en", "fieldAlias": "Name (English)", "fieldType": "string"},
+        {"fieldName": "registration_number", "fieldAlias": "Registration Number", "fieldType": "string"},
+        {"fieldName": "commercial_record", "fieldAlias": "Commercial Record", "fieldType": "string"},
+        {"fieldName": "tax_number", "fieldAlias": "Tax Number", "fieldType": "string"},
+        {"fieldName": "economic_activity", "fieldAlias": "Economic Activity", "fieldType": "string"},
+        {"fieldName": "sector", "fieldAlias": "Sector", "fieldType": "string"},
+        {"fieldName": "employee_count", "fieldAlias": "Employee Count", "fieldType": "int32"},
+        {"fieldName": "yemeni_count", "fieldAlias": "Yemeni Employees", "fieldType": "int32"},
+        {"fieldName": "expatriate_count", "fieldAlias": "Expatriate Employees", "fieldType": "int32"},
+        {"fieldName": "governorate", "fieldAlias": "Governorate", "fieldType": "string", "geographicRole": "Province"},
+        {"fieldName": "district", "fieldAlias": "District", "fieldType": "string", "geographicRole": "City"},
+        {"fieldName": "phone", "fieldAlias": "Phone", "fieldType": "string"},
+        {"fieldName": "email", "fieldAlias": "Email", "fieldType": "string"},
+        {"fieldName": "license_number", "fieldAlias": "License Number", "fieldType": "string"},
+        {"fieldName": "license_expiry", "fieldAlias": "License Expiry", "fieldType": "date"},
+        {"fieldName": "status", "fieldAlias": "Status", "fieldType": "string"},
+        {"fieldName": "created_at", "fieldAlias": "Created At", "fieldType": "datetime"},
+        {"fieldName": "updated_at", "fieldAlias": "Updated At", "fieldType": "datetime"}
+      ]
+    },
+    {
+      "tableName": "Inspections",
+      "tableAlias": "Inspections",
+      "tableDescription": "Workplace inspection records",
+      "connectionFields": ["id"],
+      "fields": [
+        {"fieldName": "id", "fieldAlias": "Inspection ID", "fieldType": "int64", "isKey": true},
+        {"fieldName": "inspection_type", "fieldAlias": "Inspection Type", "fieldType": "string"},
+        {"fieldName": "status", "fieldAlias": "Status", "fieldType": "string"},
+        {"fieldName": "scheduled_date", "fieldAlias": "Scheduled Date", "fieldType": "datetime"},
+        {"fieldName": "completed_date", "fieldAlias": "Completed Date", "fieldType": "datetime"},
+        {"fieldName": "inspector_id", "fieldAlias": "Inspector ID", "fieldType": "int64", "isForeignKey": true},
+        {"fieldName": "employer_id", "fieldAlias": "Employer ID", "fieldType": "int64", "isForeignKey": true},
+        {"fieldName": "governorate", "fieldAlias": "Governorate", "fieldType": "string", "geographicRole": "Province"},
+        {"fieldName": "findings_count", "fieldAlias": "Findings Count", "fieldType": "int32"},
+        {"fieldName": "violations_count", "fieldAlias": "Violations Count", "fieldType": "int32"},
+        {"fieldName": "result", "fieldAlias": "Result", "fieldType": "string"},
+        {"fieldName": "notes", "fieldAlias": "Notes", "fieldType": "string"},
+        {"fieldName": "created_at", "fieldAlias": "Created At", "fieldType": "datetime"},
+        {"fieldName": "updated_at", "fieldAlias": "Updated At", "fieldType": "datetime"}
+      ]
+    },
+    {
+      "tableName": "Violations",
+      "tableAlias": "Violations",
+      "tableDescription": "Labor law violation records",
+      "connectionFields": ["id"],
+      "fields": [
+        {"fieldName": "id", "fieldAlias": "Violation ID", "fieldType": "int64", "isKey": true},
+        {"fieldName": "violation_code", "fieldAlias": "Violation Code", "fieldType": "string"},
+        {"fieldName": "violation_type", "fieldAlias": "Violation Type", "fieldType": "string"},
+        {"fieldName": "severity", "fieldAlias": "Severity", "fieldType": "string"},
+        {"fieldName": "description", "fieldAlias": "Description", "fieldType": "string"},
+        {"fieldName": "status", "fieldAlias": "Status", "fieldType": "string"},
+        {"fieldName": "detected_date", "fieldAlias": "Detected Date", "fieldType": "date"},
+        {"fieldName": "resolved_date", "fieldAlias": "Resolved Date", "fieldType": "date"},
+        {"fieldName": "fine_amount", "fieldAlias": "Fine Amount", "fieldType": "decimal"},
+        {"fieldName": "currency", "fieldAlias": "Currency", "fieldType": "string"},
+        {"fieldName": "inspection_id", "fieldAlias": "Inspection ID", "fieldType": "int64", "isForeignKey": true},
+        {"fieldName": "employer_id", "fieldAlias": "Employer ID", "fieldType": "int64", "isForeignKey": true},
+        {"fieldName": "created_at", "fieldAlias": "Created At", "fieldType": "datetime"},
+        {"fieldName": "updated_at", "fieldAlias": "Updated At", "fieldType": "datetime"}
+      ]
+    },
+    {
+      "tableName": "Licenses",
+      "tableAlias": "Licenses",
+      "tableDescription": "Business and work licenses",
+      "connectionFields": ["id"],
+      "fields": [
+        {"fieldName": "id", "fieldAlias": "License ID", "fieldType": "int64", "isKey": true},
+        {"fieldName": "license_number", "fieldAlias": "License Number", "fieldType": "string"},
+        {"fieldName": "type", "fieldAlias": "Type", "fieldType": "string"},
+        {"fieldName": "status", "fieldAlias": "Status", "fieldType": "string"},
+        {"fieldName": "issue_date", "fieldAlias": "Issue Date", "fieldType": "date"},
+        {"fieldName": "expiry_date", "fieldAlias": "Expiry Date", "fieldType": "date"},
+        {"fieldName": "holder_name", "fieldAlias": "Holder Name", "fieldType": "string"},
+        {"fieldName": "holder_id", "fieldAlias": "Holder ID", "fieldType": "int64", "isForeignKey": true},
+        {"fieldName": "issuer", "fieldAlias": "Issuer", "fieldType": "string"},
+        {"fieldName": "created_at", "fieldAlias": "Created At", "fieldType": "datetime"},
+        {"fieldName": "updated_at", "fieldAlias": "Updated At", "fieldType": "datetime"}
+      ]
+    },
+    {
+      "tableName": "Contracts",
+      "tableAlias": "Contracts",
+      "tableDescription": "Employment contracts",
+      "connectionFields": ["id"],
+      "fields": [
+        {"fieldName": "id", "fieldAlias": "Contract ID", "fieldType": "int64", "isKey": true},
+        {"fieldName": "contract_number", "fieldAlias": "Contract Number", "fieldType": "string"},
+        {"fieldName": "contract_type", "fieldAlias": "Contract Type", "fieldType": "string"},
+        {"fieldName": "status", "fieldAlias": "Status", "fieldType": "string"},
+        {"fieldName": "start_date", "fieldAlias": "Start Date", "fieldType": "date"},
+        {"fieldName": "end_date", "fieldAlias": "End Date", "fieldType": "date"},
+        {"fieldName": "monthly_salary", "fieldAlias": "Monthly Salary", "fieldType": "decimal"},
+        {"fieldName": "currency", "fieldAlias": "Currency", "fieldType": "string"},
+        {"fieldName": "worker_id", "fieldAlias": "Worker ID", "fieldType": "int64", "isForeignKey": true},
+        {"fieldName": "employer_id", "fieldAlias": "Employer ID", "fieldType": "int64", "isForeignKey": true},
+        {"fieldName": "created_at", "fieldAlias": "Created At", "fieldType": "datetime"},
+        {"fieldName": "updated_at", "fieldAlias": "Updated At", "fieldType": "datetime"}
+      ]
+    },
+    {
+      "tableName": "Payments",
+      "tableAlias": "Payments",
+      "tableDescription": "Fee and payment records",
+      "connectionFields": ["id"],
+      "fields": [
+        {"fieldName": "id", "fieldAlias": "Payment ID", "fieldType": "int64", "isKey": true},
+        {"fieldName": "payment_type", "fieldAlias": "Payment Type", "fieldType": "string"},
+        {"fieldName": "status", "fieldAlias": "Status", "fieldType": "string"},
+        {"fieldName": "amount", "fieldAlias": "Amount", "fieldType": "decimal"},
+        {"fieldName": "currency", "fieldAlias": "Currency", "fieldType": "string"},
+        {"fieldName": "due_date", "fieldAlias": "Due Date", "fieldType": "date"},
+        {"fieldName": "paid_date", "fieldAlias": "Paid Date", "fieldType": "date"},
+        {"fieldName": "employer_id", "fieldAlias": "Employer ID", "fieldType": "int64", "isForeignKey": true},
+        {"fieldName": "reference_number", "fieldAlias": "Reference Number", "fieldType": "string"},
+        {"fieldName": "created_at", "fieldAlias": "Created At", "fieldType": "datetime"},
+        {"fieldName": "updated_at", "fieldAlias": "Updated At", "fieldType": "datetime"}
+      ]
+    },
+    {
+      "tableName": "Disputes",
+      "tableAlias": "Disputes",
+      "tableDescription": "Labor dispute cases",
+      "connectionFields": ["id"],
+      "fields": [
+        {"fieldName": "id", "fieldAlias": "Dispute ID", "fieldType": "int64", "isKey": true},
+        {"fieldName": "dispute_number", "fieldAlias": "Dispute Number", "fieldType": "string"},
+        {"fieldName": "dispute_type", "fieldAlias": "Dispute Type", "fieldType": "string"},
+        {"fieldName": "status", "fieldAlias": "Status", "fieldType": "string"},
+        {"fieldName": "filed_date", "fieldAlias": "Filed Date", "fieldType": "date"},
+        {"fieldName": "resolution_date", "fieldAlias": "Resolution Date", "fieldType": "date"},
+        {"fieldName": "resolution_type", "fieldAlias": "Resolution Type", "fieldType": "string"},
+        {"fieldName": "amount_claimed", "fieldAlias": "Amount Claimed", "fieldType": "decimal"},
+        {"fieldName": "amount_awarded", "fieldAlias": "Amount Awarded", "fieldType": "decimal"},
+        {"fieldName": "worker_id", "fieldAlias": "Worker ID", "fieldType": "int64", "isForeignKey": true},
+        {"fieldName": "employer_id", "fieldAlias": "Employer ID", "fieldType": "int64", "isForeignKey": true},
+        {"fieldName": "created_at", "fieldAlias": "Created At", "fieldType": "datetime"},
+        {"fieldName": "updated_at", "fieldAlias": "Updated At", "fieldType": "datetime"}
+      ]
+    },
+    {
+      "tableName": "Training",
+      "tableAlias": "Training Records",
+      "tableDescription": "Worker training and certification records",
+      "connectionFields": ["id"],
+      "fields": [
+        {"fieldName": "id", "fieldAlias": "Training ID", "fieldType": "int64", "isKey": true},
+        {"fieldName": "program_name", "fieldAlias": "Program Name", "fieldType": "string"},
+        {"fieldName": "program_type", "fieldAlias": "Program Type", "fieldType": "string"},
+        {"fieldName": "status", "fieldAlias": "Status", "fieldType": "string"},
+        {"fieldName": "start_date", "fieldAlias": "Start Date", "fieldType": "date"},
+        {"fieldName": "end_date", "fieldAlias": "End Date", "fieldType": "date"},
+        {"fieldName": "enrolled_count", "fieldAlias": "Enrolled Count", "fieldType": "int32"},
+        {"fieldName": "completed_count", "fieldAlias": "Completed Count", "fieldType": "int32"},
+        {"fieldName": "certificate_issued", "fieldAlias": "Certificate Issued", "fieldType": "boolean"},
+        {"fieldName": "provider", "fieldAlias": "Provider", "fieldType": "string"},
+        {"fieldName": "governorate", "fieldAlias": "Governorate", "fieldType": "string", "geographicRole": "Province"},
+        {"fieldName": "created_at", "fieldAlias": "Created At", "fieldType": "datetime"},
+        {"fieldName": "updated_at", "fieldAlias": "Updated At", "fieldType": "datetime"}
+      ]
+    }
+  ],
+  "joins": [
+    {
+      "name": "Workers_Employers",
+      "leftTable": "Workers",
+      "rightTable": "Employers",
+      "joinType": "left",
+      "leftKey": "employer_id",
+      "rightKey": "id"
+    },
+    {
+      "name": "Inspections_Employers",
+      "leftTable": "Inspections",
+      "rightTable": "Employers",
+      "joinType": "left",
+      "leftKey": "employer_id",
+      "rightKey": "id"
+    },
+    {
+      "name": "Violations_Inspections",
+      "leftTable": "Violations",
+      "rightTable": "Inspections",
+      "joinType": "left",
+      "leftKey": "inspection_id",
+      "rightKey": "id"
+    },
+    {
+      "name": "Violations_Employers",
+      "leftTable": "Violations",
+      "rightTable": "Employers",
+      "joinType": "left",
+      "leftKey": "employer_id",
+      "rightKey": "id"
+    },
+    {
+      "name": "Contracts_Workers",
+      "leftTable": "Contracts",
+      "rightTable": "Workers",
+      "joinType": "left",
+      "leftKey": "worker_id",
+      "rightKey": "id"
+    },
+    {
+      "name": "Contracts_Employers",
+      "leftTable": "Contracts",
+      "rightTable": "Employers",
+      "joinType": "left",
+      "leftKey": "employer_id",
+      "rightKey": "id"
+    },
+    {
+      "name": "Disputes_Workers",
+      "leftTable": "Disputes",
+      "rightTable": "Workers",
+      "joinType": "left",
+      "leftKey": "worker_id",
+      "rightKey": "id"
+    },
+    {
+      "name": "Disputes_Employers",
+      "leftTable": "Disputes",
+      "rightTable": "Employers",
+      "joinType": "left",
+      "leftKey": "employer_id",
+      "rightKey": "id"
+    }
+  ]
+}

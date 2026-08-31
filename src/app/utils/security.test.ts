@@ -31,7 +31,7 @@ describe('Rate Limiter', () => {
   it('should allow first attempt', () => {
     const result = checkRateLimit('test-user-1');
     expect(result.allowed).toBe(true);
-    expect(result.remainingAttempts).toBe(5);
+    expect(result.remaining).toBe(5);
   });
 
   it('should deny after max attempts', () => {
@@ -40,7 +40,7 @@ describe('Rate Limiter', () => {
     }
     const result = checkRateLimit('test-user-2');
     expect(result.allowed).toBe(false);
-    expect(result.remainingAttempts).toBe(0);
+    expect(result.remaining).toBe(0);
   });
 
   it('should clear rate limit', () => {
@@ -48,13 +48,15 @@ describe('Rate Limiter', () => {
     clearRateLimit('test-user-3');
     const result = checkRateLimit('test-user-3');
     expect(result.allowed).toBe(true);
-    expect(result.remainingAttempts).toBe(5);
+    expect(result.remaining).toBe(5);
   });
 });
 
 describe('Session Manager', () => {
   beforeEach(() => {
-    localStorage.removeItem('us_session');
+    localStorage.removeItem('unionsphere_session');
+    sessionStorage.removeItem('unionsphere_session');
+    localStorage.removeItem('unionsphere_csrf_token');
   });
 
   it('should create a session', () => {
@@ -90,9 +92,9 @@ describe('Session Manager', () => {
     // Create session
     createSession('user123', 'test@test.com', 'ministry');
     // Directly set the stored session expiry to 5 minutes from now
-    const stored = JSON.parse(localStorage.getItem('us_session') as string);
+    const stored = JSON.parse(localStorage.getItem('unionsphere_session') as string);
     stored.expiresAt = Date.now() + 5 * 60 * 1000;
-    localStorage.setItem('us_session', JSON.stringify(stored));
+    localStorage.setItem('unionsphere_session', JSON.stringify(stored));
     const remaining = getSessionTimeRemaining();
     expect(remaining).toBeGreaterThan(0);
     expect(remaining).toBeLessThan(600000);

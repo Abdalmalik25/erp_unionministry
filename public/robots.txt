@@ -1,7 +1,66 @@
+# Yemen Ministry of Labour - National Labour Sector Management Platform
+# Production robots.txt - Optimized for SEO
+
 User-agent: *
 Allow: /
 Disallow: /api/
-Disallow: /ministry
-Disallow: /organization
+Disallow: /api/v1/
+Disallow: /ministry/
+Disallow: /ministry/*
+Disallow: /organization/
+Disallow: /organization/*
+Disallow: /worker-portal/
+Disallow: /employer-portal/
+Disallow: /admin/
+Disallow: /admin/*
+Disallow: /auth/
+Disallow: /internal/
+Disallow: /_next/
+Disallow: /private/
+Disallow: /tmp/
+Disallow: /*.json$
+Disallow: /*?*_format=
+Disallow: /*?*sort=
+Disallow: /*?*page=
+Disallow: /search
 
+# Allow specific bots full access for SEO
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+User-agent: YandexBot
+Allow: /
+
+# Block bad bots
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+# Crawl-delay for general bots
+Crawl-delay: 10
+
+# Sitemaps
 Sitemap: https://erp-unionministry.vercel.app/sitemap.xml
+
+# Host
+Host: https://erp-unionministry.vercel.app

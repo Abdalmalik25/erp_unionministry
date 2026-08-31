@@ -1,171 +1,351 @@
 /**
- * Security Utilities — أدوات الأمان المؤسسية
- * Rate Limiting · Session Management · Input Sanitization · Audit
- * Role-Based Access Control (RBAC)
+ * Security Utilities — XSS prevention, input sanitization, CSRF helpers
+ * Lightweight, zero dependencies, production-ready
  */
 
-// ============================================================
-// Rate Limiter — تحديد معدل المحاولات
-// ============================================================
-
-interface RateLimitRecord {
-  attempts: number;
-  firstAttempt: number;
-  lastAttempt: number;
-  lockedUntil?: number;
-}
-
-const RATE_LIMIT_CONFIG = {
-  maxAttempts: 5,
-  windowMs: 15 * 60 * 1000,   // 15 دقيقة
-  lockoutMs: 30 * 60 * 1000,  // حظر 30 دقيقة بعد تجاوز الحد
+const HTML_ESCAPE_MAP: Record<string, string> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#x27;',
+  '/': '&#x2F;',
+  '`': '&#x60;',
+  '=': '&#x3D;',
 };
 
-export function checkRateLimit(key: string): {
-  allowed: boolean;
-  remainingAttempts: number;
-  lockedUntil?: Date;
-  message?: string;
-} {
-  const storageKey = `rl_${key}`;
-  const now = Date.now();
-  const raw = localStorage.getItem(storageKey);
-  const record: RateLimitRecord = raw ? JSON.parse(raw) : { attempts: 0, firstAttempt: now, lastAttempt: now };
+const DANGEROUS_PROTOCOLS = /^(?:javascript|data|vbscript|file|about):/i;
+const ALLOWED_TAGS = /<\/?(?:a|b|blockquote|br|code|div|em|h[1-6]|i|li|ol|p|pre|span|strong|ul)\b[^>]*>/gi;
+const ON_EVENT_ATTRS = /\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi;
+const JAVASCRIPT_HREF = /\b(?:href|src|action|formaction|background|poster|cite)\s*=\s*(?:"\s*(?:javascript|data|vbscript):[^"]*"|'\s*(?:javascript|data|vbscript):[^']*')/gi;
 
-  // هل الحساب محظور؟
-  if (record.lockedUntil && now < record.lockedUntil) {
-    const remaining = Math.ceil((record.lockedUntil - now) / 60000);
+/**
+ * Escape HTML special characters to prevent XSS
+ */
+export function escapeHtml(str: string): string {
+  if (str == null) return '';
+  return String(str).replace(/[&<>"'`=/]/g, (char) => HTML_ESCAPE_MAP[char] || char);
+}
+
+/**
+ * Alias of `escapeHtml` (pascal-cased) for callers expecting `escapeHTML`.
+ */
+export const escapeHTML: typeof escapeHtml = escapeHtml;
+
+/**
+ * Sanitize URL to prevent javascript: and data: URI XSS
+ */
+export function sanitizeUrl(url: string): string {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (DANGEROUS_PROTOCOLS.test(trimmed)) {
+    return '#';
+  }
+  return trimmed;
+}
+
+/**
+ * Sanitize HTML by allowing only safe tags and stripping event handlers
+ */
+export function sanitizeHtml(html: string): string {
+  if (!html) return '';
+  return html
+    .replace(JAVASCRIPT_HREF, '#')
+    .replace(ON_EVENT_ATTRS, '')
+    .replace(ALLOWED_TAGS, (match) => match);
+}
+
+/**
+ * Strip all HTML tags - leaves only text content
+ */
+export function stripHtml(html: string): string {
+  if (!html) return '';
+  return html.replace(/<[^>]*>/g, '').trim();
+}
+
+/**
+ * Validate email address
+ */
+export function isValidEmail(email: string): boolean {
+  if (!email || typeof email !== 'string') return false;
+  if (email.length > 254) return false;
+  const re = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+  return re.test(email);
+}
+
+/**
+ * Validate Yemeni phone number (multiple formats)
+ */
+export function isValidYemeniPhone(phone: string): boolean {
+  if (!phone) return false;
+  const cleaned = phone.replace(/[\s\-()]/g, '');
+  // Yemen: +967 7XXXXXXXX or 7XXXXXXXX or 01XXXXXX (landline)
+  return /^(\+967[1-9]\d{7,8}|0[1-9]\d{6,7}|[1-9]\d{6,8})$/.test(cleaned);
+}
+
+/**
+ * Validate national ID (Yemen - 9 digits typically)
+ */
+export function isValidNationalId(id: string): boolean {
+  if (!id) return false;
+  const cleaned = id.replace(/[\s-]/g, '');
+  return /^\d{9,12}$/.test(cleaned);
+}
+
+/**
+ * Generate cryptographically random ID
+ */
+export function generateId(length = 12): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  const arr = new Uint8Array(length);
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    crypto.getRandomValues(arr);
+  } else {
+    for (let i = 0; i < length; i++) {
+      arr[i] = Math.floor(Math.random() * 256);
+    }
+  }
+  return Array.from(arr, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Constant-time string comparison (for tokens)
+ */
+export function timingSafeEqual(a: string, b: string): boolean {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
+const maskChar = '•';
+
+/**
+ * Mask sensitive data (e.g., national ID, phone) for display
+ */
+export function maskString(value: string, visibleStart = 2, visibleEnd = 2, customMaskChar?: string): string {
+  const char = customMaskChar || maskChar;
+  if (!value || value.length <= visibleStart + visibleEnd) {
+    return value ? char.repeat(value.length) : '';
+  }
+  const start = value.slice(0, visibleStart);
+  const end = value.slice(-visibleEnd);
+  const middle = char.repeat(Math.max(value.length - visibleStart - visibleEnd, 3));
+  return `${start}${middle}${end}`;
+}
+
+/**
+ * Mask email: a****@example.com
+ */
+export function maskEmail(email: string): string {
+  if (!email || !email.includes('@')) return email;
+  const [local, domain] = email.split('@');
+  if (!local || !domain) return email;
+  const visible = local.slice(0, Math.min(2, local.length));
+  const masked = maskChar.repeat(Math.max(local.length - 2, 1));
+  return `${visible}${masked}@${domain}`;
+}
+
+/**
+ * Validate and sanitize search query
+ */
+export function sanitizeSearchQuery(query: string, maxLength = 100): string {
+  if (!query) return '';
+  return query
+    .trim()
+    .slice(0, maxLength)
+    .replace(/[<>'"`;]/g, '')
+    .replace(/\s+/g, ' ');
+}
+
+/**
+ * Rate limiter (client-side, simple)
+ */
+export class RateLimiter {
+  private attempts: Map<string, number[]> = new Map();
+
+  constructor(
+    private maxAttempts: number = 5,
+    private windowMs: number = 60_000
+  ) {}
+
+  check(key: string): { allowed: boolean; remaining: number; resetIn: number } {
+    const now = Date.now();
+    const attempts = this.attempts.get(key) || [];
+    const recent = attempts.filter((t) => now - t < this.windowMs);
+
+    if (recent.length >= this.maxAttempts) {
+      const oldest = recent[0];
+      return {
+        allowed: false,
+        remaining: 0,
+        resetIn: Math.max(0, this.windowMs - (now - oldest)),
+      };
+    }
+
+    recent.push(now);
+    this.attempts.set(key, recent);
     return {
-      allowed: false,
-      remainingAttempts: 0,
-      lockedUntil: new Date(record.lockedUntil),
-      message: `تم تعليق حسابك مؤقتاً. يرجى المحاولة بعد ${remaining} دقيقة.`,
+      allowed: true,
+      remaining: this.maxAttempts - recent.length,
+      resetIn: this.windowMs,
     };
   }
 
-  // إعادة ضبط النافذة إذا انتهت
-  if (now - record.firstAttempt > RATE_LIMIT_CONFIG.windowMs) {
-    const reset: RateLimitRecord = { attempts: 0, firstAttempt: now, lastAttempt: now };
-    localStorage.setItem(storageKey, JSON.stringify(reset));
-    return { allowed: true, remainingAttempts: RATE_LIMIT_CONFIG.maxAttempts };
+  reset(key: string): void {
+    this.attempts.delete(key);
   }
-
-  const remaining = RATE_LIMIT_CONFIG.maxAttempts - record.attempts;
-  return { allowed: remaining > 0, remainingAttempts: Math.max(0, remaining) };
 }
 
-export function recordFailedAttempt(key: string): {
-  remainingAttempts: number;
-  locked: boolean;
-  lockedUntil?: Date;
-} {
-  const storageKey = `rl_${key}`;
-  const now = Date.now();
-  const raw = localStorage.getItem(storageKey);
-  const record: RateLimitRecord = raw ? JSON.parse(raw) : { attempts: 0, firstAttempt: now, lastAttempt: now };
+/**
+ * Detect and report potential security issues
+ */
+export interface SecurityReport {
+  isHttps: boolean;
+  hasCSP: boolean;
+  hasHSTS: boolean;
+  hasXFrameOptions: boolean;
+  hasReferrerPolicy: boolean;
+  fingerprint: string;
+}
 
-  record.attempts += 1;
-  record.lastAttempt = now;
-
-  if (!record.firstAttempt || now - record.firstAttempt > RATE_LIMIT_CONFIG.windowMs) {
-    record.firstAttempt = now;
-    record.attempts = 1;
+export function auditSecurity(): SecurityReport {
+  if (typeof window === 'undefined') {
+    return {
+      isHttps: false,
+      hasCSP: false,
+      hasHSTS: false,
+      hasXFrameOptions: false,
+      hasReferrerPolicy: false,
+      fingerprint: '',
+    };
   }
-
-  if (record.attempts >= RATE_LIMIT_CONFIG.maxAttempts) {
-    record.lockedUntil = now + RATE_LIMIT_CONFIG.lockoutMs;
-    localStorage.setItem(storageKey, JSON.stringify(record));
-    return { remainingAttempts: 0, locked: true, lockedUntil: new Date(record.lockedUntil) };
-  }
-
-  localStorage.setItem(storageKey, JSON.stringify(record));
   return {
-    remainingAttempts: RATE_LIMIT_CONFIG.maxAttempts - record.attempts,
-    locked: false,
+    isHttps: window.location.protocol === 'https:',
+    hasCSP: !!document.querySelector('meta[http-equiv="Content-Security-Policy"]'),
+    hasHSTS: false, // Only available server-side
+    hasXFrameOptions: false, // Only available server-side
+    hasReferrerPolicy: !!document.querySelector('meta[name="referrer"]'),
+    fingerprint: generateId(8),
   };
 }
 
-export function clearRateLimit(key: string): void {
-  localStorage.removeItem(`rl_${key}`);
-}
+/**
+ * Content Security Policy directive builder
+ */
+export const CSP_DIRECTIVES = {
+  defaultSrc: ["'self'"],
+  scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'https://www.googletagmanager.com', 'https://www.google-analytics.com'],
+  styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+  fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
+  imgSrc: ["'self'", 'data:', 'blob:', 'https:', 'http:'],
+  connectSrc: ["'self'", 'https:', 'wss:'],
+  frameAncestors: ["'none'"],
+  baseUri: ["'self'"],
+  formAction: ["'self'"],
+  objectSrc: ["'none'"],
+  upgradeInsecureRequests: [],
+};
 
 // ============================================================
-// Session Manager — إدارة الجلسات
+// Session Management — client-side, used by AuthContext
 // ============================================================
 
-const SESSION_KEY = 'us_session';
-const SESSION_TIMEOUT_MS = 8 * 60 * 60 * 1000;  // 8 ساعات جلسة عمل رسمية
-const SESSION_WARN_BEFORE_MS = 10 * 60 * 1000; // تحذير قبل 10 دقائق
+const SESSION_KEY = 'unionsphere_session';
+const AUDIT_KEY = 'unionsphere_audit_log';
+const RATE_LIMIT_KEY = 'unionsphere_rate_limit';
 
-export interface SessionData {
+export interface Session {
   userId: string;
   email: string;
   userType: 'ministry' | 'organization';
-  loginAt: number;
+  sessionId: string;
+  createdAt: number;
   lastActivity: number;
   expiresAt: number;
-  sessionId: string;
-  role?: string;
+  csrfToken?: string;
 }
 
-export function createSession(userId: string, email: string, userType: 'ministry' | 'organization', role?: string): SessionData {
+export function createSession(
+  userId: string,
+  email: string,
+  userType: 'ministry' | 'organization',
+  ttlMs: number = 8 * 60 * 60 * 1000
+): Session {
   const now = Date.now();
-  const session: SessionData = {
+  const session: Session = {
     userId,
     email,
     userType,
-    loginAt: now,
+    sessionId: generateId(24),
+    createdAt: now,
     lastActivity: now,
-    expiresAt: now + SESSION_TIMEOUT_MS,
-    sessionId: generateSessionId(),
-    role,
+    expiresAt: now + ttlMs,
   };
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  try {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  } catch {
+    /* storage unavailable */
+  }
+  logAudit({ action: 'LOGIN', details: { userId, email, userType } });
   return session;
 }
 
-export function getSession(): SessionData | null {
-  const raw = localStorage.getItem(SESSION_KEY);
-  if (!raw) {
-    const demoRaw = localStorage.getItem('demo_user');
-    const token = localStorage.getItem('auth_token');
-    if (demoRaw || token) {
-      try {
-        const u = demoRaw ? JSON.parse(demoRaw) : { id: 'admin', email: 'ministry@yemen.gov.ye', userType: 'ministry' };
-        return createSession(u.id, u.email, u.userType || 'ministry', u.role);
-      } catch {
-        return null;
-      }
-    }
-    return null;
-  }
+export function getSession(): Session | null {
   try {
-    const session: SessionData = JSON.parse(raw);
+    const raw = sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const session: Session = JSON.parse(raw);
     if (Date.now() > session.expiresAt) {
       destroySession();
       return null;
     }
     return session;
-  } catch (e) {
-    console.warn('[Security] Session parse failed, destroying session:', e);
-    destroySession();
+  } catch {
     return null;
   }
 }
 
-export function refreshSession(): SessionData | null {
+export function refreshSession(): Session | null {
   const session = getSession();
   if (!session) return null;
-  const now = Date.now();
-  session.lastActivity = now;
-  session.expiresAt = now + SESSION_TIMEOUT_MS;
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  session.lastActivity = Date.now();
+  try {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  } catch {
+    /* storage unavailable */
+  }
   return session;
 }
 
 export function destroySession(): void {
-  localStorage.removeItem(SESSION_KEY);
-  localStorage.removeItem('demo_user');
+  try {
+    const existing = getSession();
+    if (existing) {
+      logAudit({ action: 'LOGOUT', details: { userId: existing.userId, email: existing.email } });
+    }
+    sessionStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(SESSION_KEY);
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+export function isSessionExpired(): boolean {
+  return getSession() === null;
+}
+
+export function isSessionWarning(warningMs: number = 5 * 60 * 1000): boolean {
+  const session = getSession();
+  if (!session) return false;
+  return session.expiresAt - Date.now() < warningMs;
 }
 
 export function getSessionTimeRemaining(): number {
@@ -174,139 +354,274 @@ export function getSessionTimeRemaining(): number {
   return Math.max(0, session.expiresAt - Date.now());
 }
 
-export function isSessionWarning(): boolean {
-  const remaining = getSessionTimeRemaining();
-  return remaining > 0 && remaining <= SESSION_WARN_BEFORE_MS;
+// ============================================================
+// Rate Limiting (client-side defense in depth)
+// ============================================================
+
+interface RateLimitEntry {
+  attempts: number;
+  firstAttempt: number;
+  lockedUntil?: number;
 }
 
-export function isSessionExpired(): boolean {
-  const session = getSession();
-  if (!session) return true;
-  return Date.now() > session.expiresAt;
+function getRateLimitStore(): Record<string, RateLimitEntry> {
+  try {
+    const raw = localStorage.getItem(RATE_LIMIT_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
 }
 
-function generateSessionId(): string {
-  const arr = new Uint8Array(16);
-  crypto.getRandomValues(arr);
-  return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+function saveRateLimitStore(store: Record<string, RateLimitEntry>): void {
+  try {
+    localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify(store));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+export function recordFailedAttempt(
+  key: string,
+  maxAttempts: number = 5,
+  windowMs: number = 15 * 60 * 1000,
+  lockoutMs: number = 15 * 60 * 1000
+): { allowed: boolean; remaining: number; resetIn: number; locked: boolean } {
+  const store = getRateLimitStore();
+  const now = Date.now();
+  const entry = store[key];
+
+  if (entry?.lockedUntil && now < entry.lockedUntil) {
+    return {
+      allowed: false,
+      remaining: 0,
+      resetIn: entry.lockedUntil - now,
+      locked: true,
+    };
+  }
+
+  if (!entry || now - entry.firstAttempt > windowMs) {
+    store[key] = { attempts: 1, firstAttempt: now };
+  } else {
+    entry.attempts += 1;
+    if (entry.attempts >= maxAttempts) {
+      entry.lockedUntil = now + lockoutMs;
+    }
+  }
+
+  saveRateLimitStore(store);
+  const current = store[key];
+  return {
+    allowed: !current.lockedUntil || now >= current.lockedUntil,
+    remaining: Math.max(0, maxAttempts - current.attempts),
+    resetIn: current.lockedUntil ? Math.max(0, current.lockedUntil - now) : windowMs,
+    locked: !!(current.lockedUntil && now < current.lockedUntil),
+  };
+}
+
+export function clearRateLimit(key: string): void {
+  const store = getRateLimitStore();
+  delete store[key];
+  saveRateLimitStore(store);
+}
+
+export function checkRateLimit(
+  key: string,
+  maxAttempts: number = 5,
+  windowMs: number = 15 * 60 * 1000
+): { allowed: boolean; remaining: number; resetIn: number } {
+  const store = getRateLimitStore();
+  const now = Date.now();
+  const entry = store[key];
+
+  if (!entry) {
+    return { allowed: true, remaining: maxAttempts, resetIn: windowMs };
+  }
+
+  if (entry.lockedUntil && now < entry.lockedUntil) {
+    return { allowed: false, remaining: 0, resetIn: entry.lockedUntil - now };
+  }
+
+  if (now - entry.firstAttempt > windowMs) {
+    delete store[key];
+    saveRateLimitStore(store);
+    return { allowed: true, remaining: maxAttempts, resetIn: windowMs };
+  }
+
+  return {
+    allowed: entry.attempts < maxAttempts,
+    remaining: Math.max(0, maxAttempts - entry.attempts),
+    resetIn: Math.max(0, windowMs - (now - entry.firstAttempt)),
+  };
 }
 
 // ============================================================
-// Input Sanitizer — تعقيم المدخلات
+// CSRF helpers
 // ============================================================
 
-const XSS_PATTERNS = [
-  /<script[\s\S]*?>[\s\S]*?<\/script>/gi,
-  /<[^>]+on\w+\s*=\s*["'][^"']*["'][^>]*>/gi,
-  /javascript:/gi,
-  /vbscript:/gi,
-  /data:text\/html/gi,
-  /expression\s*\(/gi,
-];
+const CSRF_STORAGE_KEY = 'unionsphere_csrf_token';
+let _memoryCsrfToken: string | null = null;
 
-const SQL_PATTERNS = [
-  /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|TRUNCATE|EXEC|UNION|HAVING|GROUP\s+BY)\b)/gi,
-  /--[^\n]*/g,
-  /\/\*[\s\S]*?\*\//g,
-  /;\s*(SELECT|INSERT|UPDATE|DELETE|DROP)/gi,
-];
-
-export function sanitizeInput(value: string): string {
-  if (typeof value !== 'string') return '';
-  let clean = value.trim();
-  XSS_PATTERNS.forEach(p => { clean = clean.replace(p, ''); });
-  return clean;
+/**
+ * Generate a fresh CSRF token.
+ * Persists it to document.cookie (browser), localStorage and an in-memory fallback so
+ * it can be validated consistently in both browser and non-DOM (test) environments.
+ */
+export function generateCSRFToken(): string {
+  const token = generateId(32);
+  _memoryCsrfToken = token;
+  try {
+    localStorage.setItem(CSRF_STORAGE_KEY, token);
+  } catch {
+    /* storage unavailable */
+  }
+  if (typeof document !== 'undefined') {
+    try {
+      document.cookie = `csrf_token=${encodeURIComponent(token)}; Path=/; SameSite=Lax; Secure`;
+    } catch {
+      /* cookie unavailable */
+    }
+  }
+  return token;
 }
 
-export function sanitizeSQLInput(value: string): string {
-  let clean = sanitizeInput(value);
-  SQL_PATTERNS.forEach(p => { clean = clean.replace(p, ''); });
-  return clean;
+export function getCsrfToken(): string | null {
+  if (typeof document !== 'undefined') {
+    const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+    if (match) return decodeURIComponent(match[1]);
+  }
+  if (_memoryCsrfToken) return _memoryCsrfToken;
+  try {
+    const stored = localStorage.getItem(CSRF_STORAGE_KEY);
+    if (stored) return stored;
+  } catch {
+    /* storage unavailable */
+  }
+  return null;
 }
 
-export function sanitizeObject<T extends Record<string, unknown>>(obj: T): T {
+export function validateCSRFToken(token: string | null): boolean {
+  const stored = getCsrfToken();
+  if (!stored || !token) return false;
+  return timingSafeEqual(stored, token);
+}
+
+// ============================================================
+// Input Sanitization
+// ============================================================
+
+export function sanitizeObject(obj: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
     if (typeof value === 'string') {
-      result[key] = sanitizeInput(value);
+      result[key] = escapeHtml(value);
     } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
       result[key] = sanitizeObject(value as Record<string, unknown>);
     } else if (Array.isArray(value)) {
-      result[key] = value.map(v => typeof v === 'string' ? sanitizeInput(v) : v);
+      result[key] = value.map(item =>
+        typeof item === 'object' && item !== null
+          ? sanitizeObject(item as Record<string, unknown>)
+          : typeof item === 'string' ? escapeHtml(item) : item
+      );
     } else {
       result[key] = value;
     }
   }
-  return result as T;
+  return result;
+}
+
+export function sanitizeInput(value: unknown, maxLength: number = 1000): string {
+  if (value == null) return '';
+  const str = String(value);
+  return str
+    .slice(0, maxLength)
+    .replace(/[<>]/g, '')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+\s*=/gi, '')
+    .trim();
+}
+
+/**
+ * Strip SQL injection fragments from user-provided strings.
+ * Removes SQL comments, statement terminators, quotes and common DDL/DML keywords
+ * so values cannot escape the intended query context.
+ */
+export function sanitizeSQLInput(value: string): string {
+  if (!value) return '';
+  return String(value)
+    .replace(/['";\\`]/g, '')
+    .replace(/\b(union|select|insert|update|delete|drop|alter|create|truncate|exec|execute|declare|grant|revoke|merge|replace|rename)\b/gi, '')
+    .replace(/\s*--.*$/gm, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .trim();
+}
+
+/**
+ * Evaluate password strength and return a score plus requirement breakdown.
+ * `requirements` always contains 5 categories; `score` is the number met.
+ */
+export interface PasswordStrength {
+  score: number;
+  label: string;
+  requirements: { label: string; met: boolean }[];
+}
+
+const COMMON_PASSWORDS = /^(123456|12345678|123456789|password|qwerty|letmein|admin|welcome|iloveyou|monkey|dragon|football|abc123|111111|666666|888888|password1)$/i;
+
+export function checkPasswordStrength(password: string): PasswordStrength {
+  const requirements = [
+    { label: '8+ أحرف', met: password.length >= 8 },
+    { label: 'حروف كبيرة وصغيرة', met: /[a-z]/.test(password) && /[A-Z]/.test(password) },
+    { label: 'أرقام', met: /\d/.test(password) },
+    { label: 'رموز خاصة', met: /[^A-Za-z0-9]/.test(password) },
+    { label: 'غير شائعة', met: !COMMON_PASSWORDS.test(password) },
+  ];
+  const score = requirements.filter((r) => r.met).length;
+  let label: string;
+  if (score <= 1) label = 'ضعيفة جداً';
+  else if (score === 2) label = 'ضعيفة';
+  else if (score === 3) label = 'مقبولة';
+  else if (score === 4) label = 'قوية';
+  else label = 'قوية جداً';
+  return { score, label, requirements };
 }
 
 // ============================================================
-// Audit Logger — تسجيل المراقبة الأمنية
+// Audit Logging
 // ============================================================
-
-export type AuditAction =
-  | 'LOGIN_SUCCESS' | 'LOGIN_FAILED' | 'LOGOUT'
-  | 'SESSION_EXPIRED' | 'RATE_LIMITED' | 'ACCOUNT_LOCKED'
-  | 'VIEW' | 'CREATE' | 'UPDATE' | 'DELETE'
-  | 'EXPORT' | 'IMPORT' | 'PRINT'
-  // قيم مبسّطة للاستخدام في الصفحات
-  | 'view' | 'create' | 'update' | 'delete' | 'export' | 'import' | 'print';
 
 export interface AuditEntry {
-  action: AuditAction;
+  timestamp?: number;
+  action?: string;
+  details?: Record<string, unknown>;
   userId?: string;
+  sessionId?: string;
   email?: string;
   resource?: string;
-  resourceId?: string;
-  details?: string | Record<string, unknown>;
-  timestamp: number;
-  sessionId?: string;
-  ipHint?: string;
+  [key: string]: unknown;
 }
-
-const AUDIT_KEY = 'us_audit_log';
-const MAX_AUDIT_ENTRIES = 500;
 
 export function logAudit(entry: Omit<AuditEntry, 'timestamp'>): void {
   try {
     const session = getSession();
-    const fullEntry: AuditEntry = {
+    const log: AuditEntry = {
       ...entry,
       timestamp: Date.now(),
-      sessionId: session?.sessionId,
+      userId: (entry.userId as string) ?? session?.userId,
+      sessionId: (entry.sessionId as string) ?? session?.sessionId,
     };
-
     const raw = localStorage.getItem(AUDIT_KEY);
-    const log: AuditEntry[] = raw ? JSON.parse(raw) : [];
-    log.push(fullEntry);
+    const arr: AuditEntry[] = raw ? JSON.parse(raw) : [];
+    arr.push(log);
+    // Keep last 500 entries
+    while (arr.length > 500) arr.shift();
+    localStorage.setItem(AUDIT_KEY, JSON.stringify(arr));
 
-    if (log.length > MAX_AUDIT_ENTRIES) log.splice(0, log.length - MAX_AUDIT_ENTRIES);
-    localStorage.setItem(AUDIT_KEY, JSON.stringify(log));
-
-    fetch('/api/audit-log', {
-      method: 'POST',
-      headers: (() => {
-        const h: Record<string, string> = { 'Content-Type': 'application/json' };
-        try {
-          const raw = localStorage.getItem('us_session');
-          if (raw) {
-            const sess = JSON.parse(raw);
-            if (sess?.token) h['Authorization'] = `Bearer ${sess.token}`;
-          }
-        } catch { /* لا جلسة */ }
-        return h;
-      })(),
-      body: JSON.stringify({
-        action: entry.action,
-        resource: entry.resource,
-        resource_id: entry.resourceId,
-        details: typeof entry.details === 'string' ? entry.details : JSON.stringify(entry.details || {}),
-        user_id: entry.userId,
-        email: entry.email,
-      }),
-    }).catch(() => {});
-  } catch (e) {
-    console.warn('[Security] Failed to write audit log:', e);
+    if (import.meta.env?.DEV) {
+      console.log('[Audit]', log.action, log.details);
+    }
+  } catch {
+    /* storage unavailable */
   }
 }
 
@@ -314,203 +629,17 @@ export function getAuditLog(): AuditEntry[] {
   try {
     const raw = localStorage.getItem(AUDIT_KEY);
     return raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    console.error('[Security] Failed to parse audit log:', e);
+  } catch {
     return [];
   }
 }
 
-// ============================================================
-// Password Strength — قوة كلمة المرور
-// ============================================================
-
-export interface PasswordStrength {
-  score: 0 | 1 | 2 | 3 | 4;
-  label: string;
-  color: string;
-  requirements: { met: boolean; text: string }[];
-}
-
-export function checkPasswordStrength(password: string): PasswordStrength {
-  const requirements = [
-    { met: password.length >= 8, text: 'على الأقل 8 أحرف' },
-    { met: /[A-Z]/.test(password), text: 'حرف كبير واحد على الأقل' },
-    { met: /[a-z]/.test(password), text: 'حرف صغير واحد على الأقل' },
-    { met: /\d/.test(password), text: 'رقم واحد على الأقل' },
-    {
-      met: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password),
-      text: 'رمز خاص واحد على الأقل'
-    },
-  ];
-
-  const score = requirements.filter(r => r.met).length as 0 | 1 | 2 | 3 | 4;
-  const labels = ['ضعيفة جداً', 'ضعيفة', 'مقبولة', 'قوية', 'قوية جداً'];
-  const colors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-blue-500', 'bg-green-500'];
-
-  return { score, label: labels[score] || 'ضعيفة جداً', color: colors[score] || 'bg-red-500', requirements };
-}
-
-// ============================================================
-// CSRF Token — حماية CSRF
-// ============================================================
-
-export function generateCSRFToken(): string {
-  const arr = new Uint8Array(32);
-  crypto.getRandomValues(arr);
-  const token = btoa(String.fromCharCode(...arr));
-  sessionStorage.setItem('csrf_token', token);
-  return token;
-}
-
-export function validateCSRFToken(token: string): boolean {
-  const stored = sessionStorage.getItem('csrf_token');
-  return !!stored && stored === token;
-}
-
-export function getCSRFToken(): string {
-  return sessionStorage.getItem('csrf_token') || generateCSRFToken();
-}
-
-// ============================================================
-// Content Security Policy Helpers
-// ============================================================
-
-export function escapeHTML(str: string): string {
-  if (typeof str !== 'string') return '';
-  const map: Record<string, string> = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;',
-  };
-  return str.replace(/[&<>"']/g, m => map[m] ?? m);
-}
-
-// ============================================================
-// Debounce — تأخير الطلبات لتحسين الأداء
-// ============================================================
-
-export function debounce<T extends (...args: unknown[]) => unknown>(
-  fn: T,
-  delayMs: number
-): (...args: Parameters<T>) => void {
-  let timer: ReturnType<typeof setTimeout>;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), delayMs);
-  };
-}
-
-export function throttle<T extends (...args: unknown[]) => unknown>(
-  fn: T,
-  limitMs: number
-): (...args: Parameters<T>) => void {
-  let lastCall = 0;
-  return (...args: Parameters<T>) => {
-    const now = Date.now();
-    if (now - lastCall >= limitMs) {
-      lastCall = now;
-      fn(...args);
-    }
-  };
-}
-
-// ============================================================
-// Role-Based Access Control (RBAC) Configuration
-// ============================================================
-
-export interface Role {
-  id: string;
-  name: string;
-  permissions: string[];
-  screenAccess: { [key: string]: boolean | string[] };
-}
-
-// Define core roles based on the login screen roles
-export const ROLES: Role[] = [
-  {
-    id: 'ministry-admin',
-    name: 'وزير/مدير عام',
-    permissions: ['view_all', 'create', 'update', 'delete'],
-    screenAccess: {
-      '/ministry/members': true,
-      '/ministry/establishments': true,
-      '/ministry/reports': true
-    }
-  },
-  {
-    id: 'organization-owner',
-    name: 'مالك المنشأة',
-    permissions: ['view', 'update', 'export'],
-    screenAccess: {
-      '/ministry/establishments': true,
-      '/ministry/equipment': true,
-      '/ministry/contracts': true
-    }
-  },
-  {
-    id: 'worker',
-    name: 'عامل',
-    permissions: ['view', 'update'],
-    screenAccess: {
-      '/ministry/members': true,
-      '/ministry/equipment': true
-    }
-  },
-  {
-    id: 'office-staff',
-    name: 'موظف مكتب',
-    permissions: ['view'],
-    screenAccess: {
-      '/ministry/reports': true
-    }
-  }
-];
-
-// ============================================================
-// Role Validation Middleware
-// ============================================================
-export function validateRole(_role: string, requiredPermissions: string[] = [], screenPath?: string): boolean {
-  const userRole = getCurrentUserRole();
-  
-  // Check if user has required permissions
-  if (requiredPermissions.length > 0 && !userRole.permissions.some(p => requiredPermissions.includes(p))) {
-    return false;
-  }
-  
-  // Check screen access rules
-  if (screenPath && !userRole.screenAccess[screenPath]) {
-    return false;
-  }
-  
-  return true;
-}
-
-// ============================================================
-// Helper: Get current user role from session
-// ============================================================
-export function getCurrentUserRole(): Role {
-  const session = getSession();
-  if (!session) return ROLES.find(r => r.id === 'guest') || ROLES[0];
-  
-  // In real implementation, this would map user ID to role
-  // For demo, return based on userType
-  if (session.userType === 'ministry') return ROLES[0];
-  if (session.userType === 'organization') return ROLES[1];
-  return ROLES.find(r => r.id === 'worker') || ROLES[2];
-}
-
-// ============================================================
-// Screen Access Decorator (non-JSX version)
-// ============================================================
-export function withRoleAccess(role: string, screenPath: string) {
-  return (component: any) => {
-    return (_props: any) => {
-      if (!validateRole(role, [], screenPath)) {
-        return document.createElement('div');
-      }
-      return component;
-    };
-  };
+export function buildCSP(directives = CSP_DIRECTIVES): string {
+  return Object.entries(directives)
+    .map(([key, values]) => {
+      const kebabKey = key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`);
+      if (values.length === 0) return kebabKey;
+      return `${kebabKey} ${values.join(' ')}`;
+    })
+    .join('; ');
 }

@@ -44,7 +44,7 @@ const CSP_META = [
 
 const injectCsp = () => ({
   name: 'inject-csp-meta',
-  transformIndexHtml(html: string, ctx: { server?: boolean }) {
+  transformIndexHtml(html: string, ctx: { server?: object }) {
     if (ctx.server) return html
     return html.replace(
       /<meta name="description"/,
@@ -62,12 +62,14 @@ const HEAVY_DEFERRED_CHUNKS = /(vendor-pdf|xlsx|html2canvas)/
 
 const notHeavyDeferred = (
   filename: string,
-  deps: Array<unknown>,
-): Array<unknown> =>
-  deps.filter((dep) => {
-    const ref = typeof dep === 'string' ? dep : (dep as { file?: string; name?: string }).file ?? (dep as { name?: string }).name ?? ''
-    return !HEAVY_DEFERRED_CHUNKS.test(ref)
-  })
+  deps: Array<string | { file?: string; name?: string }>,
+): string[] =>
+  deps
+    .filter((dep) => {
+      const ref = typeof dep === 'string' ? dep : (dep as { file?: string; name?: string }).file ?? (dep as { name?: string }).name ?? ''
+      return !HEAVY_DEFERRED_CHUNKS.test(ref)
+    })
+    .map((dep) => (typeof dep === 'string' ? dep : dep.file ?? dep.name ?? ''))
 
 const getManualChunks = (id: string) => {
   if (id.includes('node_modules')) {
@@ -109,18 +111,39 @@ export default defineConfig({
     },
   },
   build: {
-    target: 'es2020',
+    target: 'es2022',
     minify: 'esbuild',
     cssCodeSplit: true,
+    cssMinify: 'esbuild',
+    sourcemap: false,
+    reportCompressedSize: false,
     modulePreload: {
+      polyfill: false,
       resolveDependencies: notHeavyDeferred,
     },
     rollupOptions: {
       output: {
         manualChunks: getManualChunks,
+        experimentalMinChunkSize: 20000,
+        // Preserve module names for better long-term caching
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]',
+      },
+      treeshake: {
+        moduleSideEffects: (id) => /\.css$/.test(id),
+        propertyReadSideEffects: false,
+        tryCatchDeoptimization: false,
       },
     },
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 800,
+    // Pre-compress assets for serving via Nginx/CDN
+  },
+  esbuild: {
+    target: 'es2022',
+    legalComments: 'none',
+    keepNames: false,
+    drop: ['debugger', 'console'],
   },
   preview: {
     port: getPort(),

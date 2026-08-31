@@ -4,7 +4,6 @@
  */
 
 import { useState, useCallback, useRef } from 'react';
-import { sanitizeObject } from '../utils/security';
 
 // ============================================================
 // الأنواع
@@ -169,8 +168,7 @@ export function useFormValidation<T extends Record<string, any>>(
 
     setIsSubmitting(true);
     try {
-      const sanitized = sanitizeObject(values);
-      await onValid(sanitized);
+      await onValid(values);
     } finally {
       setIsSubmitting(false);
     }

@@ -22,10 +22,22 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
+// Advanced security headers (CSP, HSTS, COOP, COEP, CORP, Permissions-Policy, threat detection)
+import { securityHeadersMiddleware, threatDetectionMiddleware, requestSizeLimitMiddleware } from './middleware/securityHeaders.js';
+app.use(securityHeadersMiddleware);
+app.use(threatDetectionMiddleware);
+app.use(requestSizeLimitMiddleware(10 * 1024 * 1024));
+// Performance: response caching with ETag
+import { startCacheCleanup } from './middleware/cache.js';
+startCacheCleanup();
 // Security hardening (sanitization + CSRF + MFA) — TD-006/022/028/029
 import { sanitizeBody, csrfMiddleware, ensureCsrfCookie, requireMFA } from './middleware/security.js';
 import { sanitizeQuery } from './middleware/validation.js';
 import { structuredLogger, metricsEndpoint, errorHandler } from './middleware/observability.js';
+// Phase 5: Performance monitoring — must be first to capture all requests
+import { performanceMonitorMiddleware } from './middleware/performanceMonitor.js';
+app.use(performanceMonitorMiddleware);
+
 app.use(sanitizeQuery);
 app.use(sanitizeBody);
 // إصدار كوكي CSRF على الطلبات الآمنة حتى يتوفر للعميل ما يُرجعه في رأس x-csrf-token
@@ -109,48 +121,26 @@ app.use((_req, res, next) => {
   next();
 });
 
-// ===================== Rate Limiting =====================
-const rateLimitMap = new Map();
-// تنظيف دوري لسجل المحدد — يمنع تضخم الذاكرة على المدى الطويل
-setInterval(() => {
-  const now = Date.now();
-  for (const [ip, entry] of rateLimitMap) {
-    if (now - entry.start > 60000) rateLimitMap.delete(ip);
-  }
-}, 120000).unref();
-app.use('/api', (req, res, next) => {
-  const ip = req.ip || req.connection?.remoteAddress || 'unknown';
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-  if (!entry || now - entry.start > 60000) {
-    rateLimitMap.set(ip, { start: now, count: 1 });
-    return next();
-  }
-  entry.count++;
-  if (entry.count > 200) return res.status(429).json({ error: 'تم تجاوز الحد المسموح' });
-  next();
-});
+// ===================== Rate Limiting (enhanced — per-user, per-IP, per-endpoint) =====================
+// Imports new rate limiter that supports per-user + sliding window
+import { standardLimit, loginLimit } from './middleware/rateLimit.js';
 
-// ===================== Brute-Force Guard (login) =====================
-// 8 محاولات لكل 5 دقائق لكل زوج IP+بريد — حماية من تخمين كلمات المرور
-const loginGuard = new Map();
-app.use('/api/auth/login', (req, res, next) => {
-  if (req.method !== 'POST') return next();
-  const ip = req.ip || req.connection?.remoteAddress || 'unknown';
-  const email = String(req.body?.email || '').toLowerCase().trim();
-  const key = `${ip}|${email}`;
-  const now = Date.now();
-  let entry = loginGuard.get(key);
-  if (!entry || now - entry.start > 5 * 60 * 1000) {
-    entry = { start: now, count: 0 };
-    loginGuard.set(key, entry);
-  }
-  entry.count++;
-  if (loginGuard.size > 5000) loginGuard.clear(); // حماية من تضخم الذاكرة
-  if (entry.count > 8) {
-    return res.status(429).json({ error: 'تم تجاوز عدد محاولات الدخول — أعد المحاولة بعد 5 دقائق', code: 'LOGIN_RATE_LIMITED' });
-  }
-  next();
+// Phase 5: Role-based rate limiter (different limits per role)
+import { roleBasedLimit, getRoleLimits } from './middleware/roleRateLimit.js';
+
+// Apply enhanced rate limiter to all /api routes — replaces legacy IP-only limiter
+app.use('/api', standardLimit);
+
+// Brute-Force Guard: strict login limit (5 attempts/15min per IP+email)
+app.use('/api/auth/login', loginLimit);
+
+// Phase 5: Role-based limits for authenticated routes (applied after auth middleware)
+// Maps: public→60/min, worker→120, employer/union→300, ministry/admin→600
+const roleLimit = roleBasedLimit();
+app.use('/api', (req, res, next) => {
+  // Skip for unauthenticated routes (handled by standardLimit)
+  if (!req.user) return next();
+  return roleLimit(req, res, next);
 });
 
 // ===================== Cache-Control للقواميس الرسمية =====================
@@ -232,6 +222,33 @@ const AUDIT_POST_LIMITER = (() => {
   next();
 });
 
+// ===================== Location & Device Tracking (TD-04 / cross-portal) =====================
+// Enriches req.geoContext (country/city/region/ISP) + req.deviceContext (fingerprint + UA)
+// Privacy-respecting: rounds coordinates to 2 decimals, caches IPs 1h
+import { locationTracker, initSessionLog } from './middleware/locationTracker.js';
+app.use(locationTracker());
+
+// ===================== Concurrent Session Limits =====================
+// Evicts oldest session when user exceeds MAX_CONCURRENT_SESSIONS (default 3)
+import { enforceConcurrentSessions } from './middleware/rateLimit.js';
+app.use(enforceConcurrentSessions({ max: parseInt(process.env.MAX_CONCURRENT_SESSIONS || '3', 10) }));
+
+// ===================== Cross-Portal Data Sharing Policy =====================
+// Filters API responses per portal pair (Ministry ↔ Organization ↔ Employer ↔ Worker)
+import { withCrossPortalFilter, ROLE_PORTAL } from './middleware/crossPortal.js';
+app.use((req, _res, next) => {
+  // Derive the requester's portal from their role for cross-portal filtering
+  if (req.user && req.user.role && ROLE_PORTAL[req.user.role]) {
+    req.portalContext = ROLE_PORTAL[req.user.role];
+  }
+  next();
+});
+// Apply response filter only on authenticated /api/* routes (skip auth, health, public)
+app.use('/api', withCrossPortalFilter((req) => req.portalContext || 'public'));
+
+// Initialize session log table (idempotent)
+initSessionLog().catch(() => {});
+
 app.use(auditContext);
 
 // مانع صلاحيات بسيط للطرق المحمية
@@ -258,6 +275,8 @@ import aiComplianceRouter from './routes/aiCompliance.js';
 import dynamicFieldsRouter from './routes/dynamicFields.js';
 import laborRecordsRouter from './routes/laborRecords.js';
 import nationalDirectoriesRouter from './routes/nationalDirectories.js';
+import nationalDirectoryWorkflowsRouter from './routes/nationalDirectoryWorkflows.js';
+import workerPortalRouter from './routes/workerPortal.js';
 import administrationRouter from './routes/administration.js';
 import regulatoryRouter from './routes/regulatory.js';
 import workflowRouter from './routes/workflow.js';
@@ -270,6 +289,11 @@ import dataQualityRouter from './routes/dataQuality.js';
 import chronologyRouter from './routes/chronology.js';
 import externalIntegrationsRouter from './routes/externalIntegrations.js';
 import intelligenceRouter from './routes/intelligence.js';
+import intelligenceV2Router from './routes/intelligenceV2.js';
+// Phase 6: New production-grade routes
+import disputesRouter from './routes/disputes.js';
+import inspectionsRouter from './routes/inspections.js';
+import crossPortalRouter from './routes/crossPortal.js';
 
 // ===================== Automated Server-Side Mutation Audit =====================
 import { auditLog } from './middleware/shared.js';
@@ -292,6 +316,11 @@ app.use((req, res, next) => {
   next();
 });
 
+// Phase 6: Mount production-grade new routes
+app.use('/api/disputes', disputesRouter);
+app.use('/api/inspections', inspectionsRouter);
+app.use('/api/cross-portal', crossPortalRouter);
+
 app.use(entitiesRouter);
 app.use(registrationRouter);
 app.use(accountsRouter);
@@ -306,6 +335,8 @@ app.use(aiComplianceRouter);
 app.use(dynamicFieldsRouter);
 app.use(laborRecordsRouter);
 app.use(nationalDirectoriesRouter);
+app.use(nationalDirectoryWorkflowsRouter);
+app.use(workerPortalRouter);
 app.use(administrationRouter);
 app.use(regulatoryRouter);
 app.use(workflowRouter);
@@ -318,8 +349,11 @@ app.use(dataQualityRouter);
 app.use(chronologyRouter);
 app.use(externalIntegrationsRouter);
 app.use(intelligenceRouter);
+app.use(intelligenceV2Router);
 import uploadsRouter from './routes/uploads.js';
 app.use(uploadsRouter);
+import telemetryRouter from './routes/telemetry.js';
+app.use(telemetryRouter);
 
 // ===================== Dashboard (inline — uses shared pool) =====================
 import { pool, paginate, countQuery } from './middleware/shared.js';
@@ -539,6 +573,48 @@ process.on('unhandledRejection', (reason) => {
 // ===================== Metrics & Observability =====================
 app.get('/api/metrics', metricsEndpoint);
 
+// Phase 5: Performance monitoring metrics
+import { getPerformanceMetrics } from './middleware/performanceMonitor.js';
+app.get('/api/metrics/performance', (_req, res) => {
+  res.json(getPerformanceMetrics());
+});
+
+// Phase 5: Circuit breaker states
+import { getAllBreakerStates, resetBreaker } from './middleware/circuitBreaker.js';
+app.get('/api/metrics/circuit-breakers', (_req, res) => {
+  res.json(getAllBreakerStates());
+});
+app.post('/api/metrics/circuit-breakers/:name/reset', (req, res) => {
+  const ok = resetBreaker(req.params.name);
+  if (!ok) return res.status(404).json({ error: 'Breaker not found' });
+  res.json({ ok: true, message: `Circuit breaker "${req.params.name}" reset` });
+});
+
+// Phase 5: Error tracking stats + middleware
+import { getErrorStats, errorTrackerMiddleware } from './middleware/errorTracker.js';
+app.get('/api/metrics/errors', (_req, res) => {
+  res.json(getErrorStats());
+});
+app.delete('/api/metrics/errors', async (_req, res) => {
+  const { resetErrorStats } = await import('./middleware/errorTracker.js');
+  resetErrorStats();
+  res.json({ ok: true, message: 'Error stats reset' });
+});
+
+// Phase 5: Deep health check — liveness /api/health is handled by server/routes/system.js
+import { getDeepHealth } from './middleware/deepHealth.js';
+app.get('/api/health/detailed', async (_req, res) => {
+  try {
+    // pool is imported dynamically to avoid circular deps
+    const { pool } = await import('./middleware/shared.js').catch(() => ({ pool: null }));
+    if (!pool) return res.status(503).json({ status: 'unhealthy', error: 'Database not available', timestamp: new Date().toISOString() });
+    const health = await getDeepHealth(pool);
+    res.status(health.status === 'healthy' ? 200 : 503).json(health);
+  } catch (err) {
+    res.status(503).json({ status: 'unhealthy', error: String(err.message || err), timestamp: new Date().toISOString() });
+  }
+});
+
 // ===================== Version (تتبع مؤسسي للإصدار) =====================
 import { existsSync, readFileSync } from 'fs';
 const pkgPath = join(__dirname, '..', 'package.json');
@@ -582,6 +658,8 @@ if (existsSync(join(DIST_DIR, 'index.html'))) {
 app.use((_req, res) => {
   res.status(404).json({ error: 'المسار غير موجود', code:'NOT_FOUND' });
 });
+// Phase 5: error tracker middleware — track all errors before final handler
+app.use(errorTrackerMiddleware);
 app.use(errorHandler);
 
 // ===================== Start Server (when not running as Vercel serverless) =====================

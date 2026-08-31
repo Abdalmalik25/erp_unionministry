@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Briefcase, Plus, RefreshCw, Download, Eye, Trash2 } from 'lucide-react';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
 import { PageHeader } from '../../components/ui/PageHeader';
+import { useDebounce } from '../../hooks/useDebounce';
 import { toast } from 'sonner';
 import { logAudit } from '../../utils/security';
 import { fetchList } from '../../utils/api';
@@ -47,6 +48,7 @@ export function ServicesManagement() {
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 300);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showServicesModal, setShowServicesModal] = useState(false);
 
@@ -66,12 +68,14 @@ export function ServicesManagement() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const filtered = requests.filter(r => {
-    const matchStatus = selectedStatus === 'all' || r.status === selectedStatus;
-    const q = searchQuery.trim().toLowerCase();
-    const matchSearch = !q || r.request_number?.toLowerCase().includes(q) || r.service_name?.toLowerCase().includes(q) || r.entity_name?.toLowerCase().includes(q);
-    return matchStatus && matchSearch;
-  });
+  const filtered = useMemo(() => {
+    return requests.filter(r => {
+      const matchStatus = selectedStatus === 'all' || r.status === selectedStatus;
+      const q = debouncedSearch.trim().toLowerCase();
+      const matchSearch = !q || r.request_number?.toLowerCase().includes(q) || r.service_name?.toLowerCase().includes(q) || r.entity_name?.toLowerCase().includes(q);
+      return matchStatus && matchSearch;
+    });
+  }, [requests, debouncedSearch, selectedStatus]);
 
   const stats = {
     total: requests.length,

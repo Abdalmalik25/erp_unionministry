@@ -1,0 +1,5768 @@
+openapi: 3.0.3
+info:
+  title: National Labor Platform API
+  description: |
+    # Yemen National Labor Platform API
+    
+    Comprehensive API for managing labor relations, worker records, employer registrations,
+    union management, inspections, compliance monitoring, and national occupational directories.
+    
+    ## Authentication
+    All endpoints (except health and public dictionaries) require Bearer token authentication.
+    Tokens are obtained via `/api/auth/login` and should be included in the Authorization header.
+    
+    ## Rate Limiting
+    - Public endpoints: 60 requests/minute
+    - Worker endpoints: 120 requests/minute
+    - Employer/Union endpoints: 300 requests/minute
+    - Ministry/Admin endpoints: 600 requests/minute
+    
+    ## Standard Response Format
+    ```json
+    {
+      "success": true,
+      "data": { ... },
+      "meta": {
+        "timestamp": "2026-08-29T18:00:00.000Z",
+        "path": "/api/entities",
+        "method": "GET"
+      },
+      "errors": null
+    }
+    ```
+    
+    ## Error Response Format
+    ```json
+    {
+      "success": false,
+      "data": null,
+      "meta": { ... },
+      "errors": { "code": "ERROR_CODE", "message": "Human readable message" }
+    }
+    ```
+  version: 2.0.0
+  contact:
+    name: Ministry of Labor - Yemen
+    email: api-support@mol.gov.ye
+  license:
+    name: Government Use Only
+    url: https://mol.gov.ye/license
+  x-api-key-supported: true
+  x-oauth2-supported: true
+
+servers:
+  - url: https://api.labor.gov.ye/v2
+    description: Production Server
+  - url: https://staging-api.labor.gov.ye/v2
+    description: Staging Server
+  - url: http://localhost:4000/api
+    description: Local Development
+
+tags:
+  - name: Authentication
+    description: User authentication and session management
+  - name: Health
+    description: System health and status endpoints
+  - name: Dashboard
+    description: Dashboard statistics and analytics
+  - name: Entities
+    description: Organizational entities (unions, employers)
+  - name: Members
+    description: Entity member management
+  - name: Activities
+    description: Union and organization activities
+  - name: Elections
+    description: Union elections management
+  - name: Documents
+    description: Document management
+  - name: Workers
+    description: Worker profiles and records
+  - name: Employers
+    description: Employer management
+  - name: Inspections
+    description: Labor inspections
+  - name: Compliance
+    description: Compliance alerts and monitoring
+  - name: Licenses
+    description: Work permits and licenses
+  - name: Contracts
+    description: Labor contracts
+  - name: Payments
+    description: Fee payments and financial transactions
+  - name: Disputes
+    description: Labor disputes resolution
+  - name: National Directories
+    description: ISIC-4, occupations, and national standards
+  - name: Training
+    description: Training records and programs
+  - name: Notifications
+    description: System notifications
+  - name: Audit
+    description: Audit logging
+  - name: Intelligence
+    description: AI-powered analytics and recommendations
+  - name: External Integrations
+    description: Third-party system integrations
+  - name: Data Quality
+    description: Data quality monitoring
+  - name: Excellence
+    description: Excellence framework management
+
+paths:
+  # ==================== Health & System ====================
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check endpoint
+      description: Returns system health status and database connectivity
+      security: []
+      responses:
+        '200':
+          description: System healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy, degraded, unhealthy]
+                  database:
+                    type: string
+                    enum: [connected, disconnected]
+                  timestamp:
+                    type: string
+                    format: date-time
+                  version:
+                    type: string
+        '503':
+          description: System unhealthy
+
+  # ==================== Authentication ====================
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: User login
+      description: Authenticate user and receive JWT token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                description: Session cookie
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: User logout
+      description: Invalidate current session and token
+      responses:
+        '200':
+          description: Logout successful
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/me:
+    get:
+      tags: [Authentication]
+      summary: Get current user
+      description: Returns current authenticated user information
+      responses:
+        '200':
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/mfa/verify:
+    post:
+      tags: [Authentication]
+      summary: Verify MFA code
+      description: Verify TOTP or SMS MFA code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, sessionId]
+              properties:
+                code:
+                  type: string
+                  description: MFA verification code
+                sessionId:
+                  type: string
+                  description: Session ID from login
+      responses:
+        '200':
+          description: MFA verified
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh access token
+      description: Exchange refresh token for new access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Token refreshed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/change-password:
+    post:
+      tags: [Authentication]
+      summary: Change password
+      description: Change current user's password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword:
+                  type: string
+                  format: password
+                newPassword:
+                  type: string
+                  format: password
+                  minLength: 12
+      responses:
+        '200':
+          description: Password changed
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ==================== Dashboard ====================
+  /dashboard/stats:
+    get:
+      tags: [Dashboard]
+      summary: Dashboard statistics
+      description: Aggregate statistics for dashboard display
+      parameters:
+        - $ref: '#/components/parameters/Governorate'
+        - $ref: '#/components/parameters/DateRange'
+      responses:
+        '200':
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalWorkers:
+                    type: integer
+                  totalEmployers:
+                    type: integer
+                  totalUnions:
+                    type: integer
+                  pendingInspections:
+                    type: integer
+                  activeContracts:
+                    type: integer
+                  complianceRate:
+                    type: number
+                    format: float
+                  recentActivity:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Activity'
+
+  /dashboard/enhanced-stats:
+    get:
+      tags: [Dashboard]
+      summary: Enhanced dashboard statistics
+      description: Extended statistics including trends and predictions
+      parameters:
+        - $ref: '#/components/parameters/Governorate'
+        - $ref: '#/components/parameters/DateRange'
+        - name: includePredictions
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Enhanced statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnhancedStats'
+
+  # ==================== Entities ====================
+  /entities:
+    get:
+      tags: [Entities]
+      summary: List entities
+      description: Get paginated list of organizational entities
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Governorate'
+        - name: type
+          in: query
+          schema:
+            $ref: '#/components/schemas/EntityType'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/EntityStatus'
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated entity list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Entity'
+
+    post:
+      tags: [Entities]
+      summary: Create entity
+      description: Register a new organizational entity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntityCreate'
+      responses:
+        '201':
+          description: Entity created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entity'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /entities/{id}:
+    get:
+      tags: [Entities]
+      summary: Get entity by ID
+      parameters:
+        - $ref: '#/components/parameters/EntityId'
+      responses:
+        '200':
+          description: Entity details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entity'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Entities]
+      summary: Update entity
+      parameters:
+        - $ref: '#/components/parameters/EntityId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntityUpdate'
+      responses:
+        '200':
+          description: Entity updated
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Entities]
+      summary: Soft delete entity
+      parameters:
+        - $ref: '#/components/parameters/EntityId'
+      responses:
+        '200':
+          description: Entity deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /entities/{id}/members:
+    get:
+      tags: [Entities, Members]
+      summary: Get entity members
+      parameters:
+        - $ref: '#/components/parameters/EntityId'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Entity members
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /entities/{id}/activities:
+    get:
+      tags: [Entities, Activities]
+      summary: Get entity activities
+      parameters:
+        - $ref: '#/components/parameters/EntityId'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Entity activities
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  # ==================== Members ====================
+  /members:
+    get:
+      tags: [Members]
+      summary: List members
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Governorate'
+        - name: entityId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/MemberStatus'
+      responses:
+        '200':
+          description: Paginated member list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+    post:
+      tags: [Members]
+      summary: Create member
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemberCreate'
+      responses:
+        '201':
+          description: Member created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /members/{id}:
+    put:
+      tags: [Members]
+      summary: Update member
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemberUpdate'
+      responses:
+        '200':
+          description: Member updated
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Members]
+      summary: Delete member
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Member deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== Activities ====================
+  /activities:
+    get:
+      tags: [Activities]
+      summary: List activities
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: entityId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: type
+          in: query
+          schema:
+            $ref: '#/components/schemas/ActivityType'
+      responses:
+        '200':
+          description: Paginated activity list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+    post:
+      tags: [Activities]
+      summary: Create activity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivityCreate'
+      responses:
+        '201':
+          description: Activity created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /activities/{id}:
+    put:
+      tags: [Activities]
+      summary: Update activity
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivityUpdate'
+      responses:
+        '200':
+          description: Activity updated
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Activities]
+      summary: Delete activity
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Activity deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== Elections ====================
+  /elections:
+    get:
+      tags: [Elections]
+      summary: List elections
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/ElectionStatus'
+      responses:
+        '200':
+          description: Paginated election list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+    post:
+      tags: [Elections]
+      summary: Create election
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ElectionCreate'
+      responses:
+        '201':
+          description: Election created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /elections/{id}:
+    put:
+      tags: [Elections]
+      summary: Update election
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ElectionUpdate'
+      responses:
+        '200':
+          description: Election updated
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Elections]
+      summary: Delete election
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Election deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== Documents ====================
+  /documents:
+    get:
+      tags: [Documents]
+      summary: List documents
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: entityId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: type
+          in: query
+          schema:
+            $ref: '#/components/schemas/DocumentType'
+      responses:
+        '200':
+          description: Paginated document list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+    post:
+      tags: [Documents]
+      summary: Upload document
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DocumentUpload'
+      responses:
+        '201':
+          description: Document uploaded
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /documents/{id}:
+    get:
+      tags: [Documents]
+      summary: Get document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Document details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Documents]
+      summary: Delete document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Document deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== Workers ====================
+  /workers:
+    get:
+      tags: [Workers]
+      summary: List workers
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Governorate'
+        - name: employerId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: professionId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/WorkerStatus'
+      responses:
+        '200':
+          description: Paginated worker list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+    post:
+      tags: [Workers]
+      summary: Register worker
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkerCreate'
+      responses:
+        '201':
+          description: Worker registered
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /workers/{id}:
+    get:
+      tags: [Workers]
+      summary: Get worker profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Worker profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkerProfile'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Workers]
+      summary: Update worker profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkerUpdate'
+      responses:
+        '200':
+          description: Worker updated
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== Employers ====================
+  /employers:
+    get:
+      tags: [Employers]
+      summary: List employers
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Governorate'
+        - name: sectorId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/EmployerStatus'
+      responses:
+        '200':
+          description: Paginated employer list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+    post:
+      tags: [Employers]
+      summary: Register employer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployerCreate'
+      responses:
+        '201':
+          description: Employer registered
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /employers/{id}:
+    get:
+      tags: [Employers]
+      summary: Get employer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Employer details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employer'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Employers]
+      summary: Update employer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployerUpdate'
+      responses:
+        '200':
+          description: Employer updated
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== Inspections ====================
+  /inspections:
+    get:
+      tags: [Inspections]
+      summary: List inspections
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Governorate'
+        - name: employerId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: inspectorId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/InspectionStatus'
+        - name: type
+          in: query
+          schema:
+            $ref: '#/components/schemas/InspectionType'
+      responses:
+        '200':
+          description: Paginated inspection list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+    post:
+      tags: [Inspections]
+      summary: Create inspection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InspectionCreate'
+      responses:
+        '201':
+          description: Inspection created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /inspections/{id}:
+    get:
+      tags: [Inspections]
+      summary: Get inspection
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Inspection details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Inspection'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Inspections]
+      summary: Update inspection
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InspectionUpdate'
+      responses:
+        '200':
+          description: Inspection updated
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /inspections/{id}/violations:
+    post:
+      tags: [Inspections]
+      summary: Add violation to inspection
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ViolationCreate'
+      responses:
+        '201':
+          description: Violation added
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /inspections/{id}/complete:
+    post:
+      tags: [Inspections]
+      summary: Complete inspection
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InspectionComplete'
+      responses:
+        '200':
+          description: Inspection completed
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  # ==================== Compliance ====================
+  /compliance/alerts:
+    get:
+      tags: [Compliance]
+      summary: List compliance alerts
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: severity
+          in: query
+          schema:
+            $ref: '#/components/schemas/AlertSeverity'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/AlertStatus'
+      responses:
+        '200':
+          description: Paginated alert list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /compliance/alerts/{id}/acknowledge:
+    put:
+      tags: [Compliance]
+      summary: Acknowledge alert
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Alert acknowledged
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /compliance/alerts/{id}/resolve:
+    put:
+      tags: [Compliance]
+      summary: Resolve alert
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                resolution:
+                  type: string
+                  description: Resolution description
+                evidence:
+                  type: array
+                  items:
+                    type: string
+                    format: uri
+      responses:
+        '200':
+          description: Alert resolved
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== Licenses ====================
+  /licenses:
+    get:
+      tags: [Licenses]
+      summary: List licenses
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Governorate'
+        - name: type
+          in: query
+          schema:
+            $ref: '#/components/schemas/LicenseType'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/LicenseStatus'
+      responses:
+        '200':
+          description: Paginated license list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+    post:
+      tags: [Licenses]
+      summary: Create license
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LicenseCreate'
+      responses:
+        '201':
+          description: License created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /licenses/{id}:
+    get:
+      tags: [Licenses]
+      summary: Get license
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: License details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/License'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Licenses]
+      summary: Update license
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LicenseUpdate'
+      responses:
+        '200':
+          description: License updated
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /licenses/{id}/renew:
+    post:
+      tags: [Licenses]
+      summary: Renew license
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                newExpiryDate:
+                  type: string
+                  format: date
+      responses:
+        '200':
+          description: License renewed
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  # ==================== Contracts ====================
+  /contracts:
+    get:
+      tags: [Contracts]
+      summary: List contracts
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: employerId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: workerId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/ContractStatus'
+      responses:
+        '200':
+          description: Paginated contract list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+    post:
+      tags: [Contracts]
+      summary: Create contract
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContractCreate'
+      responses:
+        '201':
+          description: Contract created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /contracts/{id}:
+    get:
+      tags: [Contracts]
+      summary: Get contract
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Contract details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contract'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Contracts]
+      summary: Update contract
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContractUpdate'
+      responses:
+        '200':
+          description: Contract updated
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /contracts/{id}/terminate:
+    post:
+      tags: [Contracts]
+      summary: Terminate contract
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                terminationDate:
+                  type: string
+                  format: date
+      responses:
+        '200':
+          description: Contract terminated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  # ==================== Payments ====================
+  /payments:
+    get:
+      tags: [Payments]
+      summary: List payments
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: employerId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: type
+          in: query
+          schema:
+            $ref: '#/components/schemas/PaymentType'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/PaymentStatus'
+        - $ref: '#/components/parameters/DateRange'
+      responses:
+        '200':
+          description: Paginated payment list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+    post:
+      tags: [Payments]
+      summary: Create payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentCreate'
+      responses:
+        '201':
+          description: Payment created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /payments/{id}:
+    get:
+      tags: [Payments]
+      summary: Get payment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Payment details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /payments/{id}/verify:
+    post:
+      tags: [Payments]
+      summary: Verify payment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [verificationReference]
+              properties:
+                verificationReference:
+                  type: string
+                verificationDate:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: Payment verified
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  # ==================== Disputes ====================
+  /disputes:
+    get:
+      tags: [Disputes]
+      summary: List disputes
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Governorate'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/DisputeStatus'
+        - name: type
+          in: query
+          schema:
+            $ref: '#/components/schemas/DisputeType'
+      responses:
+        '200':
+          description: Paginated dispute list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+    post:
+      tags: [Disputes]
+      summary: Create dispute
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DisputeCreate'
+      responses:
+        '201':
+          description: Dispute created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /disputes/{id}:
+    get:
+      tags: [Disputes]
+      summary: Get dispute
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Dispute details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dispute'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Disputes]
+      summary: Update dispute
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DisputeUpdate'
+      responses:
+        '200':
+          description: Dispute updated
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /disputes/{id}/resolve:
+    post:
+      tags: [Disputes]
+      summary: Resolve dispute
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [resolution]
+              properties:
+                resolution:
+                  type: string
+                decision:
+                  type: string
+                implementationDate:
+                  type: string
+                  format: date
+      responses:
+        '200':
+          description: Dispute resolved
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  # ==================== National Directories ====================
+  /national-directories:
+    get:
+      tags: [National Directories]
+      summary: List national directories
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [occupations, skills, qualifications, certifications]
+      responses:
+        '200':
+          description: National directory entries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /national-directories/occupations:
+    get:
+      tags: [National Directories]
+      summary: List occupations
+      description: Get national occupation directory
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: sectorId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: level
+          in: query
+          schema:
+            type: string
+            enum: [1, 2, 3, 4, 5]
+      responses:
+        '200':
+          description: Occupation list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /isic4:
+    get:
+      tags: [National Directories]
+      summary: List ISIC-4 codes
+      description: Get ISIC-4 industry classification codes
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: section
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ISIC-4 codes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /geography/governorates:
+    get:
+      tags: [National Directories]
+      summary: List governorates
+      description: Get all governorates and districts
+      security: []
+      parameters:
+        - name: includeDistricts
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Governorate list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Governorate'
+
+  # ==================== Training ====================
+  /training:
+    get:
+      tags: [Training]
+      summary: List training records
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Governorate'
+        - name: workerId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: type
+          in: query
+          schema:
+            $ref: '#/components/schemas/TrainingType'
+      responses:
+        '200':
+          description: Paginated training list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+    post:
+      tags: [Training]
+      summary: Create training record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrainingCreate'
+      responses:
+        '201':
+          description: Training record created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /training/{id}:
+    get:
+      tags: [Training]
+      summary: Get training record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Training record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingRecord'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Training]
+      summary: Update training record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrainingUpdate'
+      responses:
+        '200':
+          description: Training record updated
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== Notifications ====================
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: List notifications
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: read
+          in: query
+          schema:
+            type: boolean
+        - name: type
+          in: query
+          schema:
+            $ref: '#/components/schemas/NotificationType'
+      responses:
+        '200':
+          description: Paginated notification list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /notifications/{id}/read:
+    put:
+      tags: [Notifications]
+      summary: Mark notification as read
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Notification marked as read
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /notifications/read-all:
+    put:
+      tags: [Notifications]
+      summary: Mark all notifications as read
+      responses:
+        '200':
+          description: All notifications marked as read
+
+  # ==================== Audit ====================
+  /audit-log:
+    get:
+      tags: [Audit]
+      summary: List audit log entries
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Governorate'
+        - name: userId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: action
+          in: query
+          schema:
+            type: string
+        - name: entityType
+          in: query
+          schema:
+            type: string
+        - name: entityId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/DateRange'
+      responses:
+        '200':
+          description: Paginated audit log
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  # ==================== Intelligence ====================
+  /intelligence/analytics:
+    get:
+      tags: [Intelligence]
+      summary: Get analytics
+      description: AI-powered analytics and insights
+      parameters:
+        - name: metric
+          in: query
+          schema:
+            type: string
+            enum: [workforce_trends, compliance_risk, employment_patterns, sector_growth]
+        - $ref: '#/components/parameters/Governorate'
+        - $ref: '#/components/parameters/DateRange'
+      responses:
+        '200':
+          description: Analytics data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsData'
+
+  /intelligence/recommendations:
+    get:
+      tags: [Intelligence]
+      summary: Get recommendations
+      description: AI-powered recommendations for compliance and operations
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [inspection_priority, employer_compliance, worker_development]
+      responses:
+        '200':
+          description: Recommendations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Recommendation'
+
+  /intelligence/risk-assessment:
+    post:
+      tags: [Intelligence]
+      summary: Perform risk assessment
+      description: AI-powered risk assessment for entities
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [entityType, entityId]
+              properties:
+                entityType:
+                  type: string
+                  enum: [employer, worker, union]
+                entityId:
+                  type: string
+                  format: uuid
+                assessmentType:
+                  type: string
+                  enum: [compliance, financial, operational]
+      responses:
+        '200':
+          description: Risk assessment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskAssessment'
+
+  # ==================== External Integrations ====================
+  /integrations/social-security:
+    get:
+      tags: [External Integrations]
+      summary: Get social security data
+      description: Retrieve worker contributions from Social Security
+      parameters:
+        - name: workerId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Social security data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SocialSecurityData'
+
+  /integrations/passport:
+    get:
+      tags: [External Integrations]
+      summary: Verify passport
+      description: Verify expatriate worker passport with immigration
+      parameters:
+        - name: passportNumber
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: nationality
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Passport verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PassportVerification'
+
+  # ==================== Data Quality ====================
+  /data-quality/report:
+    get:
+      tags: [Data Quality]
+      summary: Get data quality report
+      parameters:
+        - name: entityType
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Data quality report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataQualityReport'
+
+  /data-quality/issues:
+    get:
+      tags: [Data Quality]
+      summary: List data quality issues
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [critical, high, medium, low]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, resolved, ignored]
+      responses:
+        '200':
+          description: Data quality issues
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  # ==================== Excellence ====================
+  /excellence/assessments:
+    get:
+      tags: [Excellence]
+      summary: List assessments
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: entityId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: level
+          in: query
+          schema:
+            type: string
+            enum: [bronze, silver, gold, platinum]
+      responses:
+        '200':
+          description: Assessment list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+    post:
+      tags: [Excellence]
+      summary: Create assessment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExcellenceAssessmentCreate'
+      responses:
+        '201':
+          description: Assessment created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /excellence/certificates:
+    get:
+      tags: [Excellence]
+      summary: List certificates
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: level
+          in: query
+          schema:
+            type: string
+            enum: [bronze, silver, gold, platinum]
+      responses:
+        '200':
+          description: Certificate list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  # ==================== Labor Records ====================
+  /labor-records:
+    get:
+      tags: [Workers]
+      summary: List labor records
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Governorate'
+        - name: workerId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: recordType
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated labor record list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+    post:
+      tags: [Workers]
+      summary: Create labor record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LaborRecordCreate'
+      responses:
+        '201':
+          description: Labor record created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  # ==================== Worker Portal ====================
+  /worker-portal/profile:
+    get:
+      tags: [Workers]
+      summary: Get worker self-service profile
+      description: Get current worker's own profile data
+      responses:
+        '200':
+          description: Worker profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkerPortalProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /worker-portal/profile/update:
+    put:
+      tags: [Workers]
+      summary: Update worker self-service profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkerSelfUpdate'
+      responses:
+        '200':
+          description: Profile updated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /worker-portal/documents:
+    get:
+      tags: [Workers]
+      summary: List worker documents
+      description: Get current worker's documents
+      responses:
+        '200':
+          description: Document list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Document'
+
+  /worker-portal/contracts:
+    get:
+      tags: [Workers]
+      summary: List worker contracts
+      description: Get current worker's contracts
+      responses:
+        '200':
+          description: Contract list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Contract'
+
+  /worker-portal/compliance:
+    get:
+      tags: [Workers]
+      summary: Get compliance status
+      description: Get current worker's compliance status
+      responses:
+        '200':
+          description: Compliance status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkerCompliance'
+
+  # ==================== Employer Self-Service ====================
+  /employer-portal/dashboard:
+    get:
+      tags: [Employers]
+      summary: Get employer dashboard
+      description: Get current employer's dashboard data
+      responses:
+        '200':
+          description: Employer dashboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployerDashboard'
+
+  /employer-portal/workers:
+    get:
+      tags: [Employers]
+      summary: List employer workers
+      description: Get current employer's workers
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Worker list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /employer-portal/contracts:
+    get:
+      tags: [Employers]
+      summary: List employer contracts
+      description: Get current employer's contracts
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Contract list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+    post:
+      tags: [Employers]
+      summary: Create employer contract
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContractCreate'
+      responses:
+        '201':
+          description: Contract created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /employer-portal/payments:
+    get:
+      tags: [Employers]
+      summary: List employer payments
+      description: Get current employer's payment history
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Payment list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /employer-portal/payments/initiate:
+    post:
+      tags: [Employers]
+      summary: Initiate payment
+      description: Create a new payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentCreate'
+      responses:
+        '201':
+          description: Payment initiated
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /employer-portal/compliance:
+    get:
+      tags: [Employers]
+      summary: Get compliance status
+      description: Get current employer's compliance status
+      responses:
+        '200':
+          description: Compliance status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployerCompliance'
+
+  # ==================== Board Members ====================
+  /board-members:
+    get:
+      tags: [Entities]
+      summary: List board members
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: entityId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: position
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated board member list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+    post:
+      tags: [Entities]
+      summary: Create board member
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BoardMemberCreate'
+      responses:
+        '201':
+          description: Board member created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /board-members/{id}:
+    put:
+      tags: [Entities]
+      summary: Update board member
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BoardMemberUpdate'
+      responses:
+        '200':
+          description: Board member updated
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Entities]
+      summary: Delete board member
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Board member deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== Dispatches ====================
+  /dispatches:
+    get:
+      tags: [Workers]
+      summary: List worker dispatches
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: workerId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected, active, completed, cancelled]
+      responses:
+        '200':
+          description: Paginated dispatch list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+    post:
+      tags: [Workers]
+      summary: Create dispatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DispatchCreate'
+      responses:
+        '201':
+          description: Dispatch created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /dispatches/{id}/status:
+    put:
+      tags: [Workers]
+      summary: Update dispatch status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [pending, approved, rejected, active, completed, cancelled]
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Dispatch status updated
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== Reduction Requests ====================
+  /reduction-requests:
+    get:
+      tags: [Workers]
+      summary: List reduction requests
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: workerId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected, processed]
+      responses:
+        '200':
+          description: Paginated reduction request list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+    post:
+      tags: [Workers]
+      summary: Create reduction request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReductionRequestCreate'
+      responses:
+        '201':
+          description: Reduction request created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /reduction-requests/{id}/status:
+    put:
+      tags: [Workers]
+      summary: Update reduction request status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [pending, approved, rejected, processed]
+                notes:
+                  type: string
+                approvedAmount:
+                  type: number
+      responses:
+        '200':
+          description: Reduction request status updated
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== Evaluation Certificates ====================
+  /evaluation-certificates:
+    get:
+      tags: [Workers]
+      summary: List evaluation certificates
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: workerId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: level
+          in: query
+          schema:
+            type: string
+            enum: [basic, intermediate, advanced, expert]
+      responses:
+        '200':
+          description: Paginated certificate list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+    post:
+      tags: [Workers]
+      summary: Issue certificate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CertificateCreate'
+      responses:
+        '201':
+          description: Certificate issued
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  # ==================== OSH Incidents ====================
+  /osh-incidents:
+    get:
+      tags: [Compliance]
+      summary: List OSH incidents
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Governorate'
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [minor, moderate, serious, severe, fatal]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [reported, investigating, resolved, closed]
+      responses:
+        '200':
+          description: Paginated incident list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+    post:
+      tags: [Compliance]
+      summary: Report incident
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OSHIncidentCreate'
+      responses:
+        '201':
+          description: Incident reported
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /osh-incidents/{id}:
+    get:
+      tags: [Compliance]
+      summary: Get incident
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Incident details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OSHIncident'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Compliance]
+      summary: Update incident
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OSHIncidentUpdate'
+      responses:
+        '200':
+          description: Incident updated
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== Worker Passport ====================
+  /worker-passport:
+    get:
+      tags: [Workers]
+      summary: Get worker passport
+      description: Get comprehensive worker employment passport
+      parameters:
+        - name: workerId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Worker passport data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkerPassport'
+
+  # ==================== System Administration ====================
+  /system/branding:
+    get:
+      tags: [System]
+      summary: Get system branding
+      description: Get branding configuration (public)
+      security: []
+      responses:
+        '200':
+          description: Branding configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrandingConfig'
+
+  /system/policy:
+    get:
+      tags: [System]
+      summary: Get system policy
+      description: Get system policy document (public)
+      security: []
+      responses:
+        '200':
+          description: Policy document
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+                  content:
+                    type: string
+                  effectiveDate:
+                    type: string
+                    format: date
+
+  /system/users:
+    get:
+      tags: [System]
+      summary: List system users
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: role
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive, suspended]
+      responses:
+        '200':
+          description: User list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+    post:
+      tags: [System]
+      summary: Create user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '201':
+          description: User created
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /system/users/{id}:
+    put:
+      tags: [System]
+      summary: Update user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: User updated
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [System]
+      summary: Deactivate user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User deactivated
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /system/roles:
+    get:
+      tags: [System]
+      summary: List roles
+      responses:
+        '200':
+          description: Role list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Role'
+
+  /system/roles/{id}/permissions:
+    put:
+      tags: [System]
+      summary: Update role permissions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [permissions]
+              properties:
+                permissions:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Permissions updated
+
+  # ==================== Services Catalog ====================
+  /service-catalog:
+    get:
+      tags: [System]
+      summary: List services
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive, deprecated]
+      responses:
+        '200':
+          description: Service catalog
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /service-catalog/{id}:
+    get:
+      tags: [System]
+      summary: Get service
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Service details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceCatalogItem'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== Workflow ====================
+  /workflows:
+    get:
+      tags: [System]
+      summary: List workflows
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, in_progress, completed, cancelled]
+      responses:
+        '200':
+          description: Workflow list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /workflows/{id}:
+    get:
+      tags: [System]
+      summary: Get workflow
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workflow details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /workflows/{id}/approve:
+    post:
+      tags: [System]
+      summary: Approve workflow
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Workflow approved
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /workflows/{id}/reject:
+    post:
+      tags: [System]
+      summary: Reject workflow
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Workflow rejected
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== Chronology ====================
+  /chronology:
+    get:
+      tags: [System]
+      summary: Get entity chronology
+      description: Get complete event timeline for an entity
+      parameters:
+        - name: entityType
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: entityId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Chronology events
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  # ==================== Uploads ====================
+  /uploads:
+    post:
+      tags: [System]
+      summary: Upload file
+      description: Upload a file to storage
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                category:
+                  type: string
+                  enum: [documents, images, certificates, contracts]
+                entityType:
+                  type: string
+                entityId:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          description: File uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /uploads/{id}:
+    get:
+      tags: [System]
+      summary: Get upload
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Upload details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Upload'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [System]
+      summary: Delete upload
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Upload deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== Account Requests ====================
+  /account-requests:
+    get:
+      tags: [System]
+      summary: List account requests
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected]
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [employer, union, worker]
+      responses:
+        '200':
+          description: Account request list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+
+  /account-requests/{id}/approve:
+    post:
+      tags: [System]
+      summary: Approve account request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Account request approved
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /account-requests/{id}/reject:
+    post:
+      tags: [System]
+      summary: Reject account request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Account request rejected
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+# ==================== Components ====================
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /auth/login
+    apiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for service-to-service communication
+    csrf:
+      type: apiKey
+      in: header
+      name: x-csrf-token
+      description: CSRF token for state-changing operations
+
+  # ==================== Parameters ====================
+  parameters:
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        default: 1
+        minimum: 1
+      description: Page number for pagination
+
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+      description: Number of items per page
+
+    Governorate:
+      name: governorate
+      in: query
+      schema:
+        type: string
+      description: Filter by governorate code
+
+    DateRange:
+      name: dateRange
+      in: query
+      schema:
+        type: string
+        enum: [today, week, month, quarter, year, custom]
+      description: Date range filter
+
+    EntityId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Entity UUID
+
+  # ==================== Responses ====================
+  responses:
+    Unauthorized:
+      description: Authentication required or invalid token
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              errors:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: UNAUTHORIZED
+                  message:
+                    type: string
+                    example: Authentication required
+
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              errors:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: FORBIDDEN
+                  message:
+                    type: string
+                    example: Insufficient permissions
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              errors:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: NOT_FOUND
+                  message:
+                    type: string
+                    example: Resource not found
+
+    BadRequest:
+      description: Invalid request data
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              errors:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: VALIDATION_ERROR
+                  message:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: object
+
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+        X-RateLimit-Reset:
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              errors:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: RATE_LIMITED
+                  message:
+                    type: string
+                    example: Too many requests, please try again later
+                  retryAfter:
+                    type: integer
+                    description: Seconds until rate limit resets
+
+  # ==================== Schemas ====================
+  schemas:
+    # Base Types
+    BaseEntity:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        createdBy:
+          type: string
+          format: uuid
+        deletedAt:
+          type: string
+          format: date-time
+
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+
+    PaginatedResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+        pagination:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    # Enums
+    EntityType:
+      type: string
+      enum: [union, employer, cooperative, professional_association]
+      description: Type of organizational entity
+
+    EntityStatus:
+      type: string
+      enum: [active, inactive, suspended, under_investigation, dissolved]
+      description: Entity registration status
+
+    MemberStatus:
+      type: string
+      enum: [active, suspended, expelled, deceased]
+      description: Member status
+
+    ActivityType:
+      type: string
+      enum: [meeting, training, event, protest, negotiation, other]
+      description: Activity type
+
+    ElectionStatus:
+      type: string
+      enum: [scheduled, nomination, voting, completed, cancelled]
+      description: Election status
+
+    DocumentType:
+      type: string
+      enum: [certificate, license, contract, report, identity, other]
+      description: Document type
+
+    WorkerStatus:
+      type: string
+      enum: [active, suspended, terminated, emigrated, deceased]
+      description: Worker employment status
+
+    EmployerStatus:
+      type: string
+      enum: [active, suspended, closed, under_investigation]
+      description: Employer status
+
+    InspectionStatus:
+      type: string
+      enum: [scheduled, in_progress, completed, cancelled]
+      description: Inspection status
+
+    InspectionType:
+      type: string
+      enum: [routine, complaint, follow_up, scheduled, unannounced]
+      description: Inspection type
+
+    AlertSeverity:
+      type: string
+      enum: [info, warning, critical]
+      description: Alert severity
+
+    AlertStatus:
+      type: string
+      enum: [open, acknowledged, resolved, dismissed]
+      description: Alert status
+
+    LicenseType:
+      type: string
+      enum: [work_permit, residency, work_visa, professional_license]
+      description: License type
+
+    LicenseStatus:
+      type: string
+      enum: [valid, expired, revoked, suspended, pending]
+      description: License status
+
+    ContractStatus:
+      type: string
+      enum: [draft, pending, active, expired, terminated, renewed]
+      description: Contract status
+
+    PaymentType:
+      type: string
+      enum: [fee, fine, contribution, settlement]
+      description: Payment type
+
+    PaymentStatus:
+      type: string
+      enum: [pending, initiated, verified, failed, refunded]
+      description: Payment status
+
+    DisputeStatus:
+      type: string
+      enum: [filed, under_review, mediation, arbitration, resolved, closed]
+      description: Dispute status
+
+    DisputeType:
+      type: string
+      enum: [wages, termination, conditions, discrimination, harassment, other]
+      description: Dispute type
+
+    TrainingType:
+      type: string
+      enum: [certification, workshop, seminar, on_the_job, apprenticeship]
+      description: Training type
+
+    NotificationType:
+      type: string
+      enum: [system, alert, reminder, approval, rejection]
+      description: Notification type
+
+    # Authentication
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+        rememberMe:
+          type: boolean
+          default: false
+
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+          description: Token expiration in seconds
+        user:
+          $ref: '#/components/schemas/User'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        role:
+          type: string
+        userType:
+          type: string
+          enum: [ministry, employer, union, worker, inspector]
+        organizationId:
+          type: string
+          format: uuid
+        governorate:
+          type: string
+        directorate:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        mfaEnabled:
+          type: boolean
+
+    # Dashboard
+    EnhancedStats:
+      type: object
+      properties:
+        summary:
+          type: object
+          properties:
+            totalWorkers:
+              type: integer
+            totalEmployers:
+              type: integer
+            totalUnions:
+              type: integer
+            activeContracts:
+              type: integer
+            pendingInspections:
+              type: integer
+            openDisputes:
+              type: integer
+            complianceRate:
+              type: number
+        trends:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              current:
+                type: number
+              previous:
+                type: number
+              change:
+                type: number
+                format: float
+              trend:
+                type: string
+                enum: [up, down, stable]
+        predictions:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              value:
+                type: number
+              confidence:
+                type: number
+              timeframe:
+                type: string
+
+    Activity:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        description:
+          type: string
+        entityId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+
+    # Entities
+    Entity:
+      allOf:
+        - $ref: '#/components/schemas/BaseEntity'
+        - type: object
+          properties:
+            name:
+              type: string
+            nameAr:
+              type: string
+            type:
+              $ref: '#/components/schemas/EntityType'
+            status:
+              $ref: '#/components/schemas/EntityStatus'
+            registrationNumber:
+              type: string
+            registrationDate:
+              type: string
+              format: date
+            expiryDate:
+              type: string
+              format: date
+            sector:
+              type: string
+            isicCode:
+              type: string
+            licenseNumber:
+              type: string
+            licenseExpiry:
+              type: string
+              format: date
+            address:
+              type: string
+            governorate:
+              type: string
+            district:
+              type: string
+            contactPerson:
+              type: string
+            contactEmail:
+              type: string
+              format: email
+            contactPhone:
+              type: string
+            website:
+              type: string
+              format: uri
+            logo:
+              type: string
+            documents:
+              type: array
+              items:
+                $ref: '#/components/schemas/Document'
+
+    EntityCreate:
+      type: object
+      required: [name, nameAr, type]
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 200
+        nameAr:
+          type: string
+          minLength: 2
+          maxLength: 200
+        type:
+          $ref: '#/components/schemas/EntityType'
+        registrationNumber:
+          type: string
+        registrationDate:
+          type: string
+          format: date
+        sector:
+          type: string
+        isicCode:
+          type: string
+        address:
+          type: string
+        governorate:
+          type: string
+        district:
+          type: string
+        contactPerson:
+          type: string
+        contactEmail:
+          type: string
+          format: email
+        contactPhone:
+          type: string
+
+    EntityUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        nameAr:
+          type: string
+        status:
+          $ref: '#/components/schemas/EntityStatus'
+        expiryDate:
+          type: string
+          format: date
+        address:
+          type: string
+        governorate:
+          type: string
+        district:
+          type: string
+        contactPerson:
+          type: string
+        contactEmail:
+          type: string
+          format: email
+        contactPhone:
+          type: string
+
+    # Members
+    Member:
+      allOf:
+        - $ref: '#/components/schemas/BaseEntity'
+        - type: object
+          properties:
+            entityId:
+              type: string
+              format: uuid
+            firstName:
+              type: string
+            firstNameAr:
+              type: string
+            lastName:
+              type: string
+            lastNameAr:
+              type: string
+            email:
+              type: string
+              format: email
+            phone:
+              type: string
+            nationalId:
+              type: string
+            dateOfBirth:
+              type: string
+              format: date
+            gender:
+              type: string
+              enum: [male, female]
+            status:
+              $ref: '#/components/schemas/MemberStatus'
+            position:
+              type: string
+            joinDate:
+              type: string
+              format: date
+            expiryDate:
+              type: string
+              format: date
+
+    MemberCreate:
+      type: object
+      required: [entityId, firstName, firstNameAr, lastName, lastNameAr, nationalId]
+      properties:
+        entityId:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        firstNameAr:
+          type: string
+        lastName:
+          type: string
+        lastNameAr:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        nationalId:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [male, female]
+        position:
+          type: string
+        joinDate:
+          type: string
+          format: date
+
+    MemberUpdate:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/MemberStatus'
+        position:
+          type: string
+        expiryDate:
+          type: string
+          format: date
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+
+    # Activities
+    Activity:
+      allOf:
+        - $ref: '#/components/schemas/BaseEntity'
+        - type: object
+          properties:
+            entityId:
+              type: string
+              format: uuid
+            type:
+              $ref: '#/components/schemas/ActivityType'
+            title:
+              type: string
+            titleAr:
+              type: string
+            description:
+              type: string
+            descriptionAr:
+              type: string
+            startDate:
+              type: string
+              format: date-time
+            endDate:
+              type: string
+              format: date-time
+            location:
+              type: string
+            attendeeCount:
+              type: integer
+            status:
+              type: string
+              enum: [planned, in_progress, completed, cancelled]
+
+    ActivityCreate:
+      type: object
+      required: [entityId, type, title, titleAr]
+      properties:
+        entityId:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/ActivityType'
+        title:
+          type: string
+        titleAr:
+          type: string
+        description:
+          type: string
+        descriptionAr:
+          type: string
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        location:
+          type: string
+
+    ActivityUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        titleAr:
+          type: string
+        description:
+          type: string
+        descriptionAr:
+          type: string
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        location:
+          type: string
+        status:
+          type: string
+          enum: [planned, in_progress, completed, cancelled]
+
+    # Elections
+    Election:
+      allOf:
+        - $ref: '#/components/schemas/BaseEntity'
+        - type: object
+          properties:
+            entityId:
+              type: string
+              format: uuid
+            title:
+              type: string
+            titleAr:
+              type: string
+            status:
+              $ref: '#/components/schemas/ElectionStatus'
+            nominationStart:
+              type: string
+              format: date
+            nominationEnd:
+              type: string
+              format: date
+            votingStart:
+              type: string
+              format: date
+            votingEnd:
+              type: string
+              format: date
+            positions:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  seats:
+                    type: integer
+            eligibleVoters:
+              type: integer
+            actualVoters:
+              type: integer
+
+    ElectionCreate:
+      type: object
+      required: [entityId, title, titleAr]
+      properties:
+        entityId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        titleAr:
+          type: string
+        nominationStart:
+          type: string
+          format: date
+        nominationEnd:
+          type: string
+          format: date
+        votingStart:
+          type: string
+          format: date
+        votingEnd:
+          type: string
+          format: date
+        positions:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              seats:
+                type: integer
+
+    ElectionUpdate:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/ElectionStatus'
+        votingStart:
+          type: string
+          format: date
+        votingEnd:
+          type: string
+          format: date
+
+    # Documents
+    Document:
+      allOf:
+        - $ref: '#/components/schemas/BaseEntity'
+        - type: object
+          properties:
+            entityType:
+              type: string
+            entityId:
+              type: string
+              format: uuid
+            type:
+              $ref: '#/components/schemas/DocumentType'
+            name:
+              type: string
+            nameAr:
+              type: string
+            number:
+              type: string
+            issueDate:
+              type: string
+              format: date
+            expiryDate:
+              type: string
+              format: date
+            issuer:
+              type: string
+            fileUrl:
+              type: string
+              format: uri
+            fileSize:
+              type: integer
+            mimeType:
+              type: string
+            verified:
+              type: boolean
+            verifiedAt:
+              type: string
+              format: date-time
+
+    DocumentUpload:
+      type: object
+      required: [file]
+      properties:
+        file:
+          type: string
+          format: binary
+        entityType:
+          type: string
+        entityId:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/DocumentType'
+        name:
+          type: string
+        nameAr:
+          type: string
+        number:
+          type: string
+        issueDate:
+          type: string
+          format: date
+        expiryDate:
+          type: string
+          format: date
+        issuer:
+          type: string
+
+    # Workers
+    WorkerProfile:
+      allOf:
+        - $ref: '#/components/schemas/BaseEntity'
+        - type: object
+          properties:
+            firstName:
+              type: string
+            firstNameAr:
+              type: string
+            lastName:
+              type: string
+            lastNameAr:
+              type: string
+            nationalId:
+              type: string
+            passportNumber:
+              type: string
+            nationality:
+              type: string
+            dateOfBirth:
+              type: string
+              format: date
+            gender:
+              type: string
+              enum: [male, female]
+            maritalStatus:
+              type: string
+            email:
+              type: string
+              format: email
+            phone:
+              type: string
+            mobile:
+              type: string
+            address:
+              type: string
+            governorate:
+              type: string
+            district:
+              type: string
+            educationLevel:
+              type: string
+            occupationId:
+              type: string
+              format: uuid
+            occupationTitle:
+              type: string
+            employerId:
+              type: string
+              format: uuid
+            employerName:
+              type: string
+            contractType:
+              type: string
+            employmentStatus:
+              type: string
+            monthlyWage:
+              type: number
+            startDate:
+              type: string
+              format: date
+            status:
+              $ref: '#/components/schemas/WorkerStatus'
+            photoUrl:
+              type: string
+              format: uri
+            signatureUrl:
+              type: string
+              format: uri
+            documents:
+              type: array
+              items:
+                $ref: '#/components/schemas/Document'
+
+    WorkerCreate:
+      type: object
+      required: [firstName, firstNameAr, lastName, lastNameAr, nationalId]
+      properties:
+        firstName:
+          type: string
+        firstNameAr:
+          type: string
+        lastName:
+          type: string
+        lastNameAr:
+          type: string
+        nationalId:
+          type: string
+        passportNumber:
+          type: string
+        nationality:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [male, female]
+        maritalStatus:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        mobile:
+          type: string
+        address:
+          type: string
+        governorate:
+          type: string
+        district:
+          type: string
+        educationLevel:
+          type: string
+        occupationId:
+          type: string
+          format: uuid
+        employerId:
+          type: string
+          format: uuid
+        monthlyWage:
+          type: number
+        startDate:
+          type: string
+          format: date
+
+    WorkerUpdate:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        mobile:
+          type: string
+        address:
+          type: string
+        governorate:
+          type: string
+        district:
+          type: string
+        occupationId:
+          type: string
+          format: uuid
+        employerId:
+          type: string
+          format: uuid
+        contractType:
+          type: string
+        monthlyWage:
+          type: number
+        status:
+          $ref: '#/components/schemas/WorkerStatus'
+
+    WorkerSelfUpdate:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        mobile:
+          type: string
+        address:
+          type: string
+
+    WorkerPortalProfile:
+      allOf:
+        - $ref: '#/components/schemas/WorkerProfile'
+        - type: object
+          properties:
+            skills:
+              type: array
+              items:
+                type: string
+            certifications:
+              type: array
+              items:
+                $ref: '#/components/schemas/Certificate'
+            trainingHistory:
+              type: array
+              items:
+                $ref: '#/components/schemas/TrainingRecord'
+            contractHistory:
+              type: array
+              items:
+                $ref: '#/components/schemas/Contract'
+            employmentTimeline:
+              type: array
+              items:
+                type: object
+
+    WorkerCompliance:
+      type: object
+      properties:
+        overallStatus:
+          type: string
+          enum: [compliant, non_compliant, pending_review]
+        validDocuments:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              expiryDate:
+                type: string
+                format: date
+              status:
+                type: string
+        violations:
+          type: array
+          items:
+            type: object
+        lastInspectionDate:
+          type: string
+          format: date
+        nextInspectionDue:
+          type: string
+          format: date
+
+    # Employers
+    Employer:
+      allOf:
+        - $ref: '#/components/schemas/BaseEntity'
+        - $ref: '#/components/schemas/Entity'
+        - type: object
+          properties:
+            commercialRecord:
+              type: string
+            taxNumber:
+              type: string
+            employeeCount:
+              type: integer
+            establishmentType:
+              type: string
+            operatingHours:
+              type: object
+            foreignWorkerQuota:
+              type: integer
+            complianceScore:
+              type: number
+            lastInspectionDate:
+              type: string
+              format: date
+
+    EmployerCreate:
+      allOf:
+        - $ref: '#/components/schemas/EntityCreate'
+        - type: object
+          properties:
+            commercialRecord:
+              type: string
+            taxNumber:
+              type: string
+            employeeCount:
+              type: integer
+            establishmentType:
+              type: string
+
+    EmployerUpdate:
+      allOf:
+        - $ref: '#/components/schemas/EntityUpdate'
+        - type: object
+          properties:
+            employeeCount:
+              type: integer
+            establishmentType:
+              type: string
+            operatingHours:
+              type: object
+
+    EmployerDashboard:
+      type: object
+      properties:
+        totalWorkers:
+          type: integer
+        activeContracts:
+          type: integer
+        pendingInspections:
+          type: integer
+        complianceStatus:
+          type: string
+        recentPayments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payment'
+        upcomingRenewals:
+          type: array
+          items:
+            type: object
+        alerts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComplianceAlert'
+
+    EmployerCompliance:
+      type: object
+      properties:
+        overallStatus:
+          type: string
+          enum: [compliant, non_compliant, pending_review]
+        score:
+          type: number
+        issues:
+          type: array
+          items:
+            type: object
+        lastInspection:
+          type: object
+        pendingDocuments:
+          type: array
+          items:
+            type: string
+        requiredActions:
+          type: array
+          items:
+            type: object
+
+    # Inspections
+    Inspection:
+      allOf:
+        - $ref: '#/components/schemas/BaseEntity'
+        - type: object
+          properties:
+            employerId:
+              type: string
+              format: uuid
+            inspectorId:
+              type: string
+              format: uuid
+            type:
+              $ref: '#/components/schemas/InspectionType'
+            status:
+              $ref: '#/components/schemas/InspectionStatus'
+            scheduledDate:
+              type: string
+              format: date
+            actualDate:
+              type: string
+              format: date
+            location:
+              type: string
+            findings:
+              type: array
+              items:
+                type: object
+            violations:
+              type: array
+              items:
+                $ref: '#/components/schemas/Violation'
+            recommendations:
+              type: string
+            inspectorNotes:
+              type: string
+            photos:
+              type: array
+              items:
+                type: string
+                format: uri
+
+    InspectionCreate:
+      type: object
+      required: [employerId, type, scheduledDate]
+      properties:
+        employerId:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/InspectionType'
+        scheduledDate:
+          type: string
+          format: date
+        location:
+          type: string
+        notes:
+          type: string
+
+    InspectionUpdate:
+      type: object
+      properties:
+        scheduledDate:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/InspectionStatus'
+        inspectorNotes:
+          type: string
+
+    InspectionComplete:
+      type: object
+      required: [findings]
+      properties:
+        findings:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+              description:
+                type: string
+              severity:
+                type: string
+                enum: [minor, moderate, serious, critical]
+              evidence:
+                type: array
+                items:
+                  type: string
+        violations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ViolationCreate'
+        recommendations:
+          type: string
+        inspectorNotes:
+          type: string
+        photos:
+          type: array
+          items:
+            type: string
+            format: uri
+
+    Violation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        inspectionId:
+          type: string
+          format: uuid
+        type:
+          type: string
+        description:
+          type: string
+        descriptionAr:
+          type: string
+        legalReference:
+          type: string
+        severity:
+          type: string
+          enum: [minor, moderate, serious, critical]
+        fine:
+          type: number
+        status:
+          type: string
+          enum: [pending, resolved, appealed]
+        resolution:
+          type: string
+        resolvedAt:
+          type: string
+          format: date-time
+
+    ViolationCreate:
+      type: object
+      required: [type, description, descriptionAr, severity]
+      properties:
+        type:
+          type: string
+        description:
+          type: string
+        descriptionAr:
+          type: string
+        legalReference:
+          type: string
+        severity:
+          type: string
+          enum: [minor, moderate, serious, critical]
+        fine:
+          type: number
+
+    # Compliance
+    ComplianceAlert:
+      allOf:
+        - $ref: '#/components/schemas/BaseEntity'
+        - type: object
+          properties:
+            entityType:
+              type: string
+            entityId:
+              type: string
+              format: uuid
+            type:
+              type: string
+            severity:
+              $ref: '#/components/schemas/AlertSeverity'
+            title:
+              type: string
+            description:
+              type: string
+            status:
+              $ref: '#/components/schemas/AlertStatus'
+            acknowledgedAt:
+              type: string
+              format: date-time
+            acknowledgedBy:
+              type: string
+              format: uuid
+            resolvedAt:
+              type: string
+              format: date-time
+            resolvedBy:
+              type: string
+              format: uuid
+            resolution:
+              type: string
+
+    # Licenses
+    License:
+      allOf:
+        - $ref: '#/components/schemas/BaseEntity'
+        - type: object
+          properties:
+            holderType:
+              type: string
+              enum: [worker, employer]
+            holderId:
+              type: string
+              format: uuid
+            type:
+              $ref: '#/components/schemas/LicenseType'
+            number:
+              type: string
+            issueDate:
+              type: string
+              format: date
+            expiryDate:
+              type: string
+              format: date
+            status:
+              $ref: '#/components/schemas/LicenseStatus'
+            issuingAuthority:
+              type: string
+            documentUrl:
+              type: string
+              format: uri
+            notes:
+              type: string
+
+    LicenseCreate:
+      type: object
+      required: [holderType, holderId, type, number, issueDate, expiryDate]
+      properties:
+        holderType:
+          type: string
+          enum: [worker, employer]
+        holderId:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/LicenseType'
+        number:
+          type: string
+        issueDate:
+          type: string
+          format: date
+        expiryDate:
+          type: string
+          format: date
+        issuingAuthority:
+          type: string
+        notes:
+          type: string
+
+    LicenseUpdate:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/LicenseStatus'
+        expiryDate:
+          type: string
+          format: date
+        notes:
+          type: string
+
+    # Contracts
+    Contract:
+      allOf:
+        - $ref: '#/components/schemas/BaseEntity'
+        - type: object
+          properties:
+            employerId:
+              type: string
+              format: uuid
+            workerId:
+              type: string
+              format: uuid
+            contractNumber:
+              type: string
+            type:
+              type: string
+              enum: [permanent, temporary, fixed_term, part_time]
+            startDate:
+              type: string
+              format: date
+            endDate:
+              type: string
+              format: date
+            status:
+              $ref: '#/components/schemas/ContractStatus'
+            position:
+              type: string
+            occupationId:
+              type: string
+              format: uuid
+            monthlySalary:
+              type: number
+            currency:
+              type: string
+              default: YER
+            workingHours:
+              type: integer
+            probationPeriod:
+              type: integer
+            noticePeriod:
+              type: integer
+            terminationReason:
+              type: string
+            terminatedAt:
+              type: string
+              format: date-time
+            documentUrl:
+              type: string
+              format: uri
+
+    ContractCreate:
+      type: object
+      required: [employerId, workerId, type, startDate, position]
+      properties:
+        employerId:
+          type: string
+          format: uuid
+        workerId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [permanent, temporary, fixed_term, part_time]
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        position:
+          type: string
+        occupationId:
+          type: string
+          format: uuid
+        monthlySalary:
+          type: number
+        currency:
+          type: string
+        workingHours:
+          type: integer
+        probationPeriod:
+          type: integer
+        noticePeriod:
+          type: integer
+
+    ContractUpdate:
+      type: object
+      properties:
+        endDate:
+          type: string
+          format: date
+        position:
+          type: string
+        monthlySalary:
+          type: number
+        status:
+          $ref: '#/components/schemas/ContractStatus'
+
+    # Payments
+    Payment:
+      allOf:
+        - $ref: '#/components/schemas/BaseEntity'
+        - type: object
+          properties:
+            employerId:
+              type: string
+              format: uuid
+            type:
+              $ref: '#/components/schemas/PaymentType'
+            amount:
+              type: number
+            currency:
+              type: string
+            reference:
+              type: string
+            status:
+              $ref: '#/components/schemas/PaymentStatus'
+            paymentMethod:
+              type: string
+            paymentDate:
+              type: string
+              format: date
+            verificationReference:
+              type: string
+            verifiedAt:
+              type: string
+              format: date-time
+            verifiedBy:
+              type: string
+              format: uuid
+            period:
+              type: string
+            description:
+              type: string
+
+    PaymentCreate:
+      type: object
+      required: [employerId, type, amount]
+      properties:
+        employerId:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/PaymentType'
+        amount:
+          type: number
+        currency:
+          type: string
+        paymentMethod:
+          type: string
+        paymentDate:
+          type: string
+          format: date
+        period:
+          type: string
+        description:
+          type: string
+
+    # Disputes
+    Dispute:
+      allOf:
+        - $ref: '#/components/schemas/BaseEntity'
+        - type: object
+          properties:
+            filingNumber:
+              type: string
+            type:
+              $ref: '#/components/schemas/DisputeType'
+            status:
+              $ref: '#/components/schemas/DisputeStatus'
+            workerId:
+              type: string
+              format: uuid
+            employerId:
+              type: string
+              format: uuid
+            subject:
+              type: string
+            description:
+              type: string
+            filedAt:
+              type: string
+              format: date-time
+            hearingDate:
+              type: string
+              format: date
+            decision:
+              type: string
+            resolvedAt:
+              type: string
+              format: date-time
+            implementationDate:
+              type: string
+              format: date
+
+    DisputeCreate:
+      type: object
+      required: [type, subject, description]
+      properties:
+        workerId:
+          type: string
+          format: uuid
+        employerId:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/DisputeType'
+        subject:
+          type: string
+        description:
+          type: string
+
+    DisputeUpdate:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/DisputeStatus'
+        hearingDate:
+          type: string
+          format: date
+        decision:
+          type: string
+
+    # Training
+    TrainingRecord:
+      allOf:
+        - $ref: '#/components/schemas/BaseEntity'
+        - type: object
+          properties:
+            workerId:
+              type: string
+              format: uuid
+            type:
+              $ref: '#/components/schemas/TrainingType'
+            title:
+              type: string
+            titleAr:
+              type: string
+            provider:
+              type: string
+            startDate:
+              type: string
+              format: date
+            endDate:
+              type: string
+              format: date
+            hours:
+              type: integer
+            certificateIssued:
+              type: boolean
+            certificateNumber:
+              type: string
+            grade:
+              type: string
+            status:
+              type: string
+              enum: [scheduled, in_progress, completed, cancelled]
+
+    TrainingCreate:
+      type: object
+      required: [workerId, type, title, titleAr]
+      properties:
+        workerId:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/TrainingType'
+        title:
+          type: string
+        titleAr:
+          type: string
+        provider:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        hours:
+          type: integer
+
+    TrainingUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [scheduled, in_progress, completed, cancelled]
+        certificateIssued:
+          type: boolean
+        certificateNumber:
+          type: string
+        grade:
+          type: string
+
+    # Governorates
+    Governorate:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        nameAr:
+          type: string
+        districts:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+              name:
+                type: string
+              nameAr:
+                type: string
+
+    # Intelligence
+    AnalyticsData:
+      type: object
+      properties:
+        metric:
+          type: string
+        timeframe:
+          type: string
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              value:
+                type: number
+        summary:
+          type: object
+        insights:
+          type: array
+          items:
+            type: string
+
+    Recommendation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        category:
+          type: string
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+        title:
+          type: string
+        description:
+          type: string
+        rationale:
+          type: string
+        expectedImpact:
+          type: string
+        resources:
+          type: array
+          items:
+            type: string
+        timeline:
+          type: string
+
+    RiskAssessment:
+      type: object
+      properties:
+        entityType:
+          type: string
+        entityId:
+          type: string
+          format: uuid
+        assessmentType:
+          type: string
+        overallScore:
+          type: number
+        riskLevel:
+          type: string
+          enum: [low, medium, high, critical]
+        factors:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              score:
+                type: number
+              weight:
+                type: number
+              description:
+                type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+        lastAssessed:
+          type: string
+          format: date-time
+
+    # External Integrations
+    SocialSecurityData:
+      type: object
+      properties:
+        workerId:
+          type: string
+          format: uuid
+        contributions:
+          type: array
+          items:
+            type: object
+            properties:
+              period:
+                type: string
+              amount:
+                type: number
+              date:
+                type: string
+                format: date
+              employer:
+                type: string
+        totalContributions:
+          type: number
+        lastUpdated:
+          type: string
+          format: date-time
+
+    PassportVerification:
+      type: object
+      properties:
+        passportNumber:
+          type: string
+        nationality:
+          type: string
+        valid:
+          type: boolean
+        expiryDate:
+          type: string
+          format: date
+        holderName:
+          type: string
+        holderNameAr:
+          type: string
+        verifiedAt:
+          type: string
+          format: date-time
+
+    # Data Quality
+    DataQualityReport:
+      type: object
+      properties:
+        overallScore:
+          type: number
+        completeness:
+          type: number
+        accuracy:
+          type: number
+        timeliness:
+          type: number
+        consistency:
+          type: number
+        issues:
+          type: array
+          items:
+            type: object
+        recommendations:
+          type: array
+          items:
+            type: string
+
+    # Excellence
+    ExcellenceAssessment:
+      allOf:
+        - $ref: '#/components/schemas/BaseEntity'
+        - type: object
+          properties:
+            entityId:
+              type: string
+              format: uuid
+            level:
+              type: string
+              enum: [bronze, silver, gold, platinum]
+            criteriaScores:
+              type: object
+              additionalProperties:
+                type: number
+            totalScore:
+              type: number
+            assessedAt:
+              type: string
+              format: date-time
+            assessorId:
+              type: string
+              format: uuid
+            expiresAt:
+              type: string
+              format: date
+
+    ExcellenceAssessmentCreate:
+      type: object
+      required: [entityId, level, criteriaScores]
+      properties:
+        entityId:
+          type: string
+          format: uuid
+        level:
+          type: string
+          enum: [bronze, silver, gold, platinum]
+        criteriaScores:
+          type: object
+          additionalProperties:
+            type: number
+
+    # Board Members
+    BoardMember:
+      allOf:
+        - $ref: '#/components/schemas/BaseEntity'
+        - type: object
+          properties:
+            entityId:
+              type: string
+              format: uuid
+            name:
+              type: string
+            nameAr:
+              type: string
+            position:
+              type: string
+            positionAr:
+              type: string
+            email:
+              type: string
+              format: email
+            phone:
+              type: string
+            nationalId:
+              type: string
+            appointmentDate:
+              type: string
+              format: date
+            termEnd:
+              type: string
+              format: date
+            status:
+              type: string
+              enum: [active, resigned, terminated]
+
+    BoardMemberCreate:
+      type: object
+      required: [entityId, name, nameAr, position, positionAr]
+      properties:
+        entityId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        nameAr:
+          type: string
+        position:
+          type: string
+        positionAr:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        nationalId:
+          type: string
+        appointmentDate:
+          type: string
+          format: date
+        termEnd:
+          type: string
+          format: date
+
+    BoardMemberUpdate:
+      type: object
+      properties:
+        position:
+          type: string
+        positionAr:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        termEnd:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [active, resigned, terminated]
+
+    # Dispatches
+    Dispatch:
+      allOf:
+        - $ref: '#/components/schemas/BaseEntity'
+        - type: object
+          properties:
+            workerId:
+              type: string
+              format: uuid
+            sourceEmployerId:
+              type: string
+              format: uuid
+            destinationEmployerId:
+              type: string
+              format: uuid
+            dispatchNumber:
+              type: string
+            status:
+              type: string
+              enum: [pending, approved, rejected, active, completed, cancelled]
+            startDate:
+              type: string
+              format: date
+            endDate:
+              type: string
+              format: date
+            reason:
+              type: string
+            approvedBy:
+              type: string
+              format: uuid
+            approvedAt:
+              type: string
+              format: date-time
+
+    DispatchCreate:
+      type: object
+      required: [workerId, sourceEmployerId, destinationEmployerId]
+      properties:
+        workerId:
+          type: string
+          format: uuid
+        sourceEmployerId:
+          type: string
+          format: uuid
+        destinationEmployerId:
+          type: string
+          format: uuid
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        reason:
+          type: string
+
+    # Reduction Requests
+    ReductionRequest:
+      allOf:
+        - $ref: '#/components/schemas/BaseEntity'
+        - type: object
+          properties:
+            workerId:
+              type: string
+              format: uuid
+            employerId:
+              type: string
+              format: uuid
+            requestNumber:
+              type: string
+            status:
+              type: string
+              enum: [pending, approved, rejected, processed]
+            requestedAmount:
+              type: number
+            approvedAmount:
+              type: number
+            reason:
+              type: string
+            approvedBy:
+              type: string
+              format: uuid
+            processedAt:
+              type: string
+              format: date-time
+
+    ReductionRequestCreate:
+      type: object
+      required: [workerId, employerId, requestedAmount, reason]
+      properties:
+        workerId:
+          type: string
+          format: uuid
+        employerId:
+          type: string
+          format: uuid
+        requestedAmount:
+          type: number
+        reason:
+          type: string
+
+    # Evaluation Certificates
+    Certificate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        workerId:
+          type: string
+          format: uuid
+        type:
+          type: string
+        level:
+          type: string
+          enum: [basic, intermediate, advanced, expert]
+        title:
+          type: string
+        titleAr:
+          type: string
+        issuedAt:
+          type: string
+          format: date
+        expiresAt:
+          type: string
+          format: date
+        issuer:
+          type: string
+        documentUrl:
+          type: string
+          format: uri
+
+    CertificateCreate:
+      type: object
+      required: [workerId, type, level, title, titleAr]
+      properties:
+        workerId:
+          type: string
+          format: uuid
+        type:
+          type: string
+        level:
+          type: string
+          enum: [basic, intermediate, advanced, expert]
+        title:
+          type: string
+        titleAr:
+          type: string
+        issuedAt:
+          type: string
+          format: date
+        expiresAt:
+          type: string
+          format: date
+        issuer:
+          type: string
+
+    # OSH Incidents
+    OSHIncident:
+      allOf:
+        - $ref: '#/components/schemas/BaseEntity'
+        - type: object
+          properties:
+            employerId:
+              type: string
+              format: uuid
+            incidentNumber:
+              type: string
+            severity:
+              type: string
+              enum: [minor, moderate, serious, severe, fatal]
+            type:
+              type: string
+            description:
+              type: string
+            location:
+              type: string
+            occurredAt:
+              type: string
+              format: date-time
+            reportedAt:
+              type: string
+              format: date-time
+            reportedBy:
+              type: string
+              format: uuid
+            status:
+              type: string
+              enum: [reported, investigating, resolved, closed]
+            injuredWorkers:
+              type: array
+              items:
+                type: object
+            causes:
+              type: array
+              items:
+                type: string
+            correctiveActions:
+              type: array
+              items:
+                type: string
+            investigationReport:
+              type: string
+            resolvedAt:
+              type: string
+              format: date-time
+
+    OSHIncidentCreate:
+      type: object
+      required: [employerId, severity, type, description, occurredAt]
+      properties:
+        employerId:
+          type: string
+          format: uuid
+        severity:
+          type: string
+          enum: [minor, moderate, serious, severe, fatal]
+        type:
+          type: string
+        description:
+          type: string
+        location:
+          type: string
+        occurredAt:
+          type: string
+          format: date-time
+        injuredWorkers:
+          type: array
+          items:
+            type: object
+
+    OSHIncidentUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [reported, investigating, resolved, closed]
+        causes:
+          type: array
+          items:
+            type: string
+        correctiveActions:
+          type: array
+          items:
+            type: string
+        investigationReport:
+          type: string
+
+    # Worker Passport
+    WorkerPassport:
+      type: object
+      properties:
+        worker:
+          $ref: '#/components/schemas/WorkerProfile'
+        employmentHistory:
+          type: array
+          items:
+            type: object
+        certifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/Certificate'
+        trainingHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrainingRecord'
+        complianceRecord:
+          type: object
+        inspections:
+          type: array
+          items:
+            type: object
+        awards:
+          type: array
+          items:
+            type: object
+        generatedAt:
+          type: string
+          format: date-time
+
+    # Labor Records
+    LaborRecord:
+      allOf:
+        - $ref: '#/components/schemas/BaseEntity'
+        - type: object
+          properties:
+            workerId:
+              type: string
+              format: uuid
+            recordType:
+              type: string
+            title:
+              type: string
+            description:
+              type: string
+            effectiveDate:
+              type: string
+              format: date
+            expiryDate:
+              type: string
+              format: date
+            documentUrl:
+              type: string
+              format: uri
+
+    LaborRecordCreate:
+      type: object
+      required: [workerId, recordType, title, effectiveDate]
+      properties:
+        workerId:
+          type: string
+          format: uuid
+        recordType:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        effectiveDate:
+          type: string
+          format: date
+        expiryDate:
+          type: string
+          format: date
+
+    # System Administration
+    BrandingConfig:
+      type: object
+      properties:
+        name:
+          type: string
+        nameAr:
+          type: string
+        logo:
+          type: string
+          format: uri
+        favicon:
+          type: string
+          format: uri
+        primaryColor:
+          type: string
+        secondaryColor:
+          type: string
+        accentColor:
+          type: string
+        motto:
+          type: string
+        mottoAr:
+          type: string
+
+    Role:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        nameAr:
+          type: string
+        description:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        isSystem:
+          type: boolean
+
+    UserCreate:
+      type: object
+      required: [email, name, role, userType]
+      properties:
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        role:
+          type: string
+        userType:
+          type: string
+          enum: [ministry, employer, union, worker, inspector]
+        organizationId:
+          type: string
+          format: uuid
+        governorate:
+          type: string
+        password:
+          type: string
+          format: password
+          minLength: 12
+
+    UserUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        role:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, suspended]
+        governorate:
+          type: string
+
+    # Service Catalog
+    ServiceCatalogItem:
+      allOf:
+        - $ref: '#/components/schemas/BaseEntity'
+        - type: object
+          properties:
+            name:
+              type: string
+            nameAr:
+              type: string
+            description:
+              type: string
+            descriptionAr:
+              type: string
+            category:
+              type: string
+            icon:
+              type: string
+            steps:
+              type: array
+              items:
+                type: object
+            requiredDocuments:
+              type: array
+              items:
+                type: string
+            estimatedTime:
+              type: string
+            fees:
+              type: number
+            status:
+              type: string
+              enum: [active, inactive, deprecated]
+
+    # Workflow
+    Workflow:
+      allOf:
+        - $ref: '#/components/schemas/BaseEntity'
+        - type: object
+          properties:
+            type:
+              type: string
+            entityType:
+              type: string
+            entityId:
+              type: string
+              format: uuid
+            status:
+              type: string
+              enum: [pending, in_progress, completed, cancelled]
+            currentStep:
+              type: integer
+            steps:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  status:
+                    type: string
+                  completedAt:
+                    type: string
+                    format: date-time
+                  completedBy:
+                    type: string
+                    format: uuid
+            history:
+              type: array
+              items:
+                type: object
+
+    # Chronology
+    ChronologyEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        entityType:
+          type: string
+        entityId:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        metadata:
+          type: object
+        userId:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+
+    # Uploads
+    UploadResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        url:
+          type: string
+          format: uri
+        filename:
+          type: string
+        size:
+          type: integer
+        mimeType:
+          type: string
+
+    Upload:
+      allOf:
+        - $ref: '#/components/schemas/BaseEntity'
+        - type: object
+          properties:
+            category:
+              type: string
+            entityType:
+              type: string
+            entityId:
+              type: string
+              format: uuid
+            filename:
+              type: string
+            originalName:
+              type: string
+            url:
+              type: string
+              format: uri
+            size:
+              type: integer
+            mimeType:
+              type: string
+            uploadedBy:
+              type: string
+              format: uuid

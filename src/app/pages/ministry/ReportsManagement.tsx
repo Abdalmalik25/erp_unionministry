@@ -54,70 +54,64 @@ export function ReportsManagement() {
     const [licenses, setLicenses] = useState<any[]>([]);
     const [evalCerts, setEvalCerts] = useState<any[]>([]);
     const [documents, setDocuments] = useState<any[]>([]);
+    // Timed fetch wrapper — prevents hanging requests from blocking the reports page
+    const timedFetch = (url: string, timeoutMs = 8000) => {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        return fetch(url, { signal: controller.signal })
+            .then(r => { clearTimeout(timer); return r; })
+            .catch(e => { clearTimeout(timer); if (e.name === 'AbortError') throw new Error(`Timeout: ${url}`); throw e; });
+    };
+
     const fetchAll = useCallback(async () => {
         setLoading(true);
         try {
-            const [coR, enR, disR, expR, meR, prR, viR, insR, cmR, diR, paR, alR, raR, lrR, trR, liR, ecR, docR] = await Promise.all([
-                fetch('/api/commercial?limit=100'),
-                fetch('/api/entities?limit=100'),
-                fetch('/api/labor-disputes?limit=100'),
-                fetch('/api/expatriate-licenses?limit=100'),
-                fetch('/api/members?limit=100'),
-                fetch('/api/professions?limit=100'),
-                fetch('/api/violations?limit=100'),
-                fetch('/api/inspections?limit=100'),
-                fetch('/api/compliance-matrices?limit=100'),
-                fetch('/api/dispatches?limit=100'),
-                fetch('/api/fee-payments?limit=100'),
-                fetch('/api/compliance-alerts?limit=100'),
-                fetch('/api/risk-assessments?limit=100'),
-                fetch('/api/legal-references?limit=100'),
-                fetch('/api/training-records?limit=100'),
-                fetch('/api/licenses?limit=100'),
-                fetch('/api/evaluation-certificates?limit=100'),
-                fetch('/api/documents?limit=200'),
+            const results = await Promise.allSettled([
+                timedFetch('/api/commercial?limit=100'),
+                timedFetch('/api/entities?limit=100'),
+                timedFetch('/api/labor-disputes?limit=100'),
+                timedFetch('/api/expatriate-licenses?limit=100'),
+                timedFetch('/api/members?limit=100'),
+                timedFetch('/api/professions?limit=100'),
+                timedFetch('/api/violations?limit=100'),
+                timedFetch('/api/inspections?limit=100'),
+                timedFetch('/api/compliance-matrices?limit=100'),
+                timedFetch('/api/dispatches?limit=100'),
+                timedFetch('/api/fee-payments?limit=100'),
+                timedFetch('/api/compliance-alerts?limit=100'),
+                timedFetch('/api/risk-assessments?limit=100'),
+                timedFetch('/api/legal-references?limit=100'),
+                timedFetch('/api/training-records?limit=100'),
+                timedFetch('/api/licenses?limit=100'),
+                timedFetch('/api/evaluation-certificates?limit=100'),
+                timedFetch('/api/documents?limit=200'),
             ]);
             const extract = (d: any) => d?.data || [];
-            if (coR.ok)
-                setCommercialEsts(extract(await coR.json()));
-            if (enR.ok)
-                setEntities(extract(await enR.json()));
-            if (disR.ok)
-                setDisputes(extract(await disR.json()));
-            if (expR.ok)
-                setExpatriateLicenses(extract(await expR.json()));
-            if (meR.ok)
-                setMembers(extract(await meR.json()));
-            if (prR.ok)
-                setProfessions(extract(await prR.json()));
-            if (viR.ok)
-                setViolations(extract(await viR.json()));
-            if (insR.ok)
-                setInspections(extract(await insR.json()));
-            if (cmR.ok)
-                setComplianceMatrices(extract(await cmR.json()));
-            if (diR.ok)
-                setDispatches(extract(await diR.json()));
-            if (paR.ok)
-                setPayments(extract(await paR.json()));
-            if (alR.ok) {
-                const d = await alR.json();
-                setAlerts(d.data || d.alerts || []);
-            }
-            if (raR.ok)
-                setRiskAssessments(extract(await raR.json()));
-            if (lrR.ok) {
-                const d = await lrR.json();
-                setLegalRefs([...(d.legal_references || []), ...(d.law_articles || []), ...(d.ilo_conventions || []), ...(d.international_standards || [])]);
-            }
-            if (trR.ok)
-                setTrainingRecords(extract(await trR.json()));
-            if (liR.ok)
-                setLicenses(extract(await liR.json()));
-            if (ecR.ok)
-                setEvalCerts(extract(await ecR.json()));
-            if (docR.ok)
-                setDocuments(extract(await docR.json()));
+            const legalTransform = (d: any) => [...(d.legal_references || []), ...(d.law_articles || []), ...(d.ilo_conventions || []), ...(d.international_standards || [])];
+            const alertsTransform = (d: any) => d.data || d.alerts || [];
+            const apply = (r: PromiseSettledResult<Response>, setter: (v: unknown[]) => void, transform?: (d: unknown) => unknown[]) => {
+                if (r.status === 'fulfilled' && r.value.ok) {
+                    r.value.json().then(d => setter(transform ? transform(d) : (d?.data || [])));
+                }
+            };
+            apply(results[0], setCommercialEsts);
+            apply(results[1], setEntities);
+            apply(results[2], setDisputes);
+            apply(results[3], setExpatriateLicenses);
+            apply(results[4], setMembers);
+            apply(results[5], setProfessions);
+            apply(results[6], setViolations);
+            apply(results[7], setInspections);
+            apply(results[8], setComplianceMatrices);
+            apply(results[9], setDispatches);
+            apply(results[10], setPayments);
+            apply(results[11], setAlerts, alertsTransform);
+            apply(results[12], setRiskAssessments);
+            apply(results[13], setLegalRefs, legalTransform);
+            apply(results[14], setTrainingRecords);
+            apply(results[15], setLicenses);
+            apply(results[16], setEvalCerts);
+            apply(results[17], setDocuments);
             logAudit({ action: 'view', resource: 'reports' });
         }
         catch {

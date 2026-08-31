@@ -5,7 +5,7 @@
  * موحد مع server/middleware/rbac.js عبر strings موحدة في src/app/roles.ts
  */
 
-import { useCallback, useMemo, ReactNode } from 'react';
+import { useCallback, useMemo, ReactNode, memo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { ROLES, ROLE_ALIASES } from '../roles';
 
@@ -354,7 +354,7 @@ interface PermissionGateProps {
   children: ReactNode;
 }
 
-export function PermissionGate({ permission, fallback = null, children }: PermissionGateProps) {
+export const PermissionGate = memo(function PermissionGate({ permission, fallback = null, children }: PermissionGateProps) {
   const { can } = usePermissions();
   return can(permission) ? <>{children}</> : <>{fallback}</>;
-}
+});

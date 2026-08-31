@@ -1,3 +1,5 @@
+// i18n initialization (TD-024) — must come before any component imports that use translations
+import './i18n/config';
 import { useEffect, useState, useCallback } from 'react';
 import { RouterProvider } from 'react-router';
 import { Toaster } from './components/ui/sonner';
@@ -12,6 +14,9 @@ import { db } from './utils/indexedDB';
 import { SplashScreen } from './components/ui/SplashScreen';
 import { OfflineIndicator, OfflineSyncBanner } from './components/OfflineIndicator';
 import { OfflineProvider } from './contexts/OfflineContext';
+import { LanguageProvider } from './contexts/LanguageContext';
+import { A11yAnnouncer } from './components/a11y/A11yAnnouncer';
+import { SkipToContent } from './components/a11y/SkipToContent';
 
 function ToastContainer() {
   const { toasts, removeToast } = useToast();
@@ -81,11 +86,15 @@ export default function App() {
             disableTransitionOnChange
             storageKey="theme"
           >
-            <AuthProvider>
-              <OfflineProvider>
-                <AppContent />
-              </OfflineProvider>
-            </AuthProvider>
+            <LanguageProvider>
+              <AuthProvider>
+                <OfflineProvider>
+                  <SkipToContent />
+                  <A11yAnnouncer />
+                  <AppContent />
+                </OfflineProvider>
+              </AuthProvider>
+            </LanguageProvider>
           </ThemeProvider>
         </ErrorBoundary>
       )}

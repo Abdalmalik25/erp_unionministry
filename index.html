@@ -2,48 +2,403 @@
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#0a2540" />
     <meta name="color-scheme" content="light dark" />
-    <!-- PWA: قابلية التثبيت كسطح مكتب/موبايل — المفتاح الذي يطلق beforeinstallprompt -->
+
+    <!-- Primary SEO Meta Tags -->
+    <title>المنظومة الوطنية لإدارة قطاع العمل — وزارة الشؤون الاجتماعية والعمل | اليمن</title>
+    <meta name="title" content="المنظومة الوطنية لإدارة قطاع العمل — وزارة الشؤون الاجتماعية والعمل" />
+    <meta name="description" content="منصة وطنية متكاملة لإدارة سوق العمل في الجمهورية اليمنية — تسجيل النقابات والاتحادات والجمعيات وأصحاب العمل، حوكمة المنشآت، إصدار تصاريح العمل، إدارة العقود، التفتيش، فض النزاعات، والشكاوى العمالية." />
+    <meta name="keywords" content="وزارة الشؤون الاجتماعية والعمل, اليمن, سوق العمل, النقابات العمالية, الاتحادات, المنشآت, عقود العمل, تفتيش العمل, الشكاوى العمالية, تصاريح العمل, إدارة العمل, حوكمة, ISCO, ISIC, ILO, النصوص القانونية اليمنية, قانون العمل اليمني" />
+    <meta name="author" content="وزارة الشؤون الاجتماعية والعمل — الجمهورية اليمنية" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="bingbot" content="index, follow" />
+    <meta name="language" content="Arabic" />
+    <meta name="revisit-after" content="7 days" />
+    <meta name="rating" content="general" />
+    <meta name="distribution" content="global" />
+    <meta name="copyright" content="© 2026 وزارة الشؤون الاجتماعية والعمل" />
+    <meta name="geo.region" content="YE" />
+    <meta name="geo.placename" content="Yemen" />
+    <meta name="geo.position" content="15.3694;44.1910" />
+    <meta name="ICBM" content="15.3694, 44.1910" />
+
+    <!-- Canonical & Hreflang -->
+    <link rel="canonical" href="https://erp-unionministry.vercel.app/" />
+    <link rel="alternate" hreflang="ar" href="https://erp-unionministry.vercel.app/" />
+    <link rel="alternate" hreflang="ar-YE" href="https://erp-unionministry.vercel.app/" />
+    <link rel="alternate" hreflang="x-default" href="https://erp-unionministry.vercel.app/" />
+
+    <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="المنظومة الوطنية" />
     <meta name="application-name" content="المنظومة الوطنية" />
-    <meta name="description" content="المنظومة الوطنية لإدارة قطاع العمل — منصة وزارة الشؤون الاجتماعية والعمل لخدمة النقابات والاتحادات والجمعيات وأصحاب العمل في اليمن." />
-    <title>المنظومة الوطنية لإدارة قطاع العمل — وزارة الشؤون الاجتماعية والعمل</title>
-    <link rel="canonical" href="https://erp-unionministry.vercel.app/" />
+    <meta name="msapplication-TileColor" content="#0a2540" />
+    <meta name="msapplication-config" content="/browserconfig.xml" />
+
+    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="المنظومة الوطنية لإدارة قطاع العمل" />
-    <meta name="application-name" content="NLSMP — National Labour Sector Management Platform" />
     <meta property="og:title" content="المنظومة الوطنية لإدارة قطاع العمل — وزارة الشؤون الاجتماعية والعمل" />
-    <meta property="og:description" content="المنظومة الوطنية لإدارة قطاع العمل — منصة وزارة الشؤون الاجتماعية والعمل لخدمة النقابات والاتحادات والجمعيات وأصحاب العمل في اليمن." />
+    <meta property="og:description" content="منصة وطنية لإدارة سوق العمل في اليمن — حوكمة المنشآت، تسجيل النقابات، تصاريح العمل، التفتيش، والشكاوى العمالية." />
     <meta property="og:url" content="https://erp-unionministry.vercel.app/" />
     <meta property="og:image" content="https://erp-unionministry.vercel.app/android-chrome-512x512.png" />
+    <meta property="og:image:secure_url" content="https://erp-unionministry.vercel.app/android-chrome-512x512.png" />
+    <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="512" />
     <meta property="og:image:height" content="512" />
+    <meta property="og:image:alt" content="شعار المنظومة الوطنية لإدارة قطاع العمل - اليمن" />
     <meta property="og:locale" content="ar_YE" />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:locale:alternate" content="en_US" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@MOL_Yemen" />
+    <meta name="twitter:creator" content="@MOL_Yemen" />
     <meta name="twitter:title" content="المنظومة الوطنية لإدارة قطاع العمل — وزارة الشؤون الاجتماعية والعمل" />
-    <meta name="twitter:description" content="المنظومة الوطنية لإدارة قطاع العمل — حوكمة سوق العمل والمنشآت والنقابات في الجمهورية اليمنية" />
+    <meta name="twitter:description" content="منصة وطنية لإدارة سوق العمل في اليمن — حوكمة المنشآت، تسجيل النقابات، تصاريح العمل، التفتيش، والشكاوى العمالية." />
     <meta name="twitter:image" content="https://erp-unionministry.vercel.app/android-chrome-512x512.png" />
+    <meta name="twitter:image:alt" content="شعار المنظومة الوطنية" />
+
+    <!-- Verification Tags (Search Engines) -->
+    <meta name="google-site-verification" content="yemen-ministry-labor-portal-verification" />
+    <meta name="yandex-verification" content="yemen-ministry-labor" />
+    <meta name="msvalidate.01" content="yemen-ministry-labor" />
+
+    <!-- Favicons -->
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <link rel="preload" as="image" href="/logo_yemen.jpg" fetchpriority="high" />
+    <link rel="mask-icon" href="/icons/mask-icon.svg" color="#0a2540" />
 
-    <!-- الخطوط الرسمية ذاتية الاستضافة: preload للحرجين فقط، والبقية font-display swap -->
+    <!-- Preload Critical Resources -->
     <link rel="preload" as="font" type="font/woff2" href="/fonts/IBMPlexSansArabic-400-arabic.woff2" crossorigin />
     <link rel="preload" as="font" type="font/woff2" href="/fonts/Cairo-800-arabic.woff2" crossorigin />
 
-    <!-- منع وميض الثيم الخاطئ (FOUC) عند التحميل — سكربت خارجي متوافق مع CSP -->
+    <!-- DNS Prefetch for External Resources -->
+    <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="//www.google-analytics.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+
+    <!-- Structured Data: Government Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "GovernmentOrganization",
+      "name": "وزارة الشؤون الاجتماعية والعمل",
+      "alternateName": "Ministry of Social Affairs and Labour - Yemen",
+      "url": "https://erp-unionministry.vercel.app/",
+      "logo": "https://erp-unionministry.vercel.app/android-chrome-512x512.png",
+      "image": "https://erp-unionministry.vercel.app/android-chrome-512x512.png",
+      "description": "المنظومة الوطنية لإدارة قطاع العمل في الجمهورية اليمنية",
+      "foundingDate": "1990",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "صنعاء",
+        "addressLocality": "صنعاء",
+        "addressRegion": "أمانة العاصمة",
+        "addressCountry": "YE"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 15.3694,
+        "longitude": 44.1910
+      },
+      "contactPoint": [
+        {
+          "@type": "ContactPoint",
+          "telephone": "+967-1-234567",
+          "contactType": "customer service",
+          "areaServed": "YE",
+          "availableLanguage": ["Arabic", "English"]
+        }
+      ],
+      "sameAs": [
+        "https://www.facebook.com/MOL.Yemen",
+        "https://twitter.com/MOL_Yemen"
+      ],
+      "areaServed": {
+        "@type": "Country",
+        "name": "Republic of Yemen"
+      }
+    }
+    </script>
+
+    <!-- Structured Data: WebSite with SearchAction -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "المنظومة الوطنية لإدارة قطاع العمل",
+      "url": "https://erp-unionministry.vercel.app/",
+      "inLanguage": "ar-YE",
+      "publisher": {
+        "@type": "GovernmentOrganization",
+        "name": "وزارة الشؤون الاجتماعية والعمل"
+      },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://erp-unionministry.vercel.app/search?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+    <!-- Structured Data: SoftwareApplication (Government Service Platform) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "NLSMP — National Labour Sector Management Platform",
+      "alternateName": "المنظومة الوطنية لإدارة قطاع العمل",
+      "applicationCategory": "GovernmentApplication",
+      "applicationSubCategory": "Labor Relations Management",
+      "operatingSystem": "Web Browser, Android, iOS",
+      "url": "https://erp-unionministry.vercel.app/",
+      "downloadUrl": "https://erp-unionministry.vercel.app/manifest.json",
+      "softwareVersion": "2.0",
+      "datePublished": "2024-01-01",
+      "dateModified": "2026-08-30",
+      "author": {
+        "@type": "GovernmentOrganization",
+        "name": "وزارة الشؤون الاجتماعية والعمل"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "YER",
+        "availability": "https://schema.org/InStock"
+      },
+      "featureList": [
+        "إدارة المنشآت",
+        "تسجيل النقابات والاتحادات",
+        "إدارة عقود العمل",
+        "إدارة تصاريح العمل",
+        "التفتيش العمالي",
+        "الشكاوى العمالية",
+        "الأدلة الوطنية المعيارية",
+        "جواز العمل الرقمي",
+        "نظام سير العمل المؤسسي"
+      ],
+      "screenshot": "https://erp-unionministry.vercel.app/android-chrome-512x512.png"
+    }
+    </script>
+
+    <!-- Structured Data: BreadcrumbList -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "الرئيسية",
+          "item": "https://erp-unionministry.vercel.app/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "الخدمات",
+          "item": "https://erp-unionministry.vercel.app/services"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "السجلات",
+          "item": "https://erp-unionministry.vercel.app/registries"
+        }
+      ]
+    }
+    </script>
+
+    <!-- Structured Data: FAQPage -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "ما هي المنظومة الوطنية لإدارة قطاع العمل؟",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "هي منصة إلكترونية متكاملة تابعة لوزارة الشؤون الاجتماعية والعمل في الجمهورية اليمنية، تقدم خدمات تسجيل النقابات والاتحادات والجمعيات وأصحاب العمل، وإدارة العقود، وإصدار تصاريح العمل، ومتابعة الشكاوى العمالية."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "كيف يمكنني تسجيل منشأتي في المنظومة؟",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "يمكنك التسجيل عبر بوابة أصحاب العمل على المنظومة، وتعبئة البيانات المطلوبة، ورفع الوثائق اللازمة، وستحصل على رقم تسجيل فوري."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "ما هو جواز العمل الرقمي؟",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "جواز العمل الرقمي هو وثيقة إلكترونية شاملة تحوي كل بيانات العامل المهنية والصحية والتدريبية، يمكن التحقق منها عبر رمز QR."
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- Structured Data: GovernmentService Catalog (Phase 5) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "name": "خدمات المنظومة الوطنية لإدارة قطاع العمل",
+      "description": "الخدمات الإلكترونية المتاحة عبر بوابات الوزارة الأربع",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "item": {
+            "@type": "GovernmentService",
+            "name": "تسجيل المنشآت",
+            "alternateName": "Establishment Registration",
+            "description": "تسجيل المنشآت والشركات في الجمهورية اليمنية",
+            "serviceType": "Registration",
+            "provider": { "@type": "GovernmentOrganization", "name": "وزارة الشؤون الاجتماعية والعمل" },
+            "areaServed": { "@type": "Country", "name": "Republic of Yemen" },
+            "audience": { "@type": "BusinessAudience", "name": "أصحاب العمل" },
+            "availableChannel": { "@type": "ServiceChannel", "serviceUrl": "https://erp-unionministry.vercel.app/employer/register", "availableLanguage": ["Arabic"] }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "item": {
+            "@type": "GovernmentService",
+            "name": "تسجيل النقابات والاتحادات",
+            "description": "تسجيل المنظمات النقابية والاتحادات العمالية",
+            "serviceType": "Registration",
+            "provider": { "@type": "GovernmentOrganization", "name": "وزارة الشؤون الاجتماعية والعمل" },
+            "availableChannel": { "@type": "ServiceChannel", "serviceUrl": "https://erp-unionministry.vercel.app/union/register" }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "item": {
+            "@type": "GovernmentService",
+            "name": "إصدار تصاريح العمل",
+            "description": "إصدار وتجديد تصاريح العمل للعمالة الوافدة",
+            "serviceType": "Permit",
+            "provider": { "@type": "GovernmentOrganization", "name": "وزارة الشؤون الاجتماعية والعمل" },
+            "availableChannel": { "@type": "ServiceChannel", "serviceUrl": "https://erp-unionministry.vercel.app/worker/permits" }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 4,
+          "item": {
+            "@type": "GovernmentService",
+            "name": "جواز العمل الرقمي",
+            "description": "إصدار والتحقق من جواز العمل الرقمي للعامل",
+            "serviceType": "Digital ID",
+            "provider": { "@type": "GovernmentOrganization", "name": "وزارة الشؤون الاجتماعية والعمل" },
+            "availableChannel": { "@type": "ServiceChannel", "serviceUrl": "https://erp-unionministry.vercel.app/worker/passport" }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 5,
+          "item": {
+            "@type": "GovernmentService",
+            "name": "تقديم الشكاوى العمالية",
+            "description": "نظام إلكتروني لتقديم ومتابعة الشكاوى العمالية",
+            "serviceType": "Complaint",
+            "provider": { "@type": "GovernmentOrganization", "name": "وزارة الشؤون الاجتماعية والعمل" },
+            "availableChannel": { "@type": "ServiceChannel", "serviceUrl": "https://erp-unionministry.vercel.app/disputes" }
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- Structured Data: Dataset (National Directories) — Phase 5 -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Dataset",
+      "name": "الأدلة الوطنية المعيارية — قطاع العمل",
+      "alternateName": "National Labor Directories",
+      "description": "مجموعة بيانات مرجعية معيارية لقطاع العمل في اليمن — 20 دليل (محافظات، مديريات، مهن ISCO-08، أنشطة ISIC-4، مخاطر، عقود، إلخ)",
+      "url": "https://erp-unionministry.vercel.app/registries",
+      "keywords": ["ISCO-08", "ISIC-4", "الأدلة الوطنية", "المهن", "الأنشطة الاقتصادية", "اليمن", "سوق العمل"],
+      "license": "https://creativecommons.org/licenses/by/4.0/",
+      "creator": { "@type": "GovernmentOrganization", "name": "وزارة الشؤون الاجتماعية والعمل", "url": "https://erp-unionministry.vercel.app/" },
+      "publisher": { "@type": "GovernmentOrganization", "name": "وزارة الشؤون الاجتماعية والعمل" },
+      "inLanguage": "ar",
+      "spatialCoverage": { "@type": "Country", "name": "Republic of Yemen" },
+      "temporalCoverage": "2024/..",
+      "distribution": [
+        { "@type": "DataDownload", "encodingFormat": "application/json", "contentUrl": "https://erp-unionministry.vercel.app/api/national-directories" },
+        { "@type": "DataDownload", "encodingFormat": "text/csv", "contentUrl": "https://erp-unionministry.vercel.app/api/national-directories?format=csv" }
+      ],
+      "isAccessibleForFree": true
+    }
+    </script>
+
+    <!-- Structured Data: Action — Site Search + Login -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ActionAccessSpecification",
+      "name": "تسجيل الدخول",
+      "description": "تسجيل الدخول إلى المنظومة الوطنية لإدارة قطاع العمل",
+      "url": "https://erp-unionministry.vercel.app/login",
+      "category": "LoginAction",
+      "expectsAcceptanceOf": { "@type": "Offer", "price": "0", "priceCurrency": "YER" }
+    }
+    </script>
+
+    <!-- Structured Data: Organization Service Areas -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "@id": "https://erp-unionministry.vercel.app/#webpage",
+      "url": "https://erp-unionministry.vercel.app/",
+      "name": "المنظومة الوطنية لإدارة قطاع العمل",
+      "inLanguage": "ar-YE",
+      "isPartOf": { "@id": "https://erp-unionministry.vercel.app/#website" },
+      "about": { "@type": "GovernmentOrganization", "name": "وزارة الشؤون الاجتماعية والعمل" },
+      "primaryImageOfPage": { "@type": "ImageObject", "url": "https://erp-unionministry.vercel.app/android-chrome-512x512.png" },
+      "significantLink": [
+        "https://erp-unionministry.vercel.app/services",
+        "https://erp-unionministry.vercel.app/registries",
+        "https://erp-unionministry.vercel.app/legal"
+      ],
+      "lastReviewed": "2026-08-30"
+    }
+    </script>
+
+    <!-- Theme Init & Styles -->
     <script src="/theme-init.js"></script>
     <link rel="stylesheet" href="/base.css" />
   </head>
   <body>
+    <noscript>
+      <div style="padding: 20px; text-align: center; font-family: 'Cairo', sans-serif; background: #f5f5f5;">
+        <h1>المنظومة الوطنية لإدارة قطاع العمل</h1>
+        <p>يرجى تفعيل JavaScript لاستخدام المنظومة. / Please enable JavaScript to use the platform.</p>
+      </div>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

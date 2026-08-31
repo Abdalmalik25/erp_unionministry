@@ -6,11 +6,11 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { AlertTriangle, Eye, Edit2, Trash2, Plus, Search, Filter, CheckCircle, X, ChevronRight, ChevronLeft, Download, ShieldAlert, Clock, ChevronUp, RefreshCw, DollarSign, Scale, FileText, Calendar, } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { StatusBadge } from '../../components/ui/StatusBadge';
-import {} from '../../components/ui/EmptyState';
-import {} from '../../components/ui/FilterBar';
-import {} from '../../components/ui/ActionButtons';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { TableSkeleton } from '../../components/ui/LoadingSkeleton';
 import { useConfirm } from '../../components/ui/ConfirmDialog';
 import { PermissionGate } from '../../hooks/usePermissions';
+import { useDebounce } from '../../hooks/useDebounce';
 import { logAudit } from '../../utils/security';
 import { exportReportToExcel } from '../../components/enterprise/PrintExportManager';
 import { toast } from 'sonner';
@@ -121,6 +121,7 @@ export default function ViolationsManagement() {
     const [workflowTarget, setWorkflowTarget] = useState<Violation | null>(null);
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const debouncedSearch = useDebounce(searchQuery, 350);
     const [statusFilter, setStatusFilter] = useState<ViolationStatus | 'all'>('all');
     const [severityFilter, setSeverityFilter] = useState<ViolationSeverity | 'all'>('all');
     const [currentPage, setCurrentPage] = useState(1);
@@ -160,7 +161,7 @@ export default function ViolationsManagement() {
     // ============================================================
     const filtered = useMemo(() => {
         return violations.filter(v => {
-            const q = searchQuery.trim();
+            const q = debouncedSearch.trim();
             const matchSearch = !q ||
                 (v.entity_name || '').includes(q) ||
                 (v.violation_number || '').includes(q) ||
@@ -169,7 +170,7 @@ export default function ViolationsManagement() {
             const matchSeverity = severityFilter === 'all' || v.severity === severityFilter;
             return matchSearch && matchStatus && matchSeverity;
         });
-    }, [violations, searchQuery, statusFilter, severityFilter]);
+    }, [violations, debouncedSearch, statusFilter, severityFilter]);
     const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
     const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
     const stats = useMemo(() => ({
@@ -401,9 +402,9 @@ export default function ViolationsManagement() {
             </PermissionGate>
           </div>}/>
 
-      {loading && (<div className="bg-card rounded-xl border border-border shadow-sm py-16 text-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto mb-3"/>
-          <p className="text-muted-foreground font-medium">جاري تحميل البيانات...</p>
+      {loading && (<div className="bg-card rounded-xl border border-border shadow-sm p-6">
+          <TableSkeleton rows={5} columns={6} />
+          <p className="text-center text-muted-foreground font-medium mt-4" aria-live="polite">جاري تحميل البيانات...</p>
         </div>)}
 
       {/* تنبيه قانوني */}
@@ -459,10 +460,14 @@ export default function ViolationsManagement() {
 
       {/* شريط البحث والتصفية */}
       <div className="bg-card rounded-xl border border-border shadow-sm p-4">
+        <div aria-live="polite" aria-atomic="true" className="sr-only">
+          {filtered.length === 0 ? 'لا توجد نتائج مطابقة للبحث' : `تم العثور على ${filtered.length} نتيجة مطابقة`}
+        </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"/>
-            <input type="text" placeholder="البحث برقم المخالفة أو اسم المنشأة أو النوع..." value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }} className="w-full pr-9 pl-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-primary"/>
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden />
+            <input type="text" id="violations-search" aria-label="البحث في المخالفات" aria-describedby="violations-search-desc" placeholder="البحث برقم المخالفة أو اسم المنشأة أو النوع..." value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }} className="w-full pr-9 pl-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-primary"/>
+            <span id="violations-search-desc" className="sr-only">اكتب للبحث في المخالفات مع تأخير 350 مللي ثانية</span>
           </div>
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-muted-foreground"/>
@@ -497,9 +502,19 @@ export default function ViolationsManagement() {
             </thead>
             <tbody>
               {paginated.length === 0 ? (<tr>
-                  <td colSpan={9} className="py-16 text-center">
-                    <ShieldAlert className="w-12 h-12 text-muted-foreground mx-auto mb-3"/>
-                    <p className="text-muted-foreground font-medium">لا توجد مخالفات مطابقة للبحث</p>
+                  <td colSpan={9} className="py-8">
+                    <EmptyState
+                      title={violations.length === 0 ? 'لا توجد مخالفات مسجلة' : 'لا توجد نتائج مطابقة للبحث'}
+                      description={violations.length === 0 ? 'ابدأ بإضافة مخالفة جديدة عبر زر إضافة مخالفة' : 'جرّب تغيير كلمات البحث أو الفلاتر'}
+                      icon={<ShieldAlert className="w-full h-full" />}
+                      action={violations.length === 0 ? (
+                        <PermissionGate permission="violations:create">
+                          <button onClick={openAdd} className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary/90">
+                            إضافة مخالفة
+                          </button>
+                        </PermissionGate>
+                      ) : undefined}
+                    />
                   </td>
                 </tr>) : (paginated.map((violation, idx) => {
             const sev = SEVERITY_CONFIG[violation.severity];

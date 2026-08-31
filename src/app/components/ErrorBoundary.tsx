@@ -1,10 +1,12 @@
 /**
  * Global Error Boundary - حدود الأخطاء العامة
  * Catches and handles all React errors gracefully
+ * Integrates with errorTracker.ts for server-side persistence
  */
 
 import { Component, ReactNode } from 'react';
 import { AlertCircle, RefreshCw, Home } from 'lucide-react';
+import { errorTracker } from '../utils/errorTracker';
 
 interface Props {
   children: ReactNode;
@@ -31,22 +33,21 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error('[ErrorBoundary] Caught error:', error, errorInfo);
     this.setState({ errorInfo });
 
-    // تسجيل الخطأ في السجل
+    // Track error via centralized errorTracker (server-side persistence)
     try {
-      const logs = JSON.parse(localStorage.getItem('error_logs') || '[]');
-      logs.push({
-        error: error.message,
+      errorTracker.capture({
+        message: error.message,
         stack: error.stack,
-        componentStack: errorInfo.componentStack,
-        timestamp: Date.now(),
-        userAgent: navigator.userAgent,
-        url: window.location.href,
+        source: 'react',
+        severity: 'error',
+        context: {
+          componentStack: errorInfo?.componentStack,
+          url: typeof window !== 'undefined' ? window.location.href : undefined,
+          userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+        },
       });
-      // الاحتفاظ بآخر 50 خطأ فقط
-      if (logs.length > 50) logs.splice(0, logs.length - 50);
-      localStorage.setItem('error_logs', JSON.stringify(logs));
-    } catch (e) {
-      console.error('[ErrorBoundary] Failed to save error log:', e);
+    } catch {
+      // Never let errorTracker crash the boundary itself
     }
   }
 

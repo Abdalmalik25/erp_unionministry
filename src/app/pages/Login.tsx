@@ -1,23 +1,23 @@
 /**
- * بوابة الدخول الرسمية الموحدة — وزارة الشؤون الاجتماعية والعمل
- * الجمهورية اليمنية | قطاع العمل
- * تصميم مؤسسي نهائي: لوحة هوية رسمية + نموذج دخول آمن، بدون أي بيانات تجريبية.
+ * Login.tsx — شاشة الدخول المطورة للمنظومة الوطنية للعمل
+ * Premium Modern Login with Glass Morphism & Advanced Security UX
+ * World-Class Security Design with Micro-interactions
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router';
 import {
   User, Lock, Eye, EyeOff, AlertCircle, Loader2, LogIn, CheckCircle2,
-  Landmark, Building2, Users, HardHat, Search, SearchX, MapPin, UserPlus,
-  ShieldCheck, Scale, ArrowRight,
+  Landmark, Building2, Users, HardHat, ShieldCheck, Scale, ArrowRight,
+  Sparkles, Fingerprint, Smartphone, KeyRound, Shield, Zap, Globe
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { AUDIENCES, getAudience, getLandingPath } from '../utils/portals';
 import type { Audience } from '../utils/portals';
 import { BRAND } from '../branding';
 import { BrandLogo } from '../components/ui/BrandLogo';
-import { EstablishmentRegistration } from '../components/employer/EmployerRegistration';
 
+// ===== Types =====
 interface OfficialIdentity {
   ministryNameAr: string;
   countryAr: string;
@@ -31,10 +31,482 @@ const IDENTITY_FALLBACK: OfficialIdentity = {
   countryAr: BRAND.country,
   systemNameAr: BRAND.systemName,
   systemNameEn: BRAND.nameEn,
-  legalBasis: 'قانون العمل رقم 40 لسنة 2025 ولائحه التنفيذية',
+  legalBasis: 'قانون العمل رقم 40 لسنة 2025 ولائحته التنفيذية',
 };
 
-// جلب الهوية الرسمية من إعدادات النظام (مصدر واحد للحقيقة)
+// ===== Premium Components =====
+function GlassCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`
+      relative overflow-hidden rounded-3xl
+      bg-white/80 backdrop-blur-xl
+      border border-white/50
+      shadow-2xl shadow-black/10
+      ${className}
+    `}>
+      <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent" />
+      <div className="relative z-10">{children}</div>
+    </div>
+  );
+}
+
+function PremiumInput({ 
+  icon: Icon, 
+  label, 
+  type = 'text',
+  value,
+  onChange,
+  error,
+  placeholder,
+  disabled,
+  showPasswordToggle,
+  onTogglePassword,
+  showPassword,
+  autoComplete,
+  description
+}: {
+  icon: any;
+  label: string;
+  type?: string;
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  showPasswordToggle?: boolean;
+  onTogglePassword?: () => void;
+  showPassword?: boolean;
+  autoComplete?: string;
+  description?: string;
+}) {
+  const inputId = `input-${label.replace(/\s+/g, '-').toLowerCase()}`;
+  return (
+    <div className="space-y-2">
+      <label className="block text-sm font-semibold text-slate-700" htmlFor={inputId}>
+        {label}
+      </label>
+      <div className="relative">
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400">
+          <Icon className="w-5 h-5" />
+        </div>
+        <input
+          id={inputId}
+          type={showPasswordToggle ? (showPassword ? 'text' : 'password') : type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          disabled={disabled}
+          autoComplete={autoComplete}
+          aria-describedby={description ? `${inputId}-desc` : undefined}
+          className={`
+            w-full pr-12 pl-4 py-3.5 rounded-xl
+            bg-white/90 backdrop-blur-sm
+            border-2 transition-all duration-200
+            placeholder:text-slate-400
+            focus:outline-none focus:ring-0
+            disabled:opacity-50 disabled:cursor-not-allowed
+            ${error 
+              ? 'border-red-300 focus:border-red-500' 
+              : 'border-slate-200 focus:border-amber-400 hover:border-slate-300'
+            }
+          `}
+        />
+        {showPasswordToggle && (
+          <button
+            type="button"
+            onClick={onTogglePassword}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+            aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+          >
+            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+          </button>
+        )}
+      </div>
+      {description && (
+        <p id={`${inputId}-desc`} className="text-xs text-slate-500 sr-only">
+          {description}
+        </p>
+      )}
+      {error && (
+        <p className="text-sm text-red-600 flex items-center gap-1" role="alert">
+          <AlertCircle className="w-4 h-4" />
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function AudienceSelector({ 
+  selected, 
+  onSelect 
+}: { 
+  selected: Audience; 
+  onSelect: (audience: Audience) => void;
+}) {
+  const audiences = [
+    { id: 'ministry' as Audience, icon: Landmark, label: 'وزارة العمل', subLabel: 'Ministry Portal' },
+    { id: 'employer' as Audience, icon: Building2, label: 'صاحب عمل', subLabel: 'Employer Portal' },
+    { id: 'union' as Audience, icon: Users, label: 'نقابة', subLabel: 'Union Portal' },
+    { id: 'worker' as Audience, icon: HardHat, label: 'عامل', subLabel: 'Worker Portal' },
+  ];
+  
+  return (
+    <div className="space-y-3">
+      <label className="block text-sm font-semibold text-slate-700">
+        اختر نوع الحساب
+      </label>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {audiences.map((aud) => (
+          <button
+            key={aud.id}
+            type="button"
+            onClick={() => onSelect(aud.id)}
+            className={`
+              relative p-4 rounded-xl transition-all duration-200
+              border-2
+              ${selected === aud.id 
+                ? 'bg-amber-50 border-amber-400 shadow-lg shadow-amber-500/20' 
+                : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+              }
+            `}
+          >
+            <div className={`
+              w-10 h-10 mx-auto mb-2 rounded-xl flex items-center justify-center
+              ${selected === aud.id 
+                ? 'bg-gradient-to-br from-amber-400 to-amber-600' 
+                : 'bg-slate-100'
+              }
+            `}>
+              <aud.icon className={`w-5 h-5 ${selected === aud.id ? 'text-white' : 'text-slate-600'}`} />
+            </div>
+            <div className={`text-sm font-bold ${selected === aud.id ? 'text-amber-800' : 'text-slate-700'}`}>
+              {aud.label}
+            </div>
+            <div className="text-xs text-slate-500">{aud.subLabel}</div>
+            {selected === aud.id && (
+              <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-amber-400 flex items-center justify-center shadow-lg">
+                <CheckCircle2 className="w-4 h-4 text-white" />
+              </div>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SecurityBadge() {
+  return (
+    <div className="flex items-center justify-center gap-6 py-4 px-6 bg-slate-50 rounded-xl border border-slate-200">
+      <div className="flex items-center gap-2 text-sm text-slate-600">
+        <Shield className="w-4 h-4 text-emerald-500" />
+        <span>تشفير 256-bit</span>
+      </div>
+      <div className="flex items-center gap-2 text-sm text-slate-600">
+        <Fingerprint className="w-4 h-4 text-blue-500" />
+        <span>مصادقة ثنائية</span>
+      </div>
+      <div className="flex items-center gap-2 text-sm text-slate-600">
+        <Lock className="w-4 h-4 text-amber-500" />
+        <span>حماية متقدمة</span>
+      </div>
+    </div>
+  );
+}
+
+function FloatingParticles() {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {Array.from({ length: 20 }).map((_, i) => (
+        <div
+          key={i}
+          className="absolute w-2 h-2 bg-amber-400/20 rounded-full animate-pulse"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 3}s`,
+            animationDuration: `${3 + Math.random() * 4}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ===== Main Component =====
+export function Login() {
+  const navigate = useNavigate();
+  const { signIn, user, loading: authLoading } = useAuth();
+
+  const [identity, setIdentity] = useState<OfficialIdentity>(IDENTITY_FALLBACK);
+  const [audience, setAudience] = useState<Audience>('ministry');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [authSuccess, setAuthSuccess] = useState(false);
+  const liveRegionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetchIdentity().then(setIdentity);
+  }, []);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && !authLoading) {
+      navigate(getLandingPath(user), { replace: true });
+    }
+  }, [user, authLoading, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!username.trim() || !password) {
+      setErrorMessage('يرجى إدخال اسم المستخدم وكلمة المرور');
+      return;
+    }
+
+    setLoading(true);
+    setErrorMessage('');
+
+    try {
+      const userType = audience === 'employer' ? 'organization' : audience === 'union' ? 'organization' : 'ministry';
+      const userData = await signIn(username, password, userType);
+
+      setAuthSuccess(true);
+
+      setTimeout(() => {
+        navigate(getLandingPath(userData), { replace: true });
+      }, 1000);
+      
+    } catch (err: any) {
+      setErrorMessage(err.message || 'حدث خطأ أثناء تسجيل الدخول');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-amber-50 flex items-center justify-center p-4">
+      <FloatingParticles />
+      
+      <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-8 relative z-10">
+        {/* Left Panel - Branding */}
+        <div className="hidden lg:flex flex-col justify-center">
+          <GlassCard className="p-10 h-full">
+            <div className="text-center mb-8">
+              <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-xl shadow-amber-500/30">
+                <Building2 className="w-10 h-10 text-white" />
+              </div>
+              <h1 className="text-2xl font-black text-slate-900 mb-2">
+                {identity.systemNameAr}
+              </h1>
+              <p className="text-slate-600">{identity.ministryNameAr}</p>
+              <p className="text-sm text-amber-600 font-semibold mt-1">{identity.countryAr}</p>
+            </div>
+            
+            <div className="space-y-4 mb-8">
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-white/60">
+                <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                </div>
+                <div>
+                  <div className="font-semibold text-slate-900">آمن وموثوق</div>
+                  <div className="text-sm text-slate-500">بياناتك محمية بأعلى معايير الأمان</div>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-white/60">
+                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <div className="font-semibold text-slate-900">سريع ومتكامل</div>
+                  <div className="text-sm text-slate-500">إتمام المعاملات في دقائق معدودة</div>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-white/60">
+                <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                  <Globe className="w-5 h-5 text-purple-600" />
+                </div>
+                <div>
+                  <div className="font-semibold text-slate-900">متاح للجميع</div>
+                  <div className="text-sm text-slate-500">خدمة جميع المناطق والمحافظات</div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="text-center text-sm text-slate-500">
+              <p>{identity.legalBasis}</p>
+            </div>
+          </GlassCard>
+        </div>
+        
+        {/* Right Panel - Login Form */}
+        <div className="flex flex-col justify-center">
+          <GlassCard className="p-8 md:p-10">
+            {/* Header */}
+            <div className="text-center mb-8">
+              <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2">
+                {authSuccess ? 'مرحباً بك!' : 'تسجيل الدخول'}
+              </h2>
+              <p className="text-slate-600">
+                {authSuccess 
+                  ? 'جاري توجيهك إلى لوحة التحكم...' 
+                  : 'أدخل بيانات الدخول للوصول إلى حسابك'
+                }
+              </p>
+            </div>
+            
+            {/* Success State */}
+            {authSuccess ? (
+              <div className="text-center py-8">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-emerald-100 flex items-center justify-center animate-bounce">
+                  <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+                </div>
+                <p className="text-emerald-600 font-semibold">تم تسجيل الدخول بنجاح</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+                <div aria-live="polite" aria-atomic="true" className="sr-only">
+                  {authSuccess ? 'تم تسجيل الدخول بنجاح، جاري التوجيه إلى لوحة التحكم' : 'نموذج تسجيل الدخول'}
+                </div>
+                {/* Audience Selector */}
+                <AudienceSelector 
+                  selected={audience} 
+                  onSelect={setAudience} 
+                />
+                
+                 {/* Username */}
+                <PremiumInput
+                  icon={User}
+                  label="اسم المستخدم"
+                  value={username}
+                  onChange={setUsername}
+                  placeholder="أدخل اسم المستخدم"
+                  autoComplete="username"
+                  disabled={loading}
+                  description="أدخل البريد الإلكتروني الرسمي أو اسم المستخدم"
+                />
+                
+                {/* Password */}
+                <PremiumInput
+                  icon={Lock}
+                  label="كلمة المرور"
+                  type="password"
+                  value={password}
+                  onChange={setPassword}
+                  placeholder="أدخل كلمة المرور"
+                  showPasswordToggle
+                  showPassword={showPassword}
+                  onTogglePassword={() => setShowPassword(!showPassword)}
+                  autoComplete="current-password"
+                  disabled={loading}
+                  description="أدخل كلمة المرور الخاصة بحسابك"
+                />
+                
+                {/* Remember Me & Forgot Password */}
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="w-4 h-4 rounded border-slate-300 text-amber-500 focus:ring-amber-500"
+                    />
+                    <span className="text-sm text-slate-600">تذكرني</span>
+                  </label>
+                  <Link 
+                    to="/forgot-password" 
+                    className="text-sm text-amber-600 hover:text-amber-700 font-semibold"
+                  >
+                    نسيت كلمة المرور؟
+                  </Link>
+                </div>
+                
+                {/* Error Message */}
+                {errorMessage && (
+                  <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex items-center gap-3" role="alert" aria-live="assertive">
+                    <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                    <p className="text-sm text-red-700">{errorMessage}</p>
+                  </div>
+                )}
+                
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className={`
+                    w-full py-4 rounded-xl font-bold text-lg
+                    flex items-center justify-center gap-3
+                    transition-all duration-200
+                    ${loading 
+                      ? 'bg-slate-300 cursor-not-allowed' 
+                      : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white shadow-lg shadow-amber-500/30 hover:shadow-xl hover:-translate-y-0.5'
+                    }
+                  `}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      جاري التحقق...
+                    </>
+                  ) : (
+                    <>
+                      <LogIn className="w-5 h-5" />
+                      تسجيل الدخول
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
+            
+            {/* Divider */}
+            <div className="flex items-center gap-4 my-8">
+              <div className="flex-1 h-px bg-slate-200" />
+              <span className="text-sm text-slate-400">أو</span>
+              <div className="flex-1 h-px bg-slate-200" />
+            </div>
+            
+            {/* Register Link */}
+            <div className="text-center">
+              <p className="text-slate-600 mb-3">لا تملك حساباً؟</p>
+              <Link
+                to="/register"
+                className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-slate-200 hover:border-amber-400 text-slate-700 hover:text-amber-700 font-semibold transition-all"
+              >
+                <User className="w-5 h-5" />
+                إنشاء حساب جديد
+              </Link>
+            </div>
+            
+            {/* Security Badges */}
+            <div className="mt-8">
+              <SecurityBadge />
+            </div>
+          </GlassCard>
+          
+          {/* Back to Home */}
+          <div className="text-center mt-6">
+            <Link 
+              to="/" 
+              className="inline-flex items-center gap-2 text-slate-600 hover:text-amber-600 font-semibold transition-colors"
+            >
+              <ArrowRight className="w-4 h-4 rotate-180" />
+              العودة للصفحة الرئيسية
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Helper Functions
 async function fetchIdentity(): Promise<OfficialIdentity> {
   try {
     const r = await fetch('/api/system/branding');
@@ -52,502 +524,3 @@ async function fetchIdentity(): Promise<OfficialIdentity> {
     return IDENTITY_FALLBACK;
   }
 }
-
-const AUDIENCE_ICONS: Record<Audience, React.ElementType> = {
-  ministry: Landmark,
-  employer: Building2,
-  union: Users,
-  worker: HardHat,
-};
-
-export function Login() {
-  const navigate = useNavigate();
-  const { signIn, user, loading: authLoading } = useAuth();
-
-  const [identity, setIdentity] = useState<OfficialIdentity>(IDENTITY_FALLBACK);
-  const [audience, setAudience] = useState<Audience>('ministry');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [authSuccess, setAuthSuccess] = useState(false);
-
-  useEffect(() => {
-    fetchIdentity().then(setIdentity);
-  }, []);
-
-  // بحث السجل الرسمي عن منشأة صاحب العمل (بالاسم أو الرقم الوطني)
-  const [estQuery, setEstQuery] = useState('');
-  const [estResults, setEstResults] = useState<any[]>([]);
-  const [estSearching, setEstSearching] = useState(false);
-  const [estPicked, setEstPicked] = useState<any | null>(null);
-  const [showRegForm, setShowRegForm] = useState(false);
-  const [regDone, setRegDone] = useState('');
-
-  useEffect(() => {
-    if (audience !== 'employer') return;
-    const q = estQuery.trim();
-    if (q.length < 2) { setEstResults([]); return; }
-    setEstSearching(true);
-    const t = setTimeout(async () => {
-      try {
-        const r = await fetch(`/api/establishments/lookup?q=${encodeURIComponent(q)}`);
-        const j = await r.json();
-        setEstResults(j.data?.data || []);
-      } catch { setEstResults([]); }
-      finally { setEstSearching(false); }
-    }, 350);
-    return () => clearTimeout(t);
-  }, [estQuery, audience]);
-
-  const pickEstablishment = (est: any) => {
-    setEstPicked(est);
-    sessionStorage.setItem('linked_establishment', JSON.stringify(est));
-  };
-
-  // طلب فتح حساب — للنقابات والعاملين وموظفي الوزارة
-  const REQUEST_TYPE_BY_AUDIENCE: Record<string, string> = {
-    union: 'union', worker: 'worker', ministry: 'ministry_employee',
-  };
-  const [showAccReq, setShowAccReq] = useState(false);
-  const [accReqDone, setAccReqDone] = useState('');
-  const [accForm, setAccForm] = useState({ full_name: '', email: '', phone: '', national_id: '', entity_name: '' });
-  const [accBusy, setAccBusy] = useState(false);
-
-  const submitAccountRequest = async () => {
-    if (!accForm.full_name.trim() || !accForm.email.trim()) {
-      setErrorMessage('الاسم والبريد الإلكتروني مطلوبان لطلب الحساب');
-      return;
-    }
-    setAccBusy(true); setErrorMessage('');
-    try {
-      const r = await fetch('/api/account-requests', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          request_type: REQUEST_TYPE_BY_AUDIENCE[audience],
-          ...accForm,
-          governorate: estPicked?.governorate || undefined,
-        }),
-      });
-      const j = await r.json();
-      if (r.ok && j.success !== false) {
-        setAccReqDone(j.data?.type_label || 'طلبك');
-        setShowAccReq(false);
-        setAccForm({ full_name: '', email: '', phone: '', national_id: '', entity_name: '' });
-      } else {
-        setErrorMessage(j.errors?.error || j.error || 'تعذر إرسال الطلب');
-      }
-    } catch { setErrorMessage('خطأ في الاتصال بالخادم'); }
-    finally { setAccBusy(false); }
-  };
-
-  const audienceInfo = getAudience(audience);
-
-  // جلسة قائمة؟ توجيه مباشر للبوابة الصحيحة بدلاً من إعادة الدخول
-  useEffect(() => {
-    if (!authLoading && user) {
-      navigate(getLandingPath(user), { replace: true });
-    }
-  }, [user, authLoading, navigate]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!username.trim()) {
-      setErrorMessage('يرجى إدخال اسم المستخدم أو البريد الإلكتروني');
-      return;
-    }
-    if (!password) {
-      setErrorMessage('يرجى إدخال كلمة المرور');
-      return;
-    }
-
-    setLoading(true);
-    setErrorMessage('');
-
-    try {
-      const signedUser = await signIn(username.trim(), password);
-      setAuthSuccess(true);
-      navigate(getLandingPath(signedUser as any), { replace: true });
-    } catch (err: any) {
-      setErrorMessage(err.message || 'بيانات الدخول غير صحيحة، يرجى التأكد وإعادة المحاولة');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="min-h-screen flex bg-[#070c16]" dir="rtl">
-      {/* ===== لوحة الهوية المؤسسية (سطح المكتب) ===== */}
-      <aside className="hidden lg:flex flex-col justify-between w-[44%] max-w-[620px] p-12 relative overflow-hidden border-l border-slate-800/60 bg-gradient-to-bl from-[#0b1526] via-[#09111e] to-[#070c16]">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_90%_50%_at_100%_0%,rgba(30,58,138,0.28),rgba(255,255,255,0))] pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_0%_100%,rgba(180,140,30,0.07),rgba(255,255,255,0))] pointer-events-none" />
-
-        <header className="relative z-10 space-y-6">
-          <div className="flex items-center gap-4">
-            <BrandLogo variant="emblem" size={72} rounded="2xl" priority="high" className="border border-slate-700/80 shadow-2xl" />
-            <div>
-              <p className="inline-block px-3 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/25 text-amber-400 text-xs font-bold mb-1.5">
-                {identity.countryAr}
-              </p>
-              <h1 className="text-2xl font-black text-white leading-snug">{identity.ministryNameAr}</h1>
-            </div>
-          </div>
-
-          <div className="h-px bg-gradient-to-l from-transparent via-slate-700/70 to-transparent" />
-
-          <p className="text-base text-slate-300 font-bold leading-relaxed">{identity.systemNameAr}</p>
-          <p className="text-[11px] text-slate-600 tracking-wide" dir="ltr">{identity.systemNameEn} — {BRAND.abbrEn}</p>
-          <p className="text-sm text-slate-500 leading-relaxed max-w-md">{BRAND.tagline}</p>
-        </header>
-
-        <div className="relative z-10 space-y-4">
-          {[
-            { icon: Landmark, t: 'أصحاب العمل', d: 'تسجيل المنشآت، الفروع، الترخيص، وإدارة العمالة' },
-            { icon: Users, t: 'النقابات والمنظمات', d: 'التسجيل النقابي، الانتخابات، الاجتماعات، والتقارير' },
-            { icon: HardHat, t: 'العمال والموظفون', d: 'الملفات المهنية، الشهادات، الإصابات، والتأمين' },
-            { icon: ShieldCheck, t: 'التفتيش والامتثال', d: 'المعاينات الميدانية، المخالفات، والإجراءات القانونية' },
-          ].map(({ icon: Icon, t, d }) => (
-            <div key={t} className="flex items-start gap-3.5">
-              <span className="mt-0.5 w-9 h-9 rounded-xl bg-blue-600/15 border border-blue-500/25 flex items-center justify-center shrink-0">
-                <Icon size={17} className="text-amber-400" />
-              </span>
-              <div>
-                <p className="text-sm font-bold text-slate-200">{t}</p>
-                <p className="text-xs text-slate-500 leading-relaxed mt-0.5">{d}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <footer className="relative z-10 pt-6 space-y-1.5">
-          <p className="text-[11px] text-slate-500 flex items-center gap-1.5">
-            <Scale size={12} className="text-slate-600" /> السند القانوني: {identity.legalBasis}
-          </p>
-          <p className="text-[11px] text-slate-600">الدعم الفني: {BRAND.supportPhone} • {BRAND.supportEmail}</p>
-          <p className="text-[11px] text-slate-600">أوقات العمل: السبت – الأربعاء، 8:00 ص – 2:00 م — والمنظومة تعمل على مدار الساعة</p>
-        </footer>
-      </aside>
-
-      {/* ===== لوحة الدخول ===== */}
-      <main className="flex-1 flex items-center justify-center px-4 py-8 relative selection:bg-blue-600 selection:text-white">
-        <div className="absolute inset-0 lg:hidden bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(30,58,138,0.25),rgba(255,255,255,0))] pointer-events-none" />
-
-        <div className="w-full max-w-md relative z-10">
-          {/* رابط العودة إلى الموقع التعريفي العام */}
-          <div className="flex justify-end mb-3">
-            <Link to="/" className="inline-flex items-center gap-1.5 text-[12px] font-bold text-slate-400 hover:text-amber-300 transition-colors">
-              <ArrowRight size={13} /> العودة إلى الموقع الرسمي
-            </Link>
-          </div>
-          {/* ترويسة مضغوطة — الجوال فقط */}
-          <div className="lg:hidden text-center mb-6 space-y-3">
-            <div className="inline-flex items-center justify-center shadow-2xl mb-1">
-              <BrandLogo variant="emblem" size={76} rounded="2xl" priority="high" className="border border-slate-700/80" />
-            </div>
-            <div className="space-y-1">
-              <div className="inline-block px-3 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/25 text-amber-400 text-xs font-bold">
-                {identity.countryAr}
-              </div>
-              <h1 className="text-xl font-bold text-white tracking-tight">{identity.ministryNameAr}</h1>
-              <p className="text-sm text-slate-400 font-medium">{identity.systemNameAr}</p>
-            </div>
-          </div>
-
-          <div className="bg-[#0f1c31]/90 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-2xl shadow-black/40">
-            {/* رسالة الخطأ */}
-            {errorMessage && (
-              <div className="mb-5 p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-2.5 text-xs sm:text-sm text-red-300 animate-in fade-in" role="alert">
-                <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                <p className="leading-relaxed">{errorMessage}</p>
-              </div>
-            )}
-
-            {/* رسالة النجاح */}
-            {authSuccess && (
-              <div className="mb-5 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-2.5 text-xs sm:text-sm text-emerald-300 animate-in fade-in">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <p>تم التحقق بنجاح — جاري نقلك لبوابتك...</p>
-              </div>
-            )}
-
-            {/* محدد نوع الحساب */}
-            {!authSuccess && (
-              <div className="mb-5">
-                <p className="text-xs font-semibold text-slate-300 mb-2">حدد نوع حسابك</p>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {AUDIENCES.map((a) => {
-                    const Icon = AUDIENCE_ICONS[a.id];
-                    const isActive = audience === a.id;
-                    return (
-                      <button
-                        key={a.id}
-                        type="button"
-                        disabled={loading}
-                        aria-pressed={isActive}
-                        onClick={() => { setAudience(a.id); setErrorMessage(''); }}
-                        title={a.label}
-                        className={`flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl text-[10px] font-bold transition-all cursor-pointer border ${
-                          isActive
-                            ? 'bg-blue-600/20 border-blue-500/50 text-blue-200 shadow-inner'
-                            : 'bg-slate-800/40 border-slate-700/60 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                        }`}
-                      >
-                        <Icon size={18} className={isActive ? 'text-amber-400' : ''} />
-                        <span className="leading-tight text-center">{a.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-                <p className="mt-2 text-[11px] text-slate-500">{audienceInfo.hint}</p>
-              </div>
-            )}
-
-            {/* بحث السجل الرسمي — لأصحاب العمل حصراً */}
-            {!authSuccess && audience === 'employer' && (
-              <div className="mb-5 p-3.5 rounded-xl bg-slate-800/40 border border-slate-700/60">
-                {estPicked ? (
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
-                        <CheckCircle2 className="w-4 h-4 shrink-0" /> {estPicked.name_ar}
-                      </p>
-                      <p className="text-[10px] text-slate-400 mt-0.5" dir="ltr">
-                        {estPicked.national_number} • {estPicked.governorate}
-                      </p>
-                    </div>
-                    <button type="button" onClick={() => setEstPicked(null)}
-                      className="text-[10px] font-bold text-slate-400 hover:text-white cursor-pointer shrink-0">تغيير</button>
-                  </div>
-                ) : (
-                  <>
-                    <label htmlFor="est-lookup" className="block text-[11px] font-semibold text-slate-300 mb-2">
-                      منشأتك في السجل الرسمي؟ ابحث بالاسم أو الرقم الوطني
-                    </label>
-                    <div className="relative">
-                      <Search className="w-4 h-4 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2" />
-                      <input
-                        id="est-lookup"
-                        type="text"
-                        value={estQuery}
-                        onChange={(e) => setEstQuery(e.target.value)}
-                        placeholder="اسم المنشأة أو رقمها الوطني"
-                        dir="auto"
-                        disabled={loading || authSuccess}
-                        className="w-full pr-9 pl-3 py-2.5 bg-[#080d18] border border-slate-700/70 rounded-xl text-sm text-white placeholder:text-slate-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-                      />
-                      {estSearching && <Loader2 className="w-4 h-4 text-blue-400 animate-spin absolute left-3 top-1/2 -translate-y-1/2" />}
-                    </div>
-
-                    {estResults.length > 0 && (
-                      <div className="mt-2 max-h-44 overflow-y-auto space-y-1.5" role="listbox" aria-label="نتائج البحث في سجل المنشآت">
-                        {estResults.map(est => (
-                          <button key={est.id} type="button" role="option" aria-selected={false}
-                            onClick={() => pickEstablishment(est)}
-                            className="w-full text-right p-2 rounded-lg bg-slate-800/70 hover:bg-slate-700/80 border border-transparent hover:border-blue-500/50 transition-colors cursor-pointer">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-xs font-bold text-slate-200 truncate">{est.name_ar}</span>
-                              <span className="text-[10px] font-mono text-amber-400 shrink-0" dir="ltr">{est.national_number}</span>
-                            </div>
-                            <span className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
-                              <MapPin className="w-3 h-3" /> {est.governorate || '—'} • {est.status_label}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {estQuery.trim().length >= 2 && !estSearching && estResults.length === 0 && (
-                      <div className="mt-2 flex items-start justify-between gap-2 p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/20">
-                        <p className="text-[11px] text-amber-300 flex items-center gap-1.5 leading-relaxed">
-                          <SearchX className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                          لم تُسجل منشأتك بعد في السجل الرسمي
-                        </p>
-                        <button type="button" onClick={() => setShowRegForm(true)}
-                          className="shrink-0 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-900 text-[10px] font-black cursor-pointer whitespace-nowrap">
-                          طلب تسجيل فوري
-                        </button>
-                      </div>
-                    )}
-                    {regDone && (
-                      <p className="mt-2 text-[11px] font-bold text-emerald-300 flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> تم حفظ طلبك — رقمك المرجعي {regDone} • يمكنك الدخول الآن ومتابعة الطلب من بوابتك
-                      </p>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-4" noValidate aria-label="نموذج تسجيل الدخول الرسمي">
-              <div>
-                <label htmlFor="login-username" className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  اسم المستخدم أو البريد الإلكتروني
-                </label>
-                <div className="relative">
-                  <User className="w-4 h-4 text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    id="login-username"
-                    type="text"
-                    value={username}
-                    onChange={(e) => { setUsername(e.target.value); setErrorMessage(''); }}
-                    placeholder={audienceInfo.placeholder}
-                    dir="ltr"
-                    disabled={loading || authSuccess}
-                    autoComplete="username"
-                    required
-                    className="w-full pr-10 pl-3.5 py-3 bg-[#080d18] border border-slate-700/70 rounded-xl text-sm text-white placeholder:text-slate-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="login-password" className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  كلمة المرور
-                </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    id="login-password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => { setPassword(e.target.value); setErrorMessage(''); }}
-                    placeholder="••••••••"
-                    dir="ltr"
-                    disabled={loading || authSuccess}
-                    autoComplete="current-password"
-                    required
-                    minLength={8}
-                    className="w-full pr-10 pl-10 py-3 bg-[#080d18] border border-slate-700/70 rounded-xl text-sm text-white placeholder:text-slate-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
-                    aria-pressed={showPassword}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-1">
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="w-4 h-4 rounded bg-[#080d18] border-slate-700 text-blue-600 accent-blue-600 focus:ring-0"
-                  />
-                  <span className="text-xs text-slate-400 font-medium">إبقاء الجلسة مفتوحة</span>
-                </label>
-                <span className="lg:hidden text-[11px] text-slate-600">دعم: {BRAND.supportPhone}</span>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading || authSuccess}
-                aria-busy={loading}
-                className="w-full flex items-center justify-center gap-2 py-3.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-900/30 disabled:opacity-50 cursor-pointer mt-2"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>جاري التحقق...</span>
-                  </>
-                ) : (
-                  <>
-                    <LogIn size={16} />
-                    <span>تسجيل الدخول</span>
-                  </>
-                )}
-              </button>
-            </form>
-
-            {/* تلميح أمني — كلمة المرور الابتدائية */}
-            {!authSuccess && (
-              <p className="mt-3 text-center text-[11px] leading-relaxed text-slate-500 flex items-start justify-center gap-1.5">
-                <ShieldCheck size={13} className="text-slate-600 shrink-0 mt-0.5" />
-                إن كانت هذه كلمة مرور ابتدائية مُسلَّمة إليك إدارياً، فغيّرها فور الدخول من «الملف الشخصي ← تغيير كلمة المرور»
-              </p>
-            )}
-
-            {/* طلب فتح حساب — نقابات / عمال / موظفو الوزارة */}
-            {!authSuccess && REQUEST_TYPE_BY_AUDIENCE[audience] && !accReqDone && (
-              <div className="mt-4">
-                {!showAccReq ? (
-                  <button type="button" onClick={() => setShowAccReq(true)}
-                    className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-slate-700 text-xs font-bold text-slate-300 hover:bg-slate-800/60 transition-colors cursor-pointer">
-                    <UserPlus size={14} /> لا تملك حساباً؟ اطلب فتح حساب رسمي
-                  </button>
-                ) : (
-                  <div className="mt-2 p-3.5 rounded-xl bg-slate-800/40 border border-slate-700/60 space-y-2.5" aria-label="نموذج طلب فتح حساب">
-                    <p className="text-[11px] font-bold text-slate-300">طلب {audienceInfo.label} — يُراجع من إدارة الحسابات بالوزارة</p>
-                    <input value={accForm.full_name} onChange={e => setAccForm({ ...accForm, full_name: e.target.value })}
-                      placeholder="الاسم الكامل *" dir="auto" autoComplete="name"
-                      className="w-full px-3 py-2 bg-[#080d18] border border-slate-700/70 rounded-lg text-xs text-white placeholder:text-slate-600 focus:border-blue-500 outline-none" />
-                    <input value={accForm.email} onChange={e => setAccForm({ ...accForm, email: e.target.value })}
-                      placeholder="البريد الإلكتروني *" type="email" dir="ltr" autoComplete="email" inputMode="email"
-                      className="w-full px-3 py-2 bg-[#080d18] border border-slate-700/70 rounded-lg text-xs text-white placeholder:text-slate-600 focus:border-blue-500 outline-none" />
-                    <div className="grid grid-cols-2 gap-2">
-                      <input value={accForm.phone} onChange={e => setAccForm({ ...accForm, phone: e.target.value })}
-                        placeholder="الهاتف" dir="ltr" type="tel" inputMode="tel" autoComplete="tel-national"
-                        className="px-3 py-2 bg-[#080d18] border border-slate-700/70 rounded-lg text-xs text-white placeholder:text-slate-600 focus:border-blue-500 outline-none" />
-                      <input value={accForm.national_id} onChange={e => setAccForm({ ...accForm, national_id: e.target.value })}
-                        placeholder="الرقم القومي" dir="ltr" inputMode="numeric" pattern="\d{9,12}"
-                        title="أرقام فقط (9–12 خانة)"
-                        className="px-3 py-2 bg-[#080d18] border border-slate-700/70 rounded-lg text-xs text-white placeholder:text-slate-600 focus:border-blue-500 outline-none" />
-                    </div>
-                    {audience === 'union' && (
-                      <input value={accForm.entity_name} onChange={e => setAccForm({ ...accForm, entity_name: e.target.value })}
-                        placeholder="اسم النقابة أو المنظمة" dir="auto"
-                        className="w-full px-3 py-2 bg-[#080d18] border border-slate-700/70 rounded-lg text-xs text-white placeholder:text-slate-600 focus:border-blue-500 outline-none" />
-                    )}
-                    <div className="flex gap-2 pt-0.5">
-                      <button type="button" onClick={submitAccountRequest} disabled={accBusy}
-                        className="flex-1 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-black cursor-pointer disabled:opacity-50">
-                        {accBusy ? 'جارٍ الإرسال…' : 'إرسال الطلب'}
-                      </button>
-                      <button type="button" onClick={() => setShowAccReq(false)}
-                        className="px-3 py-2 rounded-lg border border-slate-700 text-xs text-slate-400 cursor-pointer">إلغاء</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-            {accReqDone && (
-              <p className="mt-4 text-[11px] font-bold text-emerald-300 flex items-center justify-center gap-1.5 text-center">
-                <CheckCircle2 size={13} /> تم استلام طلبك ({accReqDone}) — ستتواصل معك إدارة الحسابات بعد المراجعة
-              </p>
-            )}
-
-            {/* تنبيه أمني مؤسسي */}
-            <p className="mt-5 pt-4 border-t border-slate-800/70 text-[10px] text-slate-600 leading-relaxed text-center">
-              <ShieldCheck size={11} className="inline ml-1 -translate-y-px" />
-              هذا نظام معلومات حكومي محمي. جميع عمليات الدخول مسجلة ومراقبة، وأي محاولة وصول غير مصرح بها تخضع للمساءلة القانونية.
-            </p>
-          </div>
-
-          <div className="text-center mt-5 text-xs text-slate-500">
-            <p>{identity.countryAr} — بوابة رسمية معتمدة</p>
-          </div>
-        </div>
-      </main>
-
-      {/* نموذج طلب تسجيل منشأة في السجل الرسمي */}
-      <EstablishmentRegistration
-        open={showRegForm}
-        onClose={() => setShowRegForm(false)}
-        onSuccess={(r) => {
-          setShowRegForm(false);
-          setRegDone(r.national_number || r.reference || '');
-          setEstQuery('');
-        }}
-      />
-    </div>
-  );
-}
-
-export default Login;

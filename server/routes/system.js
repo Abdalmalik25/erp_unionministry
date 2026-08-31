@@ -14,7 +14,7 @@ const router = express.Router();
 router.get('/api/health', async (_req, res) => {
   const startTime = Date.now();
   try {
-    const r = await pool.query('SELECT NOW() as time, current_database() as db, version() as pg_version');
+    const r = await pool.query('SELECT NOW() as time, version() as pg_version');
     const latency = Date.now() - startTime;
     res.json({
       status: 'healthy',
@@ -22,7 +22,6 @@ router.get('/api/health', async (_req, res) => {
       version: APP_VERSION,
       database: {
         status: 'connected',
-        name: r.rows[0].db,
         latency_ms: latency,
         pg_version: r.rows[0].pg_version,
       },

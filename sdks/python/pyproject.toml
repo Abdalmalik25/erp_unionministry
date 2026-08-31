@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "national-labor-platform"
+version = "2.0.0"
+description = "Python SDK for the Yemen National Labor Platform API"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+authors = [
+    { name = "Ministry of Labor - Yemen", email = "api-support@mol.gov.ye" }
+]
+keywords = ["labor", "employment", "yemen", "api", "sdk", "data-science"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "requests>=2.31.0",
+    "httpx>=0.25.0",
+    "pydantic>=2.5.0",
+    "python-dateutil>=2.8.2",
+]
+
+[project.optional-dependencies]
+async = ["httpx>=0.25.0"]
+pandas = ["pandas>=2.0.0", "numpy>=1.24.0"]
+dev = ["pytest>=7.4.0", "pytest-asyncio>=0.23.0", "pytest-cov>=4.1.0", "ruff>=0.1.0", "mypy>=1.7.0"]
+all = ["national-labor-platform[async,pandas,dev]"]
+
+[project.urls]
+Homepage = "https://labor.gov.ye"
+Documentation = "https://docs.labor.gov.ye"
+Repository = "https://github.com/mol-yemen/national-labor-platform"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nlp_sdk"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.mypy]
+python_version = "3.9"
+strict = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
