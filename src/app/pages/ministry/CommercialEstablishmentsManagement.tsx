@@ -10,6 +10,7 @@ import { Modal } from '../../components/ui/Modal';
 import { toast } from 'sonner';
 import { logAudit } from '../../utils/security';
 import { exportReportToExcel } from '../../components/enterprise/PrintExportManager';
+import { useGovernorates } from '../../hooks/useReferenceData';
 import {} from '../../branding';
 import { fetchEntityRiskAssessment, EntityRiskAssessment } from '../../utils/aiRiskEngine';
 import { BrainCircuit, Sparkles } from 'lucide-react';
@@ -98,6 +99,7 @@ export function CommercialEstablishmentsManagement() {
     const [filterGovernorate] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
+    const { governorates } = useGovernorates();
     // 360 Dossier Modal
     const [dossierData, setDossierData] = useState<Dossier360 | null>(null);
     const [aiRisk, setAiRisk] = useState<EntityRiskAssessment | null>(null);
@@ -795,7 +797,9 @@ export function CommercialEstablishmentsManagement() {
             </div>
             <div>
               <label className="block text-xs font-bold text-foreground mb-1">المحافظة</label>
-              <input value={formData.governorate} onChange={e => setFormData({ ...formData, governorate: e.target.value })} className="w-full p-2.5 border border-border rounded-xl bg-card text-sm"/>
+              <select value={formData.governorate || governorates[0] || ''} onChange={e => setFormData({ ...formData, governorate: e.target.value })} className="w-full p-2.5 border border-border rounded-xl bg-card text-sm">
+                {governorates.map(g => <option key={g} value={g}>{g}</option>)}
+              </select>
             </div>
             <div>
               <label className="block text-xs font-bold text-foreground mb-1">عدد العمال المسجلين</label>

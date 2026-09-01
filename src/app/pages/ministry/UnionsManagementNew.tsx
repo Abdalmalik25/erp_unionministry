@@ -10,6 +10,7 @@ import { logAudit } from '../../utils/security';
 import { fetchList } from '../../utils/api';
 import { PermissionGate } from '../../hooks/usePermissions';
 import { exportReportToExcel } from '../../components/enterprise/PrintExportManager';
+import { useGovernorates } from '../../hooks/useReferenceData';
 
 interface Entity {
   entity_id: string;
@@ -60,6 +61,8 @@ export function UnionsManagementNew() {
   const [editItem, setEditItem] = useState<Entity | null>(null);
   const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null);
   const [formData, setFormData] = useState<Partial<Entity>>({});
+
+  const { governorates } = useGovernorates();
 
   const fetchUnions = useCallback(async () => {
     setLoading(true);
@@ -144,7 +147,7 @@ export function UnionsManagementNew() {
     return matchSearch && matchType && matchProvince && matchStatus;
   });
 
-  const uniqueGovernorates = [...new Set(unions.map(u => u.governorate).filter(Boolean))];
+  const uniqueGovernorates = [...new Set([...unions.map(u => u.governorate).filter(Boolean), ...governorates])];
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -414,7 +417,7 @@ export function UnionsManagementNew() {
               <div><label className="block text-sm font-semibold text-foreground mb-1">اسم النقابة أو منظمة *</label><input value={formData.entity_name || ''} onChange={e => setFormData({ ...formData, entity_name: e.target.value })} className="w-full p-2.5 border border-border rounded-lg bg-card text-sm" /></div>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="block text-sm font-semibold text-foreground mb-1">النوع</label><select value={formData.entity_type || 'union'} onChange={e => setFormData({ ...formData, entity_type: e.target.value })} className="w-full p-2.5 border border-border rounded-lg bg-card text-sm"><option value="union">نقابة</option><option value="federation">اتحاد</option><option value="organization">منظمة</option><option value="branch">فرع</option></select></div>
-                <div><label className="block text-sm font-semibold text-foreground mb-1">المحافظة</label><input value={formData.governorate || ''} onChange={e => setFormData({ ...formData, governorate: e.target.value })} className="w-full p-2.5 border border-border rounded-lg bg-card text-sm" /></div>
+                <div><label className="block text-sm font-semibold text-foreground mb-1">المحافظة</label><select value={formData.governorate || ''} onChange={e => setFormData({ ...formData, governorate: e.target.value })} className="w-full p-2.5 border border-border rounded-lg bg-card text-sm"><option value="">— اختر —</option>{governorates.map(g => <option key={g} value={g}>{g}</option>)}</select></div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="block text-sm font-semibold text-foreground mb-1">الرمز الموحد</label><input value={formData.unified_code || ''} onChange={e => setFormData({ ...formData, unified_code: e.target.value })} className="w-full p-2.5 border border-border rounded-lg bg-card text-sm" /></div>

@@ -15,6 +15,7 @@ import { logAudit } from '../../utils/security';
 import { toast } from 'sonner';
 import type { RecordConfig, FieldDef } from '../../utils/laborRecordsConfig';
 import { getBadgeColor } from '../../utils/laborRecordsConfig';
+import { useGovernorates } from '../../hooks/useReferenceData';
 
 const PAGE_SIZE = 10;
 
@@ -64,7 +65,11 @@ export function LaborRecordsManager({ config }: LaborRecordsManagerProps) {
   const [stats, setStats] = useState<Record<string, number> | null>(null);
   const { confirm, dialog: confirmDialog } = useConfirm();
 
+  const { governorates, isLoading: govLoading } = useGovernorates();
+
   const baseUrl = `/api/${config.resource}`;
+
+  const isGovernorate = (name: string) => name === 'governorate' || name.includes('governorate');
 
   const queryParams = useMemo(() => {
     const params = new URLSearchParams();
@@ -222,7 +227,7 @@ export function LaborRecordsManager({ config }: LaborRecordsManagerProps) {
             className={base}
           >
             <option value="">— اختر —</option>
-            {field.options?.map(o => <option key={o} value={o}>{o}</option>)}
+            {(isGovernorate(field.name) ? (govLoading ? field.options ?? [] : governorates) : (field.options ?? [])).map(o => <option key={o} value={o}>{o}</option>)}
           </select>
         );
       case 'number':
@@ -387,7 +392,7 @@ export function LaborRecordsManager({ config }: LaborRecordsManagerProps) {
             className="border border-border rounded-lg px-3 py-2 text-sm bg-input-background focus:outline-none focus:ring-2 focus:ring-ring/25"
           >
             <option value="">{f.label}: الكل</option>
-            {f.options.map(o => <option key={o} value={o}>{o}</option>)}
+            {(isGovernorate(f.key) ? (govLoading ? f.options : governorates) : f.options).map(o => <option key={o} value={o}>{o}</option>)}
           </select>
         ))}
         <button
