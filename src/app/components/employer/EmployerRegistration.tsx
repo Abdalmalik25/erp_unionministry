@@ -3,10 +3,9 @@
  * يكتب مباشرة في السجل الرسمي commercial_establishments بحالة «طلب بانتظار الموافقة»
  * يدعم: منشأة جديدة بفروع متعددة • أو ربط/مطالبة بمنشأة قائمة بالرقم الوطني
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Building2, Plus, Trash2, CheckCircle2, X, Loader2, LinkIcon, FilePlus2 } from 'lucide-react';
-
-export const GOVERNORATES = ['صنعاء','عدن','تعز','الحديدة','حضرموت','إب','ذمار','حجة','عمران','مأرب','صعدة','البيضاء','المهرة','لحج','أبين','شبوة','الجوف','ريمة','المحويت','الضالع','سقطرى','صنعاء المدينة'];
+import { useGovernorates } from '../../hooks/useReferenceData';
 
 export const SECTORS_AR: Record<string, string> = {
   trade: 'تجارة', services: 'خدمات', industry: 'صناعة', construction: 'إنشاءات',
@@ -57,18 +56,29 @@ export function EstablishmentRegistration({
   const [error, setError] = useState('');
   const [result, setResult] = useState<Result | null>(null);
 
+  const { governorates, isLoading: govLoading, usedFallback } = useGovernorates();
+
   const [f, setF] = useState({
     name_ar: '', name_en: '', owner_name: '', owner_national_id: '',
-    phone: '', email: '', governorate: 'صنعاء', city: '', address: '',
+    phone: '', email: '', governorate: '', city: '', address: '',
     sector: 'trade', entity_type: 'company', employees_count: '',
     commercial_register: '',
   });
   const [branches, setBranches] = useState<BranchDraft[]>([]);
 
+  const DEFAULT_GOV = governorates[0] || 'أمانة العاصمة';
+
+  useEffect(() => {
+    setF(p => {
+      if (p.governorate) return p;
+      return { ...p, governorate: DEFAULT_GOV };
+    });
+  }, [DEFAULT_GOV]);
+
   if (!open) return null;
 
   const set = (k: string, v: string) => setF(p => ({ ...p, [k]: v }));
-  const addBranch = () => setBranches(b => [...b, { branch_name: '', branch_type: 'فرع', governorate: f.governorate, city: '', manager_name: '', phone: '' }]);
+  const addBranch = () => setBranches(b => [...b, { branch_name: '', branch_type: 'فرع', governorate: f.governorate || DEFAULT_GOV, city: '', manager_name: '', phone: '' }]);
   const rmBranch = (i: number) => setBranches(b => b.filter((_, x) => x !== i));
   const editBranch = (i: number, k: keyof BranchDraft, v: string) =>
     setBranches(b => b.map((x, xi) => xi === i ? { ...x, [k]: v } : x));
@@ -235,9 +245,18 @@ export function EstablishmentRegistration({
                   <div><label className={labelCls}>عدد العاملين المتوقع</label><input type="number" min="0" className={inputCls} dir="ltr" value={f.employees_count} onChange={e => set('employees_count', e.target.value)} /></div>
                   <div>
                     <label className={labelCls}>المحافظة *</label>
-                    <select className={inputCls} value={f.governorate} onChange={e => set('governorate', e.target.value)}>
-                      {GOVERNORATES.map(g => <option key={g} value={g}>{g}</option>)}
-                    </select>
+                    {govLoading ? (
+                      <div className="flex items-center gap-2 text-[11px] text-muted-foreground border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" /> جارٍ تحميل دليل المحافظات الوطني...
+                      </div>
+                    ) : (
+                      <select className={inputCls} value={f.governorate} onChange={e => set('governorate', e.target.value)}>
+                        {governorates.map(g => <option key={g} value={g}>{g}</option>)}
+                      </select>
+                    )}
+                    {!govLoading && usedFallback && (
+                      <p className="mt-1 text-[10px] text-amber-600">تجريبي (خارج الشبكة) — القائمة الوطنية الرسمية</p>
+                    )}
                   </div>
                   <div><label className={labelCls}>المدينة / المديرية</label><input className={inputCls} value={f.city} onChange={e => set('city', e.target.value)} /></div>
                   <div className="sm:col-span-2"><label className={labelCls}>العنوان التفصيلي</label><input className={inputCls} value={f.address} onChange={e => set('address', e.target.value)} /></div>
@@ -263,8 +282,8 @@ export function EstablishmentRegistration({
                         className="absolute left-2 top-2 p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
                       <div className="col-span-2 sm:col-span-3"><label className={labelCls}>اسم الفرع {i + 1}</label><input className={inputCls} value={b.branch_name} onChange={e => editBranch(i, 'branch_name', e.target.value)} /></div>
                       <div><label className={labelCls}>المحافظة</label>
-                        <select className={inputCls} value={b.governorate} onChange={e => editBranch(i, 'governorate', e.target.value)}>
-                          {GOVERNORATES.map(g => <option key={g} value={g}>{g}</option>)}
+                        <select className={inputCls} value={b.governorate || DEFAULT_GOV} onChange={e => editBranch(i, 'governorate', e.target.value)}>
+                          {governorates.map(g => <option key={g} value={g}>{g}</option>)}
                         </select></div>
                       <div><label className={labelCls}>المدينة</label><input className={inputCls} value={b.city} onChange={e => editBranch(i, 'city', e.target.value)} /></div>
                       <div><label className={labelCls}>الهاتف</label><input className={inputCls} dir="ltr" value={b.phone} onChange={e => editBranch(i, 'phone', e.target.value)} /></div>

@@ -286,13 +286,13 @@ function ModuleDetails({ module, isRTL }: {
       {module.id === 'employer' && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
           {[
-            { labelAr: 'منشآت مسجلة', labelEn: 'Registered', value: '12,500' },
-            { labelAr: 'فروع', labelEn: 'Branches', value: '45,200' },
-            { labelAr: 'عقود نشطة', labelEn: 'Active Contracts', value: '98,700' },
-            { labelAr: 'زيارات تفتيش', labelEn: 'Inspections', value: '156,000' },
+            { labelAr: 'منشآت مسجلة', labelEn: 'Registered' },
+            { labelAr: 'فروع', labelEn: 'Branches' },
+            { labelAr: 'عقود نشطة', labelEn: 'Active Contracts' },
+            { labelAr: 'زيارات تفتيش', labelEn: 'Inspections' },
           ].map((stat, i) => (
             <div key={i} className="text-center p-4 rounded-xl bg-white/5">
-              <div className="text-2xl font-bold text-white">{stat.value}</div>
+              <div className="text-2xl font-bold text-white">—</div>
               <div className="text-sm text-white/60">
                 {isRTL ? stat.labelAr : stat.labelEn}
               </div>
@@ -304,13 +304,13 @@ function ModuleDetails({ module, isRTL }: {
       {module.id === 'worker' && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
           {[
-            { labelAr: 'عمال مسجلين', labelEn: 'Registered Workers', value: '52,300' },
-            { labelAr: 'شهادات صحية', labelEn: 'Health Certificates', value: '89,400' },
-            { labelAr: 'تدريبات', labelEn: 'Trainings', value: '23,100' },
-            { labelAr: 'شهادات مهنية', labelEn: 'Certifications', value: '15,800' },
+            { labelAr: 'عمال مسجلين', labelEn: 'Registered Workers' },
+            { labelAr: 'شهادات صحية', labelEn: 'Health Certificates' },
+            { labelAr: 'تدريبات', labelEn: 'Trainings' },
+            { labelAr: 'شهادات مهنية', labelEn: 'Certifications' },
           ].map((stat, i) => (
             <div key={i} className="text-center p-4 rounded-xl bg-white/5">
-              <div className="text-2xl font-bold text-white">{stat.value}</div>
+              <div className="text-2xl font-bold text-white">—</div>
               <div className="text-sm text-white/60">
                 {isRTL ? stat.labelAr : stat.labelEn}
               </div>
@@ -355,45 +355,6 @@ function AnimatedBarChart() {
           to { transform: scaleY(1); }
         }
       `}</style>
-    </div>
-  );
-}
-
-// ===== مكون العداد المتحرك =====
-function AnimatedCounter({ value, suffix = '' }: { value: number; suffix?: string }) {
-  const [count, setCount] = useState(0);
-  const ref = useRef<HTMLDivElement>(null);
-  
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          const duration = 2000;
-          const startTime = Date.now();
-          
-          const animate = () => {
-            const elapsed = Date.now() - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            const eased = 1 - Math.pow(1 - progress, 3);
-            setCount(Math.floor(value * eased));
-            
-            if (progress < 1) requestAnimationFrame(animate);
-          };
-          
-          requestAnimationFrame(animate);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.5 }
-    );
-    
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [value]);
-  
-  return (
-    <div ref={ref} className="text-4xl font-bold text-white">
-      {count.toLocaleString()}{suffix}
     </div>
   );
 }
@@ -493,13 +454,13 @@ function HeroSection({ onExplore }: { onExplore: () => void }) {
         {/* الإحصائيات */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16">
           {[
-            { labelAr: 'منشأة', labelEn: 'Establishments', value: 12500 },
-            { labelAr: 'عامل', labelEn: 'Workers', value: 52300 },
-            { labelAr: 'عقد', labelEn: 'Contracts', value: 98700 },
-            { labelAr: 'زيارة تفتيش', labelEn: 'Inspections', value: 156000 },
+            { labelAr: 'منشآت وشركات', labelEn: 'Establishments' },
+            { labelAr: 'قوى عاملة', labelEn: 'Workforce' },
+            { labelAr: 'عقود موثقة', labelEn: 'Contracts' },
+            { labelAr: 'زيارات تفتيش', labelEn: 'Inspections' },
           ].map((stat, i) => (
             <div key={i} className="text-center">
-              <AnimatedCounter value={stat.value} suffix="+" />
+              <div className="text-3xl font-black text-gold">—</div>
               <div className="text-white/60 mt-1">
                 {isRTL ? stat.labelAr : stat.labelEn}
               </div>

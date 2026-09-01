@@ -203,8 +203,15 @@ export function OfflineProvider({ children }: {
         setSyncStatus('syncing');
         try {
             const result = await db.sync();
-            setPendingActions(0);
-            toast.success(`تم المزامنة: ${result.synced} عنصر مُزامن`);
+            const remaining = await db.getAll('pendingActions');
+            setPendingActions(remaining.length);
+            if (result.synced > 0) {
+                toast.success(`تم المزامنة: ${result.synced} عنصر مُزامن`);
+            } else if (result.retrying > 0) {
+                toast.info(`جاري إعادة محاولة مزامنة ${result.retrying} عنصر بعد استرجاع الجهود`);
+            } else if (result.failed > 0) {
+                toast.warning(`تعذّر مزامنة ${result.failed} عنصر بعد استنفاد المحاولات`);
+            }
             setSyncStatus('idle');
         }
         catch (error) {
