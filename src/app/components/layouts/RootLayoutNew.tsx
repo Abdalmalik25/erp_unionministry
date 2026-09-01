@@ -1,18 +1,15 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
-  LayoutDashboard, Users, Vote, Activity, FileText,
-  Briefcase, AlertTriangle, BarChart3, FileSearch,
-  Bell, User, LogOut, Menu, ChevronLeft, ChevronDown, Settings, Building2, UserPlus,
-  Send, MinusCircle, FolderTree, Shield, DollarSign,
-  ClipboardCheck, Award, BadgeCheck, GraduationCap, Scale, Globe,
-  BookOpen, TrendingUp, GitBranch, GitCompare, Settings2, Download, BrainCircuit,
-  Building, HeartPulse, Map, FileBadge, FileCheck2, UserCog, ListChecks, ShieldAlert, IdCard,
-  Layers, Trophy, ShieldCheck, Lock,
+  LayoutDashboard, Users, Activity, FileText,
+  Briefcase, FileSearch,
+  Bell, User, LogOut, Menu, ChevronLeft, ChevronDown, Settings,
+  Download, Settings2, BrainCircuit, BookOpen, ShieldAlert, IdCard, Lock,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { usePermissions, ROLE_LIST } from '../../hooks/usePermissions';
+import { usePermissions } from '../../hooks/usePermissions';
 import { getPortalKind, ROLE_COLOR_CLASSES } from '../../utils/portals';
+import { SYSTEM_GROUPS, SYSTEMS } from '../../config/systems';
 import { CommandPalette, useCommandPalette } from '../CommandPalette';
 import { SystemStatusPill } from '../SystemStatusPill';
 import { ThemeToggle } from '../ui/ThemeToggle';
@@ -44,8 +41,8 @@ export function RootLayout() {
   const [showSessionWarning, setShowSessionWarning] = useState(false);
   const [sessionRemaining, setSessionRemaining] = useState(0);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    dashboard: true, 'establishments-system': true, 'unions-system': true,
-    occupations: true, documents: true, compliance: true, reports: true, 'labor-records-system': true,
+    oversight: true, 'labor-market': true, registries: true, unions: true,
+    occupations: true, compliance: true, services: true, reports: true,
   });
 
   const handleToggleSidebar = () => {
@@ -107,123 +104,19 @@ export function RootLayout() {
     setToolsMenuOpen(false);
   }, [location.pathname]);
 
-  type MenuItem = { icon: any; label: string; path: string; perm?: string };
-  type MenuGroup = { id: string; label: string; icon: any; items: MenuItem[] };
-
-  const ministryGroups: MenuGroup[] = [
-    {
-      id: 'command-centers', label: 'مراكز القيادة الذكية (جديد)', icon: Layers,
-      items: [
-        { icon: Globe, label: 'المنظومة الوطنية', path: '/ministry/national-platform', perm: 'view.dashboard' },
-        { icon: Building2, label: 'نظام تشغيل صاحب العمل — Employer OS', path: '/ministry/employer-os', perm: 'view.dashboard' },
-        { icon: IdCard, label: 'جواز العمل — Worker Passport', path: '/ministry/worker-passport', perm: 'view.dashboard' },
-        { icon: ClipboardCheck, label: 'مساحة عمل الموظف — Workspace', path: '/ministry/workspace', perm: 'view.dashboard' },
-        { icon: ShieldAlert, label: 'محرك القواعد التشريعية', path: '/ministry/regulatory-rules', perm: 'compliance.view' },
-        { icon: FileText, label: 'إدارة الخدمات — بدون كود', path: '/ministry/service-catalog', perm: 'system.audit.view' },
-        { icon: Trophy, label: 'لوحة التميز العالمي — Excellence', path: '/ministry/excellence', perm: 'view.dashboard' },
-        { icon: ShieldCheck, label: 'مركز جودة البيانات', path: '/ministry/data-quality', perm: 'system.audit.view' },
-        { icon: Globe, label: 'التكامل الخارجي — ذكي', path: '/ministry/integrations', perm: 'system.audit.view' },
-        { icon: Trophy, label: 'الجاهزية الإنتاجية — شهادة', path: '/ministry/production-readiness', perm: 'view.dashboard' },
-        { icon: BrainCircuit, label: 'مركز الذكاء — تنبؤ', path: '/ministry/intelligence', perm: 'view.dashboard' },
-      ],
-    },
-    {
-      id: 'dashboard', label: 'لوحة القيادة والمؤشرات العامة', icon: LayoutDashboard,
-      items: [{ icon: LayoutDashboard, label: 'لوحة القيادة المركزية', path: '/ministry', perm: 'view.dashboard' }],
-    },
-    {
-      id: 'establishments-system', label: 'نظام المنشآت والشركات وسوق العمل', icon: Building2,
-      items: [
-        { icon: Building2, label: 'سجل المنشآت والشركات', path: '/ministry/commercial', perm: 'commercial.view' },
-        { icon: Briefcase, label: 'تسكين وتوطين المهن (اليمننة)', path: '/ministry/occupation-links', perm: 'occupations.view' },
-        { icon: Globe, label: 'تراخيص العمالة الوافدة (غير اليمنية)', path: '/ministry/expatriate-licenses', perm: 'licenses.expat.view' },
-        { icon: Send, label: 'إرساليات وتوجيه العمالة', path: '/ministry/dispatches', perm: 'workers.dispatch.view' },
-        { icon: MinusCircle, label: 'طلبات تقليص العمالة (اقتصادية)', path: '/ministry/reduction-requests', perm: 'workers.reduction.view' },
-        { icon: Users, label: 'الملف الرقمي للعمالة بالمنشآت', path: '/ministry/worker-profiles', perm: 'members.view' },
-      ],
-    },
-    {
-      id: 'labor-records-system', label: 'سجلات قطاع شؤون العمل الأساسية', icon: IdCard,
-      items: [
-        { icon: Map, label: 'سجل المديريات (محافظة/مديرية/عزلة)', path: '/ministry/labor-records/directorates', perm: 'entities.view' },
-        { icon: Building, label: 'سجل مكاتب الوزارة', path: '/ministry/labor-records/ministry-offices', perm: 'entities.view' },
-        { icon: UserCog, label: 'سجل الموظفين', path: '/ministry/labor-records/ministry-employees', perm: 'entities.view' },
-        { icon: ClipboardCheck, label: 'سجل المفتشين', path: '/ministry/labor-records/inspectors', perm: 'inspections.view' },
-        { icon: ListChecks, label: 'سجل معايير التفتيش', path: '/ministry/labor-records/inspection-criteria', perm: 'inspections.view' },
-        { icon: HeartPulse, label: 'سجل الإصابات والأمراض المهنية', path: '/ministry/labor-records/work-injuries', perm: 'compliance.view' },
-        { icon: BadgeCheck, label: 'سجل التأمينات', path: '/ministry/labor-records/insurance-records', perm: 'compliance.view' },
-        { icon: Users, label: 'سجل العمالة غير المنتظمة', path: '/ministry/labor-records/irregular-workers', perm: 'members.view' },
-        { icon: FileBadge, label: 'سجل شهادات اللياقة الصحية', path: '/ministry/labor-records/health-fitness-certificates', perm: 'members.view' },
-        { icon: FileCheck2, label: 'سجل شهادات الخبرة', path: '/ministry/labor-records/experience-certificates', perm: 'members.view' },
-        { icon: ShieldAlert, label: 'إجراءات وسياسات العمل', path: '/ministry/labor-records/work-procedures', perm: 'compliance.view' },
-      ],
-    },
-    {
-      id: 'unions-system', label: 'نظام النقابات والاتحادات والمنظمات', icon: Users,
-      items: [
-        { icon: Users, label: 'سجل النقابات والاتحادات العمالية', path: '/ministry/unions', perm: 'unions.view' },
-        { icon: GitBranch, label: 'الهيكل والتبعيات النقابية', path: '/ministry/entity-relationships', perm: 'entities.view' },
-        { icon: Users, label: 'مجالس وهيئات الإدارة النقابية', path: '/ministry/board-members', perm: 'members.view' },
-        { icon: Vote, label: 'الانتخابات والدورات النقابية', path: '/ministry/elections', perm: 'elections.view' },
-        { icon: Users, label: 'سجل النقابيين والكوادر العمالية', path: '/ministry/members', perm: 'members.view' },
-        { icon: Activity, label: 'سجل الأنشطة والفعاليات النقابية', path: '/ministry/activities', perm: 'activities.view' },
-      ],
-    },
-    {
-      id: 'occupations', label: 'استوديو المهن والأنشطة والتوصيف', icon: Briefcase,
-      items: [
-        { icon: Briefcase, label: 'استوديو توصيف المهن (ISCO-08)', path: '/ministry/professions', perm: 'occupations.view' },
-        { icon: FolderTree, label: 'دليل الأنشطة الاقتصادية (ISIC-4)', path: '/ministry/isic4', perm: 'occupations.view' },
-        { icon: Layers, label: 'السجلات المعيارية والتراميز والأكواد', path: '/ministry/national-directories', perm: 'occupations.view' },
-        { icon: GraduationCap, label: 'سجلات التدريب والتأهيل المهني', path: '/ministry/training-records', perm: 'training.view' },
-      ],
-    },
-    {
-      id: 'compliance', label: 'الرقابة والتفتيش والسلامة والنزاعات', icon: Shield,
-      items: [
-        { icon: Scale, label: 'المنازعات العمالية والصلح (م 128)', path: '/ministry/labor-disputes', perm: 'disputes.view' },
-        { icon: ClipboardCheck, label: 'محاضر التفتيش الميداني OSH', path: '/ministry/inspections', perm: 'inspections.view' },
-        { icon: AlertTriangle, label: 'المخالفات العمالية والإجراءات', path: '/ministry/violations', perm: 'violations.view' },
-        { icon: Award, label: 'شهادات الكفاءة والمطابقة المهنية', path: '/ministry/evaluation-certificates', perm: 'inspections.cert.view' },
-        { icon: BadgeCheck, label: 'تراخيص مزاولة الأنشطة', path: '/ministry/licenses', perm: 'licenses.view' },
-        { icon: Shield, label: 'تنبيهات الامتثال القانوني', path: '/ministry/compliance-alerts', perm: 'compliance.view' },
-        { icon: ClipboardCheck, label: 'مصفوفات الامتثال المؤسسي', path: '/ministry/compliance-matrices', perm: 'compliance.view' },
-        { icon: AlertTriangle, label: 'تقييم المخاطر التنبؤي AI', path: '/ministry/risk-assessments', perm: 'compliance.view' },
-        { icon: TrendingUp, label: 'مؤشرات النضج المؤسسي', path: '/ministry/maturity-assessments', perm: 'compliance.view' },
-        { icon: BookOpen, label: 'الموسوعة القانونية وقانون العمل', path: '/ministry/legal-references', perm: 'compliance.view' },
-      ],
-    },
-    {
-      id: 'documents', label: 'الوثائق والخدمات الحكومية', icon: FileText,
-      items: [
-        { icon: FileText, label: 'الأرشيف واللوائح الداخلية', path: '/ministry/documents', perm: 'documents.view' },
-        { icon: Briefcase, label: 'بوابة الخدمات والمعاملات', path: '/ministry/services', perm: 'services.view' },
-        { icon: Bell, label: 'سجل التنبيهات والإشعارات', path: '/ministry/notifications', perm: 'notifications.view' },
-      ],
-    },
-    {
-      id: 'reports', label: 'التقارير والمؤشرات والرقابة', icon: BarChart3,
-      items: [
-        { icon: BarChart3, label: 'التقارير الرقابية والإحصائية', path: '/ministry/reports', perm: 'reports.view' },
-        { icon: GitCompare, label: 'التحليل المقارن واستشراف AI', path: '/ministry/comparative', perm: 'reports.view' },
-        { icon: DollarSign, label: 'سداد الرسوم والتحصيل المالي', path: '/ministry/fee-payments', perm: 'fees.view' },
-        { icon: FileSearch, label: 'سجل التدقيق الأمني المؤسسي', path: '/ministry/audit', perm: 'system.audit.view' },
-        { icon: Settings, label: 'إدارة النظام والإعدادات المتقدمة', path: '/ministry/system-administration', perm: 'system.users.manage' },
-      ],
-    },
-    {
-      id: 'roles-system', label: 'معرض الأدوار الوظيفية', icon: Users,
-      items: [
-        { icon: Users, label: `معرض الأدوار (${ROLE_LIST.length} أدوار)`, path: '/ministry/roles', perm: 'view.dashboard' },
-      ],
-    },
-    {
-      id: 'account-admin', label: 'إدارة الحسابات والجلسات والرقابة', icon: UserCog,
-      items: [
-        { icon: UserPlus, label: 'طلبات فتح الحسابات والمستخدمون', path: '/ministry/accounts', perm: 'view.dashboard' },
-      ],
-    },
-  ];
+  const ministryGroups = useMemo(() => {
+    return SYSTEM_GROUPS.map((group) => ({
+      id: group.id,
+      label: group.title,
+      icon: group.icon,
+      items: SYSTEMS.filter((s) => s.group === group.id).map((s) => ({
+        icon: s.icon,
+        label: s.title,
+        path: s.path,
+        perm: s.perm,
+      })),
+    }));
+  }, []);
 
   const toggleGroup = (groupId: string) => {
     setOpenGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }));

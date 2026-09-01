@@ -1,7 +1,7 @@
 /**
  * MinistryWorkspace — مساحة عمل الموظف الحكومي (Unified Tasks/Cases/Approvals)
  */
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PermissionGate } from "../hooks/usePermissions";
 import { Card } from "../components/ui/Card";
 import { Badge } from "../components/ui/badge";
@@ -19,6 +19,8 @@ export default function MinistryWorkspace() {
   const [cases, setCases] = useState<CaseItem[]>([]);
   const [sla, setSla] = useState<any>(null);
   const [stats, setStats] = useState<any>(null);
+  const approvals = useMemo<unknown[]>(() => [], []);
+  const inspections = useMemo<unknown[]>(() => [], []);
 
   useEffect(()=>{
     fetch('/api/v1/cases?limit=8').then(r=>r.json()).then(j=> setCases(j.data?.data||j.data||[])).catch(()=>{});
@@ -26,12 +28,9 @@ export default function MinistryWorkspace() {
     fetch('/api/dashboard/enhanced-stats').then(r=>r.json()).then(j=> setStats(j.data||j)).catch(()=>{});
   },[]);
 
-  const myTasks = [
-    { id:'t1', title:'مراجعة عقد عمل — فني صيانة', type:'موافقة', due:'خلال يومين', prio:'high' },
-    { id:'t2', title:'اعتماد شهادة خبرة — عامل', type:'مصادقة', due:'اليوم', prio:'urgent' },
-    { id:'t3', title:'تفتيش ميداني — منشأة 1024', type:'تفتيش', due:'غداً 09:00', prio:'medium' },
-    { id:'t4', title:'جلسة صلح — نزاع 2026/41', type:'جلسة', due:'2026/08/25', prio:'high' },
-  ];
+  const myTasks = useMemo<{ id: string; title: string; type: string; due: string; prio: string }[]>(() => {
+    return [];
+  }, []);
 
   return (
     <PermissionGate permission="view.dashboard">
@@ -46,11 +45,11 @@ export default function MinistryWorkspace() {
             <div className="flex gap-2"><Button variant="secondary" size="sm"><Bell className="w-4 h-4 ml-1"/>التنبيهات الذكية</Button><Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-white">بدء معاملة</Button></div>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mt-6">
-            <div className="p-3 rounded-xl border border-slate-200 text-center"><div className="text-xs text-slate-500">مهامي اليوم</div><div className="text-xl font-black">7</div><div className="text-xs text-amber-400">2 عاجلة</div></div>
-            <div className="p-3 rounded-xl border border-slate-200 text-center"><div className="text-xs text-slate-500">قضايا مسندة</div><div className="text-xl font-black">{cases.length || 12}</div><div className="text-xs text-slate-400">4 قيد المعالجة</div></div>
-            <div className="p-3 rounded-xl border border-slate-200 text-center"><div className="text-xs text-slate-500">SLA معرض للخطر</div><div className="text-xl font-black text-amber-400">{sla?.overdue?.length ?? 3}</div><div className="text-xs text-slate-400">ينبه قبل التأخر</div></div>
-            <div className="p-3 rounded-xl border border-slate-200 text-center"><div className="text-xs text-slate-500">موافقات معلقة</div><div className="text-xl font-black">5</div><div className="text-xs text-slate-400">عقود + تراخيص</div></div>
-            <div className="p-3 rounded-xl border border-slate-200 text-center"><div className="text-xs text-slate-500">تفتيش هذا الأسبوع</div><div className="text-xl font-black">3</div><div className="text-xs text-slate-400">موزعة جغرافياً</div></div>
+            <div className="p-3 rounded-xl border border-slate-200 text-center"><div className="text-xs text-slate-500">مهامي اليوم</div><div className="text-xl font-black">{myTasks.length || '—'}</div><div className="text-xs text-amber-400">حسب الأولوية والـ SLA</div></div>
+            <div className="p-3 rounded-xl border border-slate-200 text-center"><div className="text-xs text-slate-500">قضايا مسندة</div><div className="text-xl font-black">{cases.length || '—'}</div><div className="text-xs text-slate-400">قيد المعالجة</div></div>
+            <div className="p-3 rounded-xl border border-slate-200 text-center"><div className="text-xs text-slate-500">SLA معرض للخطر</div><div className="text-xl font-black text-amber-400">{sla?.overdue?.length ?? '—'}</div><div className="text-xs text-slate-400">ينبه قبل التأخر</div></div>
+            <div className="p-3 rounded-xl border border-slate-200 text-center"><div className="text-xs text-slate-500">موافقات معلقة</div><div className="text-xl font-black">{approvals.length || '—'}</div><div className="text-xs text-slate-400">عقود + تراخيص</div></div>
+            <div className="p-3 rounded-xl border border-slate-200 text-center"><div className="text-xs text-slate-500">تفتيش هذا الأسبوع</div><div className="text-xl font-black">{inspections.length || '—'}</div><div className="text-xs text-slate-400">موزعة جغرافياً</div></div>
           </div>
         </div>
 
@@ -83,22 +82,24 @@ export default function MinistryWorkspace() {
               <div className="p-5 space-y-3">
                 <div className="flex items-center gap-2 font-bold text-sm"><Scale className="w-5 h-5 text-indigo-600"/> قضاياي — Case Management</div>
                 <div className="space-y-2">
-                  {(cases.length?cases:[
-                    { id:'1', case_number:'CASE-2026-041', subject:'شكوى تأخر أجور — مصنع', case_type:'complaint', priority:'high', status:'in_progress', sla_status:'at_risk' },
-                    { id:'2', case_number:'CASE-2026-038', subject:'نزاع فصل تعسفي', case_type:'dispute', priority:'urgent', status:'hearing', sla_status:'on_track' },
-                    { id:'3', case_number:'CASE-2026-033', subject:'اعتراض على تفتيش', case_type:'appeal', priority:'medium', status:'open', sla_status:'overdue' },
-                  ] as any).slice(0,5).map((c:any)=>(
-                    <div key={c.id||c.case_number} className="p-3 border rounded-xl flex items-center justify-between">
-                      <div>
-                        <div className="font-medium text-sm">{c.subject || c.case_number}</div>
-                        <div className="text-xs text-muted-foreground">{c.case_type} • {c.case_number}</div>
-                      </div>
-                      <div className="flex gap-1.5">
-                        <Badge variant={c.priority==='urgent'?'destructive':c.priority==='high'?'default':'secondary'}>{ ({urgent:'عاجلة', high:'عالية', medium:'متوسطة', low:'منخفضة'} as Record<string,string>)[c.priority] || c.priority }</Badge>
-                        <Badge variant={c.sla_status==='overdue'?'destructive':c.sla_status==='at_risk'?'default':'outline'}>{ ({on_track:'داخل المهلة', at_risk:'قارب الانتهاء', overdue:'تجاوز المهلة'} as Record<string,string>)[c.sla_status] || c.sla_status }</Badge>
-                      </div>
+                  {cases.length === 0 ? (
+                    <div className="p-3 border rounded-xl text-sm text-muted-foreground">
+                      لا توجد قضايا مسندة إليك حالياً.
                     </div>
-                  ))}
+                  ) : (
+                    cases.slice(0, 5).map((c: any) => (
+                      <div key={c.id || c.case_number} className="p-3 border rounded-xl flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-sm">{c.subject || c.case_number}</div>
+                          <div className="text-xs text-muted-foreground">{c.case_type} • {c.case_number}</div>
+                        </div>
+                        <div className="flex gap-1.5">
+                          <Badge variant={c.priority==='urgent'?'destructive':c.priority==='high'?'default':'secondary'}>{ ({urgent:'عاجلة', high:'عالية', medium:'متوسطة', low:'منخفضة'} as Record<string,string>)[c.priority] || c.priority }</Badge>
+                          <Badge variant={c.sla_status==='overdue'?'destructive':c.sla_status==='at_risk'?'default':'outline'}>{ ({on_track:'داخل المهلة', at_risk:'قارب الانتهاء', overdue:'تجاوز المهلة'} as Record<string,string>)[c.sla_status] || c.sla_status }</Badge>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <Button size="sm"><FileText className="w-4 h-4 ml-1"/>فتح القضية</Button>
@@ -112,9 +113,9 @@ export default function MinistryWorkspace() {
               <div className="p-5 space-y-3">
                 <div className="flex items-center gap-2 font-bold text-sm"><ClipboardCheck className="w-5 h-5 text-emerald-600"/> التفتيش المبني على المخاطر</div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                  <div className="p-3 border rounded-xl"><div className="font-bold">مخاطرة عالية</div><div>منشأة — 3 مخالفات سابقة + شكوى</div><Badge className="mt-2 bg-rose-600">أولوية 1</Badge></div>
+                  <div className="p-3 border rounded-xl"><div className="font-bold">مخاطرة عالية</div><div>(تُحدَّد من سجل المخالفات والشكاوى)</div><Badge className="mt-2 bg-rose-600">أولوية 1</Badge></div>
                   <div className="p-3 border rounded-xl"><div className="font-bold">متوسطة</div><div>تفتيش دوري مجدول</div><Badge variant="secondary" className="mt-2">أولوية 2</Badge></div>
-                  <div className="p-3 border rounded-xl"><div className="font-bold">منخفضة</div><div>التزام 92 — زيارة توعية</div><Badge variant="outline" className="mt-2">أولوية 3</Badge></div>
+                  <div className="p-3 border rounded-xl"><div className="font-bold">منخفضة</div><div>زيارة توعوية</div><Badge variant="outline" className="mt-2">أولوية 3</Badge></div>
                 </div>
                 <div className="text-[11px] text-muted-foreground">درجة المخاطرة للترتيب والتخطيط فقط وليست حكماً قانونياً • الأدلة تُرفع ببصمة رقمية موثقة</div>
               </div>
@@ -125,25 +126,36 @@ export default function MinistryWorkspace() {
             <Card><div className="p-5 space-y-3">
               <div className="font-bold text-sm flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-amber-600"/> تنبيهات SLA</div>
               <div className="space-y-2 text-sm">
-                <div className="p-2.5 border rounded-xl bg-amber-50 border-amber-200 flex justify-between"><span>شكوى 041 — باقي 2 يوم</span><Badge variant="default">قارب الانتهاء</Badge></div>
-                <div className="p-2.5 border rounded-xl bg-rose-50 border-rose-200 flex justify-between"><span>اعتراض 033 — متأخر</span><Badge variant="destructive">تجاوز المهلة</Badge></div>
-                <div className="p-2.5 border rounded-xl bg-emerald-50 border-emerald-200 flex justify-between"><span>تفتيش — يلتزم بالموعد</span><Badge variant="outline">داخل المهلة</Badge></div>
+                {(sla?.overdue ?? []).length === 0 && (sla?.atRisk ?? []).length === 0 ? (
+                  <div className="p-2.5 border rounded-xl text-muted-foreground">
+                    لا توجد مهل SLA معرّضة للخطر حالياً.
+                  </div>
+                ) : (
+                  [
+                    ...(sla?.overdue ?? []).map((x: any) => ({ text: x.case_number || 'قضية', badge: <Badge variant="destructive">تجاوز المهلة</Badge>, box: 'bg-rose-50 border-rose-200' })),
+                    ...(sla?.atRisk ?? []).map((x: any) => ({ text: x.case_number || 'قضية', badge: <Badge variant="default">قارب الانتهاء</Badge>, box: 'bg-amber-50 border-amber-200' })),
+                  ].map((x, i) => (
+                    <div key={i} className={`p-2.5 border rounded-xl flex justify-between ${x.box}`}><span>{x.text}</span>{x.badge}</div>
+                  ))
+                )}
               </div>
             </div></Card>
 
             <Card><div className="p-5 space-y-3">
               <div className="font-bold text-sm flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-emerald-600"/> موافقات سريعة</div>
               <div className="space-y-2 text-sm">
-                {[
-                  { t:'عقد عمل أجنبي — ترخيص 14', d:'المادة 15 — تصريح ساري' },
-                  { t:'تسجيل نقابة — النظام الأساسي', d:'قيد المراجعة القانونية' },
-                  { t:'تجديد ترخيص منشأة', d:'وثائق مكتملة — SLA 3 أيام' },
-                ].map(x=>(
-                  <div key={x.t} className="p-2.5 border rounded-xl flex justify-between items-center">
-                    <div><div className="font-medium">{x.t}</div><div className="text-xs text-muted-foreground">{x.d}</div></div>
-                    <Button size="sm" variant="outline">مراجعة</Button>
+                {approvals.length === 0 ? (
+                  <div className="p-2.5 border rounded-xl text-muted-foreground">
+                    لا توجد موافقات معلقة بانتظار مراجعتك حالياً.
                   </div>
-                ))}
+                ) : (
+                  approvals.map((x: any, i: number) => (
+                    <div key={i} className="p-2.5 border rounded-xl flex justify-between items-center">
+                      <div><div className="font-medium">{x.title ?? x}</div><div className="text-xs text-muted-foreground">{x.note ?? ''}</div></div>
+                      <Button size="sm" variant="outline">مراجعة</Button>
+                    </div>
+                  ))
+                )}
               </div>
             </div></Card>
 

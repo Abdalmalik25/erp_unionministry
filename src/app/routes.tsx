@@ -22,6 +22,7 @@ const ContactPage = lazy(() => import("./pages/public/PublicPages").then(m => ({
 
 // Lazy Loading لباقي الصفحات
 const MinistryDashboard = lazy(() => import("./pages/ministry/DashboardNewEnhanced").then(m => ({ default: m.DashboardNewEnhanced })));
+const SystemsHome = lazy(() => import("./pages/ministry/SystemsHome").then(m => ({ default: m.default })));
 const MinistryDashboardNew = lazy(() => import("./pages/ministry/MinistryDashboardNew").then(m => ({ default: m.default })));
 const CommercialEstablishmentsManagement = lazy(() => import("./pages/ministry/CommercialEstablishmentsManagement").then(m => ({ default: m.CommercialEstablishmentsManagement })));
 const OrganizationDashboard = lazy(() => import("./pages/organization/Dashboard").then(m => ({ default: m.OrganizationDashboard })));
@@ -177,6 +178,10 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
+        element: <LazyPage><SystemsHome /></LazyPage>
+      },
+      {
+        path: "indicators",
         element: <LazyPage><MinistryDashboard /></LazyPage>
       },
       {
