@@ -17,6 +17,12 @@ import { TableSkeleton } from '../../components/ui/LoadingSkeleton';
 import { useDebounce } from '../../hooks/useDebounce';
 import { toast } from 'sonner';
 import { useTranslation } from '../../hooks/useTranslation';
+import {
+  triageInspection,
+  sortByRisk,
+  URGENCY_LABEL,
+  type TriageUrgency,
+} from '../../utils/inspectionExpertLogic';
 
 interface Filters {
   type: string[];
@@ -51,6 +57,7 @@ export function InspectionsManagement() {
   const [showFilters, setShowFilters] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [statistics, setStatistics] = useState<any>(null);
+  const [urgencyFilter, setUrgencyFilter] = useState<'all' | TriageUrgency>('all');
 
   const canCreate = can('inspections:create');
   const canEdit = can('inspections:edit');
@@ -152,6 +159,36 @@ export function InspectionsManagement() {
     }
   };
 
+  // ── Expert triage layer ─────────────────────────────────────────────
+  const ranked = React.useMemo(() => sortByRisk(inspections), [inspections]);
+  const displayList = React.useMemo(() => {
+    if (urgencyFilter === 'all') return ranked;
+    return ranked.filter((i) => triageInspection(i).urgency === urgencyFilter);
+  }, [ranked, urgencyFilter]);
+
+  const queueSummary = React.useMemo(() => {
+    let urgent = 0;
+    let priority = 0;
+    let routine = 0;
+    const awaitingInspector: Inspection[] = [];
+    for (const it of inspections) {
+      const u = triageInspection(it).urgency;
+      if (u === 'urgent') urgent += 1;
+      else if (u === 'priority') priority += 1;
+      else routine += 1;
+      if ((it.status === 'planned' || it.status === 'assigned') && !it.inspectorName) {
+        awaitingInspector.push(it);
+      }
+    }
+    return {
+      urgent,
+      priority,
+      routine,
+      awaitingInspector: awaitingInspector.length,
+      topPick: ranked[0] ?? null,
+    };
+  }, [inspections, ranked]);
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
@@ -170,6 +207,17 @@ export function InspectionsManagement() {
               <Button variant="outline" onClick={() => setShowFilters(!showFilters)}>
                 {t('common.filters')}
               </Button>
+              <select
+                value={urgencyFilter}
+                onChange={(e) => setUrgencyFilter(e.target.value as 'all' | TriageUrgency)}
+                className="h-10 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 text-sm text-gray-900 dark:text-white focus:outline-none"
+                aria-label="تصفية حسب الأولوية"
+              >
+                <option value="all">كل الأولويات</option>
+                <option value="urgent">عاجلة</option>
+                <option value="priority">ذات أولوية</option>
+                <option value="routine">روتينية</option>
+              </select>
               {canExport && (
                 <Button variant="outline" onClick={() => handleExport('xlsx')}>
                   {t('common.export')}
@@ -228,6 +276,52 @@ export function InspectionsManagement() {
         </div>
       )}
 
+      {/* Expert triage queue */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card className="p-4 border-red-200">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-500">عاجلة (تريج مفتشي)</div>
+                <span className="text-sm font-mono rounded px-2 py-0.5 bg-red-100 text-red-800">{queueSummary.urgent}</span>
+              </div>
+              <div className="mt-2 text-xs text-gray-500">تفتيشات بدرجة مخاطر مرتفعة تستوجب بدءًا/جدولة فورية.</div>
+            </Card>
+            <Card className="p-4 border-amber-200">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-500">ذات أولوية</div>
+                <span className="text-sm font-mono rounded px-2 py-0.5 bg-amber-100 text-amber-800">{queueSummary.priority}</span>
+              </div>
+              <div className="mt-2 text-xs text-gray-500">تفتيشات تتطلب جدولة قريبة ضمن دوره العمل.</div>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-500">بانتظار تعيين مفتش</div>
+                <span className="text-sm font-mono rounded px-2 py-0.5 bg-gray-100 text-gray-700">{queueSummary.awaitingInspector}</span>
+              </div>
+              <div className="mt-2 text-xs text-gray-500">مخططة أو معيّنة دون اسم مفتش بعد.</div>
+            </Card>
+          </div>
+          <Card className="p-4 border-blue-200">
+            <div className="text-sm font-medium text-gray-500 mb-2">الأولوية القصوى للتفتيش</div>
+            {queueSummary.topPick ? (
+              <div className="rounded-lg border border-gray-200 p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-gray-900">{queueSummary.topPick.entityName}</span>
+                  <span className={`text-xs font-mono rounded px-2 py-0.5 ${URGENCY_LABEL[triageInspection(queueSummary.topPick).urgency].badge}`}>
+                    {triageInspection(queueSummary.topPick).riskScore}
+                  </span>
+                </div>
+                <div className="mt-1 text-xs text-gray-500">{queueSummary.topPick.caseNumber} • {queueSummary.topPick.type}</div>
+                <div className="mt-1 text-xs text-gray-700">{triageInspection(queueSummary.topPick).recommendedAction}</div>
+              </div>
+            ) : (
+              <div className="text-xs text-gray-400">لا توجد تفتيشات بعد.</div>
+            )}
+          </Card>
+        </div>
+      </div>
+
       {/* Table */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <Card className="overflow-hidden">
@@ -248,6 +342,9 @@ export function InspectionsManagement() {
                     {t('inspections.status')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    أولوية المخاطر
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                     {t('inspections.scheduled_date')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
@@ -261,14 +358,14 @@ export function InspectionsManagement() {
               <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-6">
-                      <TableSkeleton rows={5} columns={7} />
+                    <td colSpan={8} className="px-6 py-6">
+                      <TableSkeleton rows={5} columns={8} />
                       <p className="text-center text-sm text-muted-foreground mt-3" aria-live="polite">جاري تحميل عمليات التفتيش...</p>
                     </td>
                   </tr>
-                ) : inspections.length === 0 ? (
+                ) : displayList.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-8">
+                    <td colSpan={8} className="px-6 py-8">
                       <EmptyState
                         title={t('inspections.no_inspections')}
                         description="لم يتم العثور على عمليات تفتيش مطابقة. جرّب تغيير الفلاتر أو إنشاء تفتيش جديد."
@@ -276,7 +373,7 @@ export function InspectionsManagement() {
                     </td>
                   </tr>
                 ) : (
-                  inspections.map((inspection) => (
+                  displayList.map((inspection) => (
                     <tr
                       key={inspection.id}
                       className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
@@ -293,6 +390,24 @@ export function InspectionsManagement() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <StatusBadge status={inspection.status} />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {(() => {
+                          const triage = triageInspection(inspection);
+                          return (
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`text-xs font-mono font-semibold rounded px-2 py-0.5 ${URGENCY_LABEL[triage.urgency].badge}`}
+                                title={triage.drivers.length ? triage.drivers.join('، ') : 'لا إشارات مخاطرة'}
+                              >
+                                {triage.riskScore}
+                              </span>
+                              <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                                {URGENCY_LABEL[triage.urgency].label}
+                              </span>
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         {inspection.schedule?.scheduledDate || '-'}
@@ -363,6 +478,37 @@ export function InspectionsManagement() {
                 <div className="mt-1 text-gray-900">{t(`inspections.type.${selectedInspection.type}`)}</div>
               </div>
             </div>
+
+            {(() => {
+              const triage = triageInspection(selectedInspection);
+              return (
+                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">تقييم المخاطر (منطق خبير)</span>
+                    <span className={`text-sm font-mono font-semibold rounded px-2.5 py-1 ${URGENCY_LABEL[triage.urgency].badge}`}>
+                      {triage.riskScore} / 100 — {URGENCY_LABEL[triage.urgency].label}
+                    </span>
+                  </div>
+                  {triage.drivers.length ? (
+                    <div className="text-sm text-gray-600 dark:text-gray-300">
+                      <div className="mb-1 text-xs text-gray-500">عوامل الرفع:</div>
+                      <ul className="list-disc list-inside text-xs space-y-0.5">
+                        {triage.drivers.map((d) => <li key={d}>{d}</li>)}
+                      </ul>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-gray-500">لا توجد إشارات مخاطرة على هذا السجل.</div>
+                  )}
+                  <div className="text-sm text-gray-700 dark:text-gray-300">
+                    <span className="text-xs text-gray-500">الإجراء الموصى به: </span>
+                    {triage.recommendedAction}
+                  </div>
+                  {triage.slaAdvice && (
+                    <div className="text-xs text-amber-600">{triage.slaAdvice}</div>
+                  )}
+                </div>
+              );
+            })()}
 
             <div>
               <h3 className="text-lg font-medium mb-3">{t('inspections.schedule')}</h3>
