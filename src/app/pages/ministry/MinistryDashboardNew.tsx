@@ -115,17 +115,16 @@ export default function MinistryDashboardNew() {
     complianceRate: 0,
   });
 
-  // Fetch data from API endpoints
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      setIsLoading(true);
-      try {
-        const [statsRes, workersRes, entitiesRes, contractsRes] = await Promise.allSettled([
-          fetch('/api/dashboard/ministry-stats'),
-          fetch('/api/workers?limit=10&sort=created_at&order=desc'),
-          fetch('/api/entities?limit=10&sort=created_at&order=desc'),
-          fetch('/api/contracts?limit=10&sort=start_date&order=desc'),
-        ]);
+  // Fetch data from API endpoints — يُستدعى عند التحميل وعند «تحديث» من شريط الأدوات
+  const fetchDashboardData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const [statsRes, workersRes, entitiesRes, contractsRes] = await Promise.allSettled([
+        fetch('/api/dashboard/ministry-stats'),
+        fetch('/api/workers?limit=10&sort=created_at&order=desc'),
+        fetch('/api/entities?limit=10&sort=created_at&order=desc'),
+        fetch('/api/contracts?limit=10&sort=start_date&order=desc'),
+      ]);
 
         // Parse stats
         if (statsRes.status === 'fulfilled' && statsRes.value.ok) {
@@ -188,18 +187,17 @@ export default function MinistryDashboardNew() {
       } finally {
         setIsLoading(false);
       }
-    };
-
-    fetchDashboardData();
   }, []);
 
-  // Computed metrics
+  useEffect(() => { fetchDashboardData(); }, [fetchDashboardData]);
+
+  // Computed metrics — من واقع البيانات المُسترجعة فقط، بلا نسبت وهمية
   const metrics = useMemo(() => ({
-    workerGrowth: '+12%',
-    contractApprovalRate: '94%',
-    avgProcessingTime: '3.2 days',
-    complianceTrend: '+5%',
-  }), []);
+    totalWorkers: stats.totalWorkers,
+    activeEstablishments: stats.activeEstablishments,
+    pendingContracts: stats.pendingContracts,
+    complianceRate: stats.complianceRate,
+  }), [stats]);
 
   // Tab definitions
   const tabs: ToolbarTab[] = [
@@ -211,15 +209,14 @@ export default function MinistryDashboardNew() {
   ];
 
   // Actions
+  const handleRefresh = useCallback(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
   const actions: ToolbarAction[] = [
     { id: 'export', label: 'تصدير', icon: '📥', variant: 'secondary', onClick: () => console.log('Export') },
-    { id: 'refresh', label: 'تحديث', icon: '🔄', variant: 'ghost', onClick: () => { setIsLoading(true); setTimeout(() => setIsLoading(false), 1000); } },
+    { id: 'refresh', label: 'تحديث', icon: '🔄', variant: 'ghost', onClick: handleRefresh },
   ];
-
-  const handleRefresh = useCallback(() => {
-    setIsLoading(true);
-    setTimeout(() => setIsLoading(false), 1000);
-  }, []);
 
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
@@ -250,20 +247,20 @@ export default function MinistryDashboardNew() {
           <div className="space-y-6">
             {/* KPI Cards */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              <KPICard title="إجمالي العمال" value={stats.totalWorkers.toLocaleString()} trend="+12%" color="blue" />
-              <KPICard title="المنشآت النشطة" value={stats.activeEstablishments.toString()} trend="+5%" color="green" />
-              <KPICard title="العقود المعلقة" value={stats.pendingContracts.toString()} trend="-8%" color="yellow" />
-              <KPICard title="النزاعات المفتوحة" value={stats.openDisputes.toString()} trend="-3%" color="red" />
-              <KPICard title="الفحوصات" value={stats.inspectionsThisMonth.toString()} trend="+15%" color="purple" />
-              <KPICard title="معدل الالتزام" value={`${stats.complianceRate}%`} trend="+5%" color="indigo" />
+              <KPICard title="إجمالي العمال" value={stats.totalWorkers.toLocaleString()} color="blue" />
+              <KPICard title="المنشآت النشطة" value={stats.activeEstablishments.toString()} color="green" />
+              <KPICard title="العقود المعلقة" value={stats.pendingContracts.toString()} color="yellow" />
+              <KPICard title="النزاعات المفتوحة" value={stats.openDisputes.toString()} color="red" />
+              <KPICard title="الفحوصات" value={stats.inspectionsThisMonth.toString()} color="purple" />
+              <KPICard title="معدل الالتزام" value={`${stats.complianceRate}%`} color="indigo" />
             </div>
 
-            {/* Quick Stats Row */}
+            {/* Quick Stats Row — أرقام حقيقية من مؤشرات الوزارة */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <QuickStat icon="📈" label="نمو العمال" value={metrics.workerGrowth} />
-              <QuickStat icon="✅" label="نسبة الموافقة" value={metrics.contractApprovalRate} />
-              <QuickStat icon="⏱️" label="متوسط المعالجة" value={metrics.avgProcessingTime} />
-              <QuickStat icon="📊" label="اتجاه الالتزام" value={metrics.complianceTrend} />
+              <QuickStat icon="👷" label="إجمالي العمال" value={metrics.totalWorkers.toLocaleString()} />
+              <QuickStat icon="🏢" label="المنشآت النشطة" value={metrics.activeEstablishments.toString()} />
+              <QuickStat icon="📄" label="العقود المعلقة" value={metrics.pendingContracts.toString()} />
+              <QuickStat icon="📊" label="معدل الالتزام" value={`${metrics.complianceRate}%`} />
             </div>
 
             {/* Quick Data Views */}
@@ -404,7 +401,7 @@ function KPICard({
 }: {
   title: string;
   value: string;
-  trend: string;
+  trend?: string;
   color: string;
 }) {
   const colorMap: Record<string, { bg: string; text: string }> = {
@@ -416,16 +413,18 @@ function KPICard({
     indigo: { bg: 'bg-indigo-50', text: 'text-indigo-600' },
   };
 
-  const isPositive = trend.startsWith('+');
+  const isPositive = trend ? trend.startsWith('+') : true;
   const colors = colorMap[color] || colorMap.blue;
 
   return (
     <div className={`${colors.bg} rounded-xl p-4 border border-${color}-100`}>
       <p className="text-sm text-gray-600 mb-1">{title}</p>
       <p className={`text-2xl font-bold ${colors.text}`}>{value}</p>
-      <p className={`text-xs mt-1 ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-        {trend} عن الشهر الماضي
-      </p>
+      {trend !== undefined && (
+        <p className={`text-xs mt-1 ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+          {trend} عن الشهر الماضي
+        </p>
+      )}
     </div>
   );
 }
