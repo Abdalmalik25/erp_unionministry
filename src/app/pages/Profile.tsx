@@ -416,7 +416,7 @@ export function Profile() {
                 </div>
                 <div className="flex items-center gap-2 text-foreground">
                   <div className="w-2 h-2 rounded-full bg-success"></div>
-                  <p><strong>التقنيات:</strong> React, TypeScript, Supabase, Vercel</p>
+                  <p><strong>التقنيات:</strong> بنية سحابية حديثة بمعايير مؤسسية معتمدة</p>
                 </div>
                 <div className="flex items-center gap-2 text-foreground">
                   <div className="w-2 h-2 rounded-full bg-success"></div>

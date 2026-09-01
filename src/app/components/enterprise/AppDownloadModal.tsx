@@ -132,7 +132,7 @@ exit
                 <div>
                   <h4 className="font-bold text-heading text-sm">تثبيت التطبيق كبرنامج مستقل (Standalone App)</h4>
                   <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                    يعمل التطبيق في نافذة مستقلة مخصصة وسريعة بدون شريط المتصفح، مع إمكانية الوصول إليه مباشرة من سطح المكتب وقائمة Start.
+                    يعمل التطبيق في نافذة مستقلة مخصصة وسريعة بدون شريط المتصفح، مع إمكانية الوصول إليه مباشرة من سطح المكتب وقائمة ابدأ.
                   </p>
                 </div>
               </div>
@@ -141,7 +141,7 @@ exit
                 <div className="p-4 bg-muted/40 border border-border rounded-2xl space-y-3">
                   <div className="flex items-center gap-2 text-xs font-bold text-heading">
                     <Sparkles size={16} className="text-amber-500"/>
-                    <span>التثبيت المباشر (PWA)</span>
+                    <span>التثبيت المباشر على الجهاز</span>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     تثبيت التطبيق بنقرة واحدة عبر محرك المتصفح الحديث.
@@ -155,7 +155,7 @@ exit
                 <div className="p-4 bg-muted/40 border border-border rounded-2xl space-y-3">
                   <div className="flex items-center gap-2 text-xs font-bold text-heading">
                     <Terminal size={16} className="text-blue-500"/>
-                    <span>مشغل ويندوز السريع (.bat)</span>
+                    <span>مشغل ويندوز السريع</span>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     أداة تشغيل سريعة تفتح المنظومة في وضع التطبيق المستقل فوراً.
@@ -238,9 +238,9 @@ exit
                   <Zap size={20}/>
                 </div>
                 <div>
-                  <h4 className="font-bold text-heading text-sm">الوضع المحلي فائق السرعة ومزامنة البيانات (IndexedDB)</h4>
+                  <h4 className="font-bold text-heading text-sm">الوضع المحلي فائق السرعة ومزامنة البيانات</h4>
                   <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                    تعتمد المنظومة على التخزين المؤقت الذكي ومحرك Service Worker لضمان استجابة فورية حتى في حالات انقطاع أو بطء الإنترنت.
+                    تعتمد المنظومة على التخزين المؤقت الذكي لضمان استجابة فورية حتى في حالات انقطاع أو بطء الإنترنت، مع مزامنة آمنة تلقائية عند عودة الاتصال.
                   </p>
                 </div>
               </div>

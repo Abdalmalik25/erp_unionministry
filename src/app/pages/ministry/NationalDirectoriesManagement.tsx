@@ -277,7 +277,7 @@ export function NationalDirectoriesManagement() {
                     logAudit({ action: 'import', resource: 'registry', details: { table: 'national_directories', imported: d.imported } });
                     loadEntries();
                 } else { toast.error(d.error || 'فشل الاستيراد'); }
-            } catch { toast.error('ملف JSON غير صالح'); }
+            } catch { toast.error('الملف المرفوع غير صالح، تأكد من صحته ثم أعد المحاولة'); }
         };
         input.click();
     };
@@ -312,12 +312,12 @@ export function NationalDirectoriesManagement() {
                 actions={
                     <div className="flex items-center gap-2">
                         <button onClick={handleExport} className="flex items-center gap-2 px-3.5 py-2 border border-border bg-card text-foreground rounded-xl text-sm font-medium hover:bg-muted transition-colors shadow-sm">
-                            <Download size={16} /> Excel
+                            <Download size={16} /> إكسل
                         </button>
-                        <button onClick={handleRegistryExport} className="flex items-center gap-2 px-3.5 py-2 border border-border bg-card text-foreground rounded-xl text-sm font-medium hover:bg-muted transition-colors shadow-sm" title="تصدير عام JSON">
-                            <Download size={16} /> تصدير JSON
+                        <button onClick={handleRegistryExport} className="flex items-center gap-2 px-3.5 py-2 border border-border bg-card text-foreground rounded-xl text-sm font-medium hover:bg-muted transition-colors shadow-sm" title="تصدير نسخة كاملة من البيانات">
+                            <Download size={16} /> تصدير نسخة كاملة
                         </button>
-                        <button onClick={handleRegistryImport} className="flex items-center gap-2 px-3.5 py-2 border border-border bg-card text-foreground rounded-xl text-sm font-medium hover:bg-muted transition-colors shadow-sm" title="استيراد عام JSON">
+                        <button onClick={handleRegistryImport} className="flex items-center gap-2 px-3.5 py-2 border border-border bg-card text-foreground rounded-xl text-sm font-medium hover:bg-muted transition-colors shadow-sm" title="استيراد نسخة بيانات محفوظة">
                             <Upload size={16} /> استيراد
                         </button>
                         <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary-dark transition-all shadow-md shadow-primary/20">
