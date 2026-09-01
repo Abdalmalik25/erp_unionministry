@@ -44,7 +44,7 @@ export default function IntelligenceCenter(){
             <div className="p-5 space-y-3">
               <div className="font-bold text-sm flex items-center gap-2"><Target className="w-5 h-5 text-emerald-400"/> المطابقة الذكية للمهارات</div>
               <Button size="sm" onClick={runMatch} className="text-amber-400/30"><Users className="w-4 h-4 ml-1"/>تجربة: مهنة كهرباء — صنعاء</Button>
-              {match && <div className="space-y-1">{match.matches.map((m:any)=> <div key={m.worker} className="flex justify-between p-2 border rounded-xl text-xs"><span>{m.worker} • {m.profession}</span><Badge className="text-slate-600">نسبة التوافق {m.score}%</Badge></div>)}</div>}
+              {match && (match.matches?.length ? <div className="space-y-1">{match.matches.map((m:any)=> <div key={m.worker} className="flex justify-between p-2 border rounded-xl text-xs"><span>{m.worker} • {m.profession}</span><Badge className="text-slate-600">نسبة التوافق {m.score}%</Badge></div>)}</div> : <div className="text-[11px] text-slate-400">لا نتائج مطابقة حالياً من السجلات</div>)}
               <div className="text-[11px] text-slate-400">مطابقة فورية بين متطلبات المنشآت ومهارات العمالة المسجلة — استجابة فورية</div>
             </div>
           </Card>
@@ -53,8 +53,14 @@ export default function IntelligenceCenter(){
             <div className="p-5 space-y-2">
               <div className="font-bold text-sm flex items-center gap-2"><TrendingUp className="w-5 h-5 text-amber-400"/> التنبؤ المبكر</div>
               <div className="p-3 border rounded-xl bg-amber-50 border-amber-200/50 text-xs">
-                <div>القضايا المتوقعة الشهر القادم: <b>{data?.forecast?.next_month_cases||18}</b> — درجة confiance {data?.forecast?.confidence? Math.round(data.forecast.confidence*100):81}%</div>
-                <div className="text-slate-400">توصية النظام: تهيئة ثلاثة مفتشين وموظفي دعم مسبقاً</div>
+                {data?.forecast ? (
+                  <>
+                    <div>القضايا المتوقعة الشهر القادم: <b>{data.forecast.next_month_cases ?? '—'}</b> — درجة الثقة {data.forecast.confidence ? Math.round(data.forecast.confidence*100) : '—'}%</div>
+                    <div className="text-slate-400">{data.forecast.recommendation || 'توصية تُبنى من بيانات التنبؤ الفعلية'}</div>
+                  </>
+                ) : (
+                  <div className="text-slate-400">لا توجد بيانات تنبؤ متاحة بعد — يُعرض عندما تتوفر إحصاءات فعلية</div>
+                )}
               </div>
               <div className="flex items-center gap-1 text-[11px] text-slate-400"><Zap className="w-3 h-3"/> تنبؤ يسبق ذروة العمل — لا مفاجآت</div>
             </div>

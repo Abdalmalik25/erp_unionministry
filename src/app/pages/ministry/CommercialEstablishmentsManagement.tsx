@@ -643,8 +643,8 @@ export function CommercialEstablishmentsManagement() {
                             <p className="font-bold text-xs text-heading">{occ.occupation_name_ar} ({occ.isco_code})</p>
                             <p className="text-[11px] text-muted-foreground mt-0.5">القسم: {occ.department} | الكادر: {occ.allocated_headcount} (يمني: {occ.yemeni_headcount} - وافد: {occ.expatriate_headcount})</p>
                           </div>
-                          <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-xs font-bold">
-                            مطابق بنسبة {occ.compliance_score || 95}%
+                          <span className={"px-2.5 py-1 rounded-lg text-xs font-bold " + (occ.compliance_score != null ? "bg-emerald-100 text-emerald-800" : "bg-muted text-muted-foreground")}>
+                            {occ.compliance_score != null ? `مطابق بنسبة ${occ.compliance_score}%` : 'لم يُقيّم بعد'}
                           </span>
                         </div>))}
                     </div>)}
