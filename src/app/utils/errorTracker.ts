@@ -12,6 +12,7 @@
  */
 
 import { ApiError } from '../services/api';
+import { isBenignMediaError } from './globalErrorGuards';
 
 export type ErrorSeverity = 'fatal' | 'error' | 'warning' | 'info';
 
@@ -51,10 +52,14 @@ class ErrorTracker {
     this.loadFromStorage();
 
     window.addEventListener('error', (e) => {
+      // أخطاء عناصر الوسائط (<audio>/<video>) حميدة — الصوت اختياري ولا يُسقط التطبيق
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === 'AUDIO' || target.tagName === 'VIDEO')) return;
       this.capture({
         message: e.message || 'Uncaught error',
         stack: e.error?.stack,
         source: 'window',
+        severity: 'warning',
         context: {
           filename: e.filename,
           lineno: e.lineno,
@@ -65,6 +70,11 @@ class ErrorTracker {
 
     window.addEventListener('unhandledrejection', (e) => {
       const reason = e.reason as unknown;
+      // أخطاء الوسائط (audio.play() إلخ) غير قاتلة — تُمنع من الظهور ولا تُسجَّل كخطأ
+      if (isBenignMediaError(reason)) {
+        e.preventDefault();
+        return;
+      }
       this.capture({
         message: reason instanceof Error ? reason.message : String(reason),
         stack: reason instanceof Error ? reason.stack : undefined,

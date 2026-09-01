@@ -4,7 +4,11 @@
  * Strategy: Stale-While-Revalidate for API, Cache-First for assets
  */
 
-const CACHE_VERSION = 'v1.1.0';
+// __SW_VERSION__ يُستبدل آلياً عند البناء (vite plugin: sw-version-stamp) بمعرّف فريد لكل نشرت.
+// أي نشرت جديدة ⇒ sw.js جديد ⇒ المتصفح يثبّت العامل الجديد ⇒ activate يحذف كاشات النسخ السابقة.
+// هذا يمنع جذرياً خدمة حزم/أيقونات/manifest قديمة بعد النشر (stale assets).
+const RAW_VERSION = '__SW_VERSION__';
+const CACHE_VERSION = RAW_VERSION.startsWith('__') ? 'dev' : RAW_VERSION;
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const API_CACHE = `${CACHE_VERSION}-api`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
@@ -85,19 +89,36 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Route: static assets → cache-first
+  // Route: manifest → network-first دائماً
+  // (manifest صغير؛ يجب أن يصل أي تغيير في الأيقونات/الاسم فوراً بدل انتظار أسبوع من الكاش)
+  if (url.pathname === '/manifest.json' || url.pathname === '/site.webmanifest') {
+    event.respondWith(networkFirstWithCache(request, DYNAMIC_CACHE));
+    return;
+  }
+
+  // Route: static assets →
+  //   الملفات المُختمة بـ hash (assets/*-[hash].js) آمنة للـ cache-first إلى الأبد.
+  //   الملفات غير المُختمة (index.html, base.css, theme-init.js, icons/*) تُخدم
+  //   stale-while-revalidate حتى لا يعلق الزائر على نسخة قديمة بعد النشر.
   if (
     request.destination === 'script' ||
     request.destination === 'style' ||
     request.destination === 'image' ||
-    request.destination === 'font' ||
-    request.destination === 'document'
+    request.destination === 'font'
   ) {
-    event.respondWith(cacheFirst(request, STATIC_CACHE));
+    const isHashedAsset = /-[A-Za-z0-9_-]{8,}\.(?:js|css|woff2?|png|jpe?g|svg|webp|ico)$/i.test(url.pathname);
+    if (isHashedAsset) {
+      event.respondWith(cacheFirst(request, STATIC_CACHE));
+    } else {
+      event.respondWith(staleWhileRevalidate(request, STATIC_CACHE));
+    }
     return;
   }
 
-  // Route: HTML pages → network-first (for fresh navigation)
+  // Route: HTML pages → network-first (لضمان حصول الزائر على آخر bundle بعد كل نشرت)
+  // ملاحظة جوهرية: 'document' يجب ألا يدخل فرع cache-first أعلاه — التنقلات
+  // شبكة-أولاً دائماً، وإلا بقيت الحزم القديمة تعمل لزوار العائدين (الجذر التاريخي
+  // لأخطاء data:audio/wav وicon-144 التي أبلغ عنها المستخدمون على نسخ قديمة).
   if (request.mode === 'navigate') {
     event.respondWith(networkFirstWithCache(request, DYNAMIC_CACHE));
     return;

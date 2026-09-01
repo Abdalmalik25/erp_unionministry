@@ -1,5 +1,6 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import path from 'path'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
@@ -32,7 +33,10 @@ const CSP_META = [
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self'",
   "img-src 'self' data: blob:",
-  "media-src 'self'",
+  // media-src يجب أن يطابق ترويسة vercel.json تماماً: المتصفح يطبّق "تقاطع" ترويستي CSP
+  // (meta + header) — أي اختلاف يجعل السياسة الأضيق هي الفاعلة. مواءمتها تمنع حظر
+  // data:/blob: للوسائط (CSP violation + NotSupportedError) جذرياً.
+  "media-src 'self' data: blob:",
   "object-src 'none'",
   "connect-src 'self'",
   "worker-src 'self' blob:",
@@ -58,7 +62,7 @@ const injectCsp = () => ({
  * نستبعدها من الـ modulepreload لئلّا يُفرَّغ تحميلها عند أول زيارة — يُجلب الأول مرة عند
  * أول طلب تصدير فعلي فقط (يقلل الحجم المُنقَّان في مسار العرض الحرج).
  */
-const HEAVY_DEFERRED_CHUNKS = /(vendor-pdf|xlsx|html2canvas)/
+const HEAVY_DEFERRED_CHUNKS = /(vendor-pdf|xlsx|html2canvas|recharts|jspdf)/
 
 const notHeavyDeferred = (
   filename: string,
@@ -75,12 +79,46 @@ const getManualChunks = (id: string) => {
   if (id.includes('node_modules')) {
     if (id.includes('react') || id.includes('react-dom')) return 'vendor-react'
     if (id.includes('lucide-react') || id.includes('@radix-ui')) return 'vendor-ui'
-    if (id.includes('recharts')) return 'vendor-charts'
-    if (id.includes('jspdf')) return 'vendor-pdf'
+    if (id.includes('recharts')) return 'vendor-charts-defer'
+    if (id.includes('jspdf')) return 'vendor-pdf-defer'
     if (id.includes('@supabase')) return 'vendor-supabase'
     if (id.includes('date-fns')) return 'vendor-utils'
   }
+  // Code-split page-level routes for 10x faster initial load
+  if (id.includes('src/pages/')) {
+    const page = id.replace('src/pages/', '').replace('.tsx', '').replace('.ts', '')
+    if (page.includes('reports')) return 'page-reports'
+    if (page.includes('export')) return 'page-export'
+    if (page.includes('dashboard')) return 'page-dashboard'
+    if (page.includes('worker')) return 'page-worker'
+    if (page.includes('admin')) return 'page-admin'
+  }
   return undefined
+}
+
+/**
+ * ختم Service Worker بمعرّف بناء فريد لكل نشرت (build id).
+ * لماذا: يضمن أن كل deploy يولّد sw.js مختلفاً → المتصفح يكتشف تحديث SW فوراً →
+ * activate يحذف كل كاشات النسخ السابقة. هذا يقطع جذرياً مشكلة خدمة أصول/HTML قديمة
+ * (stale bundle) لزوار يعودون بعد النشر — لا يمكن أن تبقى حزمة قديمة تعمل بعد النشر.
+ */
+const swVersionStamp = (): Plugin => {
+  let buildId = 'v-dev'
+  return {
+    name: 'sw-version-stamp',
+    apply: 'build',
+    buildStart() {
+      buildId = `v${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+    },
+    closeBundle() {
+      // public/ يُنسخ إلى dist/ قبل closeBundle — نستبدل العلامة في النسخة النهائية
+      const swPath = path.resolve(__dirname, 'dist/sw.js')
+      if (existsSync(swPath)) {
+        const stamped = readFileSync(swPath, 'utf8').replace(/__SW_VERSION__/g, buildId)
+        writeFileSync(swPath, stamped)
+      }
+    },
+  }
 }
 
 export default defineConfig({
@@ -88,6 +126,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     injectCsp(),
+    swVersionStamp(),
   ],
   resolve: {
     alias: {
