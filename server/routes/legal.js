@@ -3,6 +3,7 @@ import { pool, paginate, countQuery, softDeleteFilter, TABLE_COLUMNS, validateCo
 import { validateCertificateProfession, normalizeCertificateStatus } from '../lib/certificateValidation.mjs';
 import { validateFieldValues } from '../lib/dynamicFieldsValidation.mjs';
 import { requirePermission } from '../middleware/rbac.js';
+import { invalidateCache } from '../middleware/cache.js';
 
 const router = express.Router();
 
@@ -14,10 +15,10 @@ router.get('/api/legal-references', async (req, res) => {
     const targetTable = table || 'all';
     if (targetTable === 'all') {
       const [refs, lawArticles, ilo, intl] = await Promise.all([
-        pool.query(`SELECT *, 'reference' as _type FROM legal_references ORDER BY law_name_ar LIMIT $1 OFFSET $2`, [limit, offset]),
-        pool.query(`SELECT *, 'article' as _type FROM law_articles ORDER BY article_number LIMIT $1 OFFSET $2`, [limit, offset]),
-        pool.query(`SELECT *, 'ilo' as _type FROM ilo_conventions ORDER BY convention_number LIMIT $1 OFFSET $2`, [limit, offset]),
-        pool.query(`SELECT *, 'international' as _type FROM international_standards ORDER BY standard_code LIMIT $1 OFFSET $2`, [limit, offset]),
+        pool.query(`SELECT id, law_name_ar, law_name_en, law_number, law_year, law_type, summary, status, created_at, updated_at, 'reference' as _type FROM legal_references ORDER BY law_name_ar LIMIT $1 OFFSET $2`, [limit, offset]),
+        pool.query(`SELECT id, legal_reference_id, article_number, article_title_ar, article_title_en, content_ar, content_en, created_at, updated_at, 'article' as _type FROM law_articles ORDER BY article_number LIMIT $1 OFFSET $2`, [limit, offset]),
+        pool.query(`SELECT id, convention_number, convention_name_ar, convention_name_en, year_adopted, status, summary, created_at, updated_at, 'ilo' as _type FROM ilo_conventions ORDER BY convention_number LIMIT $1 OFFSET $2`, [limit, offset]),
+        pool.query(`SELECT id, standard_code, standard_name, standard_name_en, organization, category, status, summary, created_at, updated_at, 'international' as _type FROM international_standards ORDER BY standard_code LIMIT $1 OFFSET $2`, [limit, offset]),
       ]);
       res.json({
         legal_references: refs.rows,
@@ -26,19 +27,19 @@ router.get('/api/legal-references', async (req, res) => {
         international_standards: intl.rows,
       });
     } else if (targetTable === 'legal_references') {
-      const r = await pool.query(`SELECT *, 'reference' as _type FROM legal_references ORDER BY law_name_ar LIMIT $1 OFFSET $2`, [limit, offset]);
+      const r = await pool.query(`SELECT id, law_name_ar, law_name_en, law_number, law_year, law_type, summary, status, created_at, updated_at, 'reference' as _type FROM legal_references ORDER BY law_name_ar LIMIT $1 OFFSET $2`, [limit, offset]);
       const total = await pool.query(`SELECT COUNT(*)::int FROM legal_references`);
       res.json({ data: r.rows, total: total.rows[0].count, page: +page, limit: +limit });
     } else if (targetTable === 'law_articles') {
-      const r = await pool.query(`SELECT la.*, 'article' as _type, lr.law_name_ar as reference_name FROM law_articles la LEFT JOIN legal_references lr ON la.legal_reference_id = lr.id ORDER BY la.article_number LIMIT $1 OFFSET $2`, [limit, offset]);
+      const r = await pool.query(`SELECT la.id, la.legal_reference_id, la.article_number, la.article_title_ar, la.article_title_en, la.content_ar, la.content_en, la.created_at, la.updated_at, 'article' as _type, lr.law_name_ar as reference_name FROM law_articles la LEFT JOIN legal_references lr ON la.legal_reference_id = lr.id ORDER BY la.article_number LIMIT $1 OFFSET $2`, [limit, offset]);
       const total = await pool.query(`SELECT COUNT(*)::int FROM law_articles`);
       res.json({ data: r.rows, total: total.rows[0].count, page: +page, limit: +limit });
     } else if (targetTable === 'ilo_conventions') {
-      const r = await pool.query(`SELECT *, 'ilo' as _type FROM ilo_conventions ORDER BY convention_number LIMIT $1 OFFSET $2`, [limit, offset]);
+      const r = await pool.query(`SELECT id, convention_number, convention_name_ar, convention_name_en, year_adopted, status, summary, created_at, updated_at, 'ilo' as _type FROM ilo_conventions ORDER BY convention_number LIMIT $1 OFFSET $2`, [limit, offset]);
       const total = await pool.query(`SELECT COUNT(*)::int FROM ilo_conventions`);
       res.json({ data: r.rows, total: total.rows[0].count, page: +page, limit: +limit });
     } else if (targetTable === 'international_standards') {
-      const r = await pool.query(`SELECT *, 'international' as _type FROM international_standards ORDER BY standard_code LIMIT $1 OFFSET $2`, [limit, offset]);
+      const r = await pool.query(`SELECT id, standard_code, standard_name, standard_name_en, organization, category, status, summary, created_at, updated_at, 'international' as _type FROM international_standards ORDER BY standard_code LIMIT $1 OFFSET $2`, [limit, offset]);
       const total = await pool.query(`SELECT COUNT(*)::int FROM international_standards`);
       res.json({ data: r.rows, total: total.rows[0].count, page: +page, limit: +limit });
     }
@@ -59,6 +60,7 @@ router.post('/api/legal-references', requirePermission('legal:create'), async (r
       fields.map(c => d[c])
     );
     res.status(201).json({ success: true, data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
@@ -76,6 +78,7 @@ router.put('/api/legal-references/:id', requirePermission('legal:edit'), async (
     const r = await pool.query(`UPDATE ${table} SET ${cols.join(', ')} WHERE id = $${vals.length} RETURNING *`, vals);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
@@ -86,6 +89,7 @@ router.delete('/api/legal-references/:id', requirePermission('legal:delete'), as
     const r = await pool.query(`UPDATE ${table} SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id`, [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
@@ -96,6 +100,7 @@ router.put('/api/legal_references/:id/restore', async (req, res) => {
     const r = await pool.query('UPDATE legal_references SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -136,6 +141,7 @@ router.post('/api/labor-disputes', requirePermission('laborDisputes:create'), as
       `INSERT INTO labor_disputes (${fields.join(',')}) VALUES (${placeholders.join(',')}) RETURNING *`, values
     );
     res.status(201).json({ success: true, data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
@@ -150,6 +156,7 @@ router.put('/api/labor-disputes/:id', requirePermission('laborDisputes:edit'), a
     const r = await pool.query(`UPDATE labor_disputes SET ${cols.join(', ')} WHERE id = $${idx} RETURNING *`, vals);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
@@ -158,6 +165,7 @@ router.delete('/api/labor-disputes/:id', requirePermission('laborDisputes:delete
     const r = await pool.query('UPDATE labor_disputes SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
@@ -168,6 +176,7 @@ router.put('/api/labor_disputes/:id/restore', async (req, res) => {
     const r = await pool.query('UPDATE labor_disputes SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -209,6 +218,7 @@ router.post('/api/expatriate-licenses', requirePermission('expatriate:create'), 
       `INSERT INTO expatriate_licenses (${fields.join(',')}) VALUES (${placeholders.join(',')}) RETURNING *`, values
     );
     res.status(201).json({ success: true, data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
@@ -223,6 +233,7 @@ router.put('/api/expatriate-licenses/:id', requirePermission('expatriate:edit'),
     const r = await pool.query(`UPDATE expatriate_licenses SET ${cols.join(', ')} WHERE id = $${idx} RETURNING *`, vals);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
@@ -231,6 +242,7 @@ router.delete('/api/expatriate-licenses/:id', requirePermission('expatriate:dele
     const r = await pool.query('UPDATE expatriate_licenses SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
@@ -241,6 +253,7 @@ router.put('/api/expatriate_licenses/:id/restore', async (req, res) => {
     const r = await pool.query('UPDATE expatriate_licenses SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -291,7 +304,7 @@ router.post('/api/evaluation-certificates', requirePermission('evaluation:create
     // Validate extensible custom_data against the active field definitions.
     if (d.custom_data !== undefined) {
       const defs = await pool.query(
-        `SELECT * FROM custom_field_definitions WHERE entity_type = 'evaluation_certificates' AND active = true`
+        `SELECT id, entity_type, field_key, label, description, data_type, required, default_value, options, validation_rules, reference_entity, visible_in_form, visible_in_list, searchable, filterable, sortable, reportable, printable, importable, exportable, scope, active, display_order, entity_id, created_at, updated_at FROM custom_field_definitions WHERE entity_type = 'evaluation_certificates' AND active = true`
       );
       const cv = validateFieldValues(defs.rows, d.custom_data);
       if (!cv.valid) return res.status(400).json({ error: 'بيانات الحقول المخصصة غير صالحة', fields: cv.errors });
@@ -313,6 +326,7 @@ router.post('/api/evaluation-certificates', requirePermission('evaluation:create
       `INSERT INTO evaluation_certificates (${fields.join(',')}) VALUES (${placeholders.join(',')}) RETURNING *`, values
     );
     res.status(201).json({ success: true, data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' });
   }
@@ -335,7 +349,7 @@ router.put('/api/evaluation-certificates/:id', requirePermission('evaluation:edi
     // Validate extensible custom_data against the active field definitions.
     if (d.custom_data !== undefined) {
       const defs = await pool.query(
-        `SELECT * FROM custom_field_definitions WHERE entity_type = 'evaluation_certificates' AND active = true`
+        `SELECT id, entity_type, field_key, label, description, data_type, required, default_value, options, validation_rules, reference_entity, visible_in_form, visible_in_list, searchable, filterable, sortable, reportable, printable, importable, exportable, scope, active, display_order, entity_id, created_at, updated_at FROM custom_field_definitions WHERE entity_type = 'evaluation_certificates' AND active = true`
       );
       const cv = validateFieldValues(defs.rows, d.custom_data);
       if (!cv.valid) return res.status(400).json({ error: 'بيانات الحقول المخصصة غير صالحة', fields: cv.errors });
@@ -384,6 +398,7 @@ router.put('/api/evaluation-certificates/:id', requirePermission('evaluation:edi
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, certificate: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -394,6 +409,7 @@ router.delete('/api/evaluation-certificates/:id', requirePermission('evaluation:
     const r = await pool.query('UPDATE evaluation_certificates SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -406,6 +422,7 @@ router.put('/api/evaluation_certificates/:id/restore', async (req, res) => {
     const r = await pool.query('UPDATE evaluation_certificates SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -454,6 +471,7 @@ router.post('/api/licenses', requirePermission('licenses:create'), async (req, r
       `INSERT INTO licenses (${fields.join(',')}) VALUES (${placeholders.join(',')}) RETURNING *`, values
     );
     res.status(201).json({ success: true, license: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     console.error('License create error:', err);
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
@@ -486,6 +504,7 @@ router.put('/api/licenses/:id', requirePermission('licenses:edit'), async (req, 
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, license: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -496,6 +515,7 @@ router.delete('/api/licenses/:id', requirePermission('licenses:delete'), async (
     const r = await pool.query('UPDATE licenses SET deleted_at = NOW(), deleted_by = NULL WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -506,6 +526,7 @@ router.put('/api/licenses/:id/restore', async (req, res) => {
     const r = await pool.query('UPDATE licenses SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }

@@ -30,31 +30,35 @@ const MAP: Record<string, string> = {
     documents: 'مستندات النقابات والمنظمات',
 };
 type ReportType = keyof typeof MAP;
+const REPORT_ENDPOINTS: Record<ReportType, string> = {
+    commercial: '/api/commercial?limit=100',
+    unions: '/api/entities?limit=100',
+    disputes: '/api/labor-disputes?limit=100',
+    expatriates: '/api/expatriate-licenses?limit=100',
+    members: '/api/members?limit=100',
+    professions: '/api/professions?limit=100',
+    violations: '/api/violations?limit=100',
+    inspections: '/api/inspections?limit=100',
+    compliance: '/api/compliance-matrices?limit=100',
+    dispatches: '/api/dispatches?limit=100',
+    financial: '/api/fee-payments?limit=100',
+    alerts: '/api/compliance-alerts?limit=100',
+    risk_assessments: '/api/risk-assessments?limit=100',
+    legal_references: '/api/legal-references?limit=100',
+    training: '/api/training-records?limit=100',
+    licenses: '/api/licenses?limit=100',
+    evaluations: '/api/evaluation-certificates?limit=100',
+    documents: '/api/documents?limit=200',
+};
 export function ReportsManagement() {
     const [reportType, setReportType] = useState<ReportType>('commercial');
     const [dateFrom, setDateFrom] = useState('2026-01-01');
     const [dateTo, setDateTo] = useState('2026-12-31');
     const [govFilter, setGovFilter] = useState('all');
-    const [loading, setLoading] = useState(true);
-    const [commercialEsts, setCommercialEsts] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [reportData, setReportData] = useState<any[]>([]);
     const [entities, setEntities] = useState<any[]>([]);
-    const [disputes, setDisputes] = useState<any[]>([]);
-    const [expatriateLicenses, setExpatriateLicenses] = useState<any[]>([]);
-    const [members, setMembers] = useState<any[]>([]);
     const [professions, setProfessions] = useState<any[]>([]);
-    const [violations, setViolations] = useState<any[]>([]);
-    const [inspections, setInspections] = useState<any[]>([]);
-    const [complianceMatrices, setComplianceMatrices] = useState<any[]>([]);
-    const [dispatches, setDispatches] = useState<any[]>([]);
-    const [payments, setPayments] = useState<any[]>([]);
-    const [alerts, setAlerts] = useState<any[]>([]);
-    const [riskAssessments, setRiskAssessments] = useState<any[]>([]);
-    const [legalRefs, setLegalRefs] = useState<any[]>([]);
-    const [trainingRecords, setTrainingRecords] = useState<any[]>([]);
-    const [licenses, setLicenses] = useState<any[]>([]);
-    const [evalCerts, setEvalCerts] = useState<any[]>([]);
-    const [documents, setDocuments] = useState<any[]>([]);
-    // Timed fetch wrapper — prevents hanging requests from blocking the reports page
     const timedFetch = (url: string, timeoutMs = 8000) => {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -63,65 +67,57 @@ export function ReportsManagement() {
             .catch(e => { clearTimeout(timer); if (e.name === 'AbortError') throw new Error(`Timeout: ${url}`); throw e; });
     };
 
-    const fetchAll = useCallback(async () => {
+    const fetchReportData = useCallback(async (type: ReportType) => {
         setLoading(true);
+        setReportData([]);
         try {
-            const results = await Promise.allSettled([
-                timedFetch('/api/commercial?limit=100'),
-                timedFetch('/api/entities?limit=100'),
-                timedFetch('/api/labor-disputes?limit=100'),
-                timedFetch('/api/expatriate-licenses?limit=100'),
-                timedFetch('/api/members?limit=100'),
-                timedFetch('/api/professions?limit=100'),
-                timedFetch('/api/violations?limit=100'),
-                timedFetch('/api/inspections?limit=100'),
-                timedFetch('/api/compliance-matrices?limit=100'),
-                timedFetch('/api/dispatches?limit=100'),
-                timedFetch('/api/fee-payments?limit=100'),
-                timedFetch('/api/compliance-alerts?limit=100'),
-                timedFetch('/api/risk-assessments?limit=100'),
-                timedFetch('/api/legal-references?limit=100'),
-                timedFetch('/api/training-records?limit=100'),
-                timedFetch('/api/licenses?limit=100'),
-                timedFetch('/api/evaluation-certificates?limit=100'),
-                timedFetch('/api/documents?limit=200'),
-            ]);
-            const extract = (d: any) => d?.data || [];
-            const legalTransform = (d: any) => [...(d.legal_references || []), ...(d.law_articles || []), ...(d.ilo_conventions || []), ...(d.international_standards || [])];
-            const alertsTransform = (d: any) => d.data || d.alerts || [];
-            const apply = (r: PromiseSettledResult<Response>, setter: (v: unknown[]) => void, transform?: (d: unknown) => unknown[]) => {
-                if (r.status === 'fulfilled' && r.value.ok) {
-                    r.value.json().then(d => setter(transform ? transform(d) : (d?.data || [])));
-                }
-            };
-            apply(results[0], setCommercialEsts);
-            apply(results[1], setEntities);
-            apply(results[2], setDisputes);
-            apply(results[3], setExpatriateLicenses);
-            apply(results[4], setMembers);
-            apply(results[5], setProfessions);
-            apply(results[6], setViolations);
-            apply(results[7], setInspections);
-            apply(results[8], setComplianceMatrices);
-            apply(results[9], setDispatches);
-            apply(results[10], setPayments);
-            apply(results[11], setAlerts, alertsTransform);
-            apply(results[12], setRiskAssessments);
-            apply(results[13], setLegalRefs, legalTransform);
-            apply(results[14], setTrainingRecords);
-            apply(results[15], setLicenses);
-            apply(results[16], setEvalCerts);
-            apply(results[17], setDocuments);
-            logAudit({ action: 'view', resource: 'reports' });
-        }
-        catch {
+            const url = REPORT_ENDPOINTS[type];
+            const res = await timedFetch(url);
+            if (!res.ok) throw new Error('Failed to fetch');
+            const json = await res.json();
+            let data: any[] = [];
+            if (type === 'alerts') {
+                data = json.data || json.alerts || [];
+            } else if (type === 'legal_references') {
+                data = [...(json.legal_references || []), ...(json.law_articles || []), ...(json.ilo_conventions || []), ...(json.international_standards || [])];
+            } else {
+                data = json?.data || [];
+            }
+            setReportData(data);
+            logAudit({ action: 'view', resource: 'reports', details: { type } });
+        } catch {
             toast.error('خطأ في تحميل البيانات');
-        }
-        finally {
+        } finally {
             setLoading(false);
         }
     }, []);
-    useEffect(() => { fetchAll(); }, [fetchAll]);
+
+    useEffect(() => {
+        fetchReportData(reportType);
+    }, [reportType, fetchReportData]);
+
+    useEffect(() => {
+        const fetchSupportData = async () => {
+            try {
+                const [entRes, profRes] = await Promise.allSettled([
+                    timedFetch('/api/entities?limit=100'),
+                    timedFetch('/api/professions?limit=100'),
+                ]);
+                if (entRes.status === 'fulfilled' && entRes.value.ok) {
+                    const d = await entRes.value.json();
+                    setEntities(d?.data || []);
+                }
+                if (profRes.status === 'fulfilled' && profRes.value.ok) {
+                    const d = await profRes.value.json();
+                    setProfessions(d?.data || []);
+                }
+            } catch {
+                // silent – support data is non-critical
+            }
+        };
+        fetchSupportData();
+    }, []);
+
     const filteredEntities = useMemo(() => {
         return entities.filter(e => {
             if (govFilter !== 'all' && e.governorate !== govFilter)
@@ -131,29 +127,36 @@ export function ReportsManagement() {
     }, [entities, govFilter]);
     const summaryStats = useMemo(() => ({
         totalEntities: entities.length, activeEntities: entities.filter(e => e.status === 'active').length,
-        totalMembers: members.length, totalProfessions: professions.length,
-        totalViolations: violations.length, totalInspections: inspections.length,
-        totalDispatches: dispatches.length, totalPayments: payments.reduce((s, p) => s + (Number(p.amount) || 0), 0),
-        activeAlerts: alerts.length, totalRisk: riskAssessments.length,
-        totalLegal: legalRefs.length, totalTraining: trainingRecords.length,
-        totalLicenses: licenses.length, totalEval: evalCerts.length,
-        compliant: complianceMatrices.filter(m => m.compliance_status === 'compliant').length,
-    }), [entities, members, professions, violations, inspections, dispatches, payments, alerts, riskAssessments, legalRefs, trainingRecords, licenses, evalCerts, complianceMatrices]);
+        totalMembers: reportType === 'members' ? reportData.length : 0,
+        totalProfessions: professions.length,
+        totalViolations: reportType === 'violations' ? reportData.length : 0,
+        totalInspections: reportType === 'inspections' ? reportData.length : 0,
+        totalDispatches: reportType === 'dispatches' ? reportData.length : 0,
+        totalPayments: reportType === 'financial' ? reportData.reduce((s, p) => s + (Number(p.amount) || 0), 0) : 0,
+        activeAlerts: reportType === 'alerts' ? reportData.length : 0,
+        totalRisk: reportType === 'risk_assessments' ? reportData.length : 0,
+        totalLegal: reportType === 'legal_references' ? reportData.length : 0,
+        totalTraining: reportType === 'training' ? reportData.length : 0,
+        totalLicenses: reportType === 'licenses' ? reportData.length : 0,
+        totalEval: reportType === 'evaluations' ? reportData.length : 0,
+        compliant: reportType === 'compliance' ? reportData.filter(m => m.compliance_status === 'compliant').length : 0,
+    }), [entities, reportType, reportData, professions]);
     const govDistribution = useMemo(() => {
         const map: Record<string, number> = {};
-        entities.forEach(e => { const g = e.governorate || 'غير محدد'; map[g] = (map[g] || 0) + 1; });
+        const source = reportType === 'unions' ? filteredEntities : reportType === 'commercial' ? reportData : entities;
+        source.forEach(e => { const g = e.governorate || 'غير محدد'; map[g] = (map[g] || 0) + 1; });
         return Object.entries(map).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value).slice(0, 8);
-    }, [entities]);
+    }, [entities, reportData, filteredEntities, reportType]);
     const typeDistribution = useMemo(() => {
         const map: Record<string, number> = {};
         entities.forEach(e => { const t = e.entity_type || 'غير محدد'; map[t] = (map[t] || 0) + 1; });
         return Object.entries(map).map(([name, value]) => ({ name, value }));
     }, [entities]);
     const genderData = useMemo(() => {
-        const male = members.filter(m => m.gender === 'male' || m.gender === 'ذكر').length;
-        const female = members.filter(m => m.gender === 'female' || m.gender === 'أنثى').length;
+        const male = reportData.filter(m => m.gender === 'male' || m.gender === 'ذكر').length;
+        const female = reportData.filter(m => m.gender === 'female' || m.gender === 'أنثى').length;
         return [{ name: 'ذكور', value: male || 0 }, { name: 'إناث', value: female || 0 }];
-    }, [members]);
+    }, [reportData]);
     const getReportData = (): {
         data: any[];
         columns: ReportColumn[];
@@ -162,7 +165,7 @@ export function ReportsManagement() {
         switch (reportType) {
             case 'commercial':
                 return {
-                    data: commercialEsts, filename: 'سجل المنشآت والشركات التجارية',
+                    data: reportData, filename: 'سجل المنشآت والشركات التجارية',
                     columns: [
                         { key: 'name_ar', label: 'اسم المنشأة', width: 28 },
                         { key: 'unified_code', label: 'الرمز الموحد', width: 14 },
@@ -194,7 +197,7 @@ export function ReportsManagement() {
                 };
             case 'disputes':
                 return {
-                    data: disputes, filename: 'المنازعات العمالية والصلح',
+                    data: reportData, filename: 'المنازعات العمالية والصلح',
                     columns: [
                         { key: 'dispute_number', label: 'رقم النزاع', width: 14 },
                         { key: 'enterprise_name', label: 'المنشأة الطرف', width: 24 },
@@ -207,7 +210,7 @@ export function ReportsManagement() {
                 };
             case 'expatriates':
                 return {
-                    data: expatriateLicenses, filename: 'تراخيص العمالة الوافدة',
+                    data: reportData, filename: 'تراخيص العمالة الوافدة',
                     columns: [
                         { key: 'license_number', label: 'رقم الترخيص', width: 14 },
                         { key: 'worker_name_ar', label: 'اسم العامل الوافد', width: 22 },
@@ -220,7 +223,7 @@ export function ReportsManagement() {
                 };
             case 'members':
                 return {
-                    data: members, filename: 'سجل العمال والنقابيين',
+                    data: reportData, filename: 'سجل العمال والنقابيين',
                     columns: [
                         { key: 'full_name', label: 'الاسم الكامل', width: 25 },
                         { key: 'national_id', label: 'الرقم الوطني', width: 14 },
@@ -235,7 +238,7 @@ export function ReportsManagement() {
                 };
             case 'professions':
                 return {
-                    data: professions.slice(0, 200), filename: 'المهن والوظائف القياسية',
+                    data: reportData.slice(0, 200), filename: 'المهن والوظائف القياسية',
                     columns: [
                         { key: 'code', label: 'رمز المهنة', width: 10 },
                         { key: 'name_ar', label: 'المسمى المهني (عربي)', width: 26 },
@@ -250,7 +253,7 @@ export function ReportsManagement() {
                 };
             case 'violations':
                 return {
-                    data: violations, filename: 'محاضر المخالفات العمالية',
+                    data: reportData, filename: 'محاضر المخالفات العمالية',
                     columns: [
                         { key: 'violation_number', label: 'رقم المحضر', width: 14 },
                         { key: 'violation_type', label: 'نوع المخالفة', width: 22 },
@@ -262,7 +265,7 @@ export function ReportsManagement() {
                 };
             case 'inspections':
                 return {
-                    data: inspections, filename: 'محاضر التفتيش والسلامة المهنية',
+                    data: reportData, filename: 'محاضر التفتيش والسلامة المهنية',
                     columns: [
                         { key: 'inspection_number', label: 'رقم المحضر', width: 14 },
                         { key: 'enterprise_name', label: 'المنشأة', width: 22 },
@@ -277,7 +280,7 @@ export function ReportsManagement() {
                 };
             case 'compliance':
                 return {
-                    data: complianceMatrices, filename: 'مصفوفات الامتثال المؤسسي',
+                    data: reportData, filename: 'مصفوفات الامتثال المؤسسي',
                     columns: [
                         { key: 'enterprise_name', label: 'اسم المنشأة', width: 22 },
                         { key: 'article_number', label: 'رقم المادة', width: 14 },
@@ -289,7 +292,7 @@ export function ReportsManagement() {
                 };
             case 'dispatches':
                 return {
-                    data: dispatches, filename: 'إرساليات وتوجيه العمالة',
+                    data: reportData,                     filename: 'إرساليات وتوجيه العمالة',
                     columns: [
                         { key: 'dispatch_number', label: 'رقم الإرسالية', width: 14 },
                         { key: 'entity_name', label: 'المنشأة المصدرة', width: 22 },
@@ -300,7 +303,7 @@ export function ReportsManagement() {
                 };
             case 'financial':
                 return {
-                    data: payments, filename: 'سداد الرسوم والتحصيل المالي',
+                    data: reportData, filename: 'سداد الرسوم والتحصيل المالي',
                     columns: [
                         { key: 'entity_name', label: 'المنشأة / الجهة', width: 22 },
                         { key: 'amount', label: 'المبلغ المسدد', width: 14, format: v => v ? `${Number(v).toLocaleString('ar-YE')} ر.ي` : '—' },
@@ -311,7 +314,7 @@ export function ReportsManagement() {
                 };
             case 'risk_assessments':
                 return {
-                    data: riskAssessments, filename: 'تقييم المخاطر التنبؤي',
+                    data: reportData, filename: 'تقييم المخاطر التنبؤي',
                     columns: [
                         { key: 'entity_name', label: 'المنشأة', width: 22 },
                         { key: 'risk_type', label: 'نوع المخاطرة', width: 16 },
@@ -324,7 +327,7 @@ export function ReportsManagement() {
                 };
             case 'legal_references':
                 return {
-                    data: legalRefs, filename: 'الموسوعة القانونية وقانون العمل',
+                    data: reportData, filename: 'الموسوعة القانونية وقانون العمل',
                     columns: [
                         { key: 'law_name_ar', label: 'اسم القانون / اللائحة', width: 28 },
                         { key: 'law_number', label: 'رقم التشريع', width: 12 },
@@ -335,7 +338,7 @@ export function ReportsManagement() {
                 };
             case 'training':
                 return {
-                    data: trainingRecords, filename: 'سجلات التدريب والتأهيل',
+                    data: reportData, filename: 'سجلات التدريب والتأهيل',
                     columns: [
                         { key: 'training_name', label: 'البرنامج التدريبي', width: 24 },
                         { key: 'training_type', label: 'المجال التخصصي', width: 14 },
@@ -347,7 +350,7 @@ export function ReportsManagement() {
                 };
             case 'licenses':
                 return {
-                    data: licenses, filename: 'تراخيص مزاولة الأنشطة',
+                    data: reportData, filename: 'تراخيص مزاولة الأنشطة',
                     columns: [
                         { key: 'license_number', label: 'رقم الترخيص', width: 14 },
                         { key: 'license_type', label: 'نوع النشاط', width: 16 },
@@ -359,7 +362,7 @@ export function ReportsManagement() {
                 };
             case 'evaluations':
                 return {
-                    data: evalCerts, filename: 'شهادات الكفاءة والمطابقة المهنية',
+                    data: reportData, filename: 'شهادات الكفاءة والمطابقة المهنية',
                     columns: [
                         { key: 'certificate_number', label: 'رقم الشهادة', width: 14 },
                         { key: 'enterprise_name', label: 'المنشأة الحائزة', width: 22 },
@@ -376,7 +379,7 @@ export function ReportsManagement() {
                 };
             case 'alerts':
                 return {
-                    data: alerts, filename: 'تنبيهات الامتثال والإنذارات',
+                    data: reportData, filename: 'تنبيهات الامتثال والإنذارات',
                     columns: [
                         { key: 'alert_type', label: 'نوع الإنذار', width: 20 },
                         { key: 'severity', label: 'مستوى الأهمية', width: 12 },
@@ -386,7 +389,7 @@ export function ReportsManagement() {
                 };
             case 'documents':
                 return {
-                    data: documents.map(d => ({
+                    data: reportData.map(d => ({
                         ...d,
                         docNumber: d.docNumber ?? d.doc_number ?? d.document_number,
                         name: d.name ?? d.document_name,
@@ -441,24 +444,24 @@ export function ReportsManagement() {
         icon: any;
         count: number;
     }[] = [
-        { id: 'commercial', label: 'المنشآت التجارية', icon: Building2, count: commercialEsts.length },
-        { id: 'unions', label: 'النقابات والاتحادات', icon: Users, count: entities.length },
-        { id: 'disputes', label: 'المنازعات والصلح', icon: Scale, count: disputes.length },
-        { id: 'expatriates', label: 'العمالة الوافدة', icon: Globe, count: expatriateLicenses.length },
-        { id: 'members', label: 'الكوادر العمالية', icon: Users, count: members.length },
-        { id: 'professions', label: 'المهن القياسية', icon: Briefcase, count: professions.length },
-        { id: 'violations', label: 'المخالفات العمالية', icon: AlertTriangle, count: violations.length },
-        { id: 'inspections', label: 'التفتيش والسلامة', icon: ClipboardCheck, count: inspections.length },
-        { id: 'compliance', label: 'الامتثال المؤسسي', icon: Shield, count: complianceMatrices.length },
-        { id: 'dispatches', label: 'إرساليات العمالة', icon: FileText, count: dispatches.length },
-        { id: 'financial', label: 'التحصيل والرسوم', icon: TrendingUp, count: payments.length },
-        { id: 'risk_assessments', label: 'تقييم المخاطر', icon: AlertTriangle, count: riskAssessments.length },
-        { id: 'legal_references', label: 'الموسوعة القانونية', icon: Scale, count: legalRefs.length },
-        { id: 'training', label: 'التدريب والتأهيل', icon: Award, count: trainingRecords.length },
-        { id: 'licenses', label: 'تراخيص الأنشطة', icon: Globe, count: licenses.length },
-        { id: 'evaluations', label: 'شهادات الكفاءة', icon: BarChart3, count: evalCerts.length },
-        { id: 'documents', label: 'مستندات النقابات', icon: FileText, count: documents.length },
-        { id: 'alerts', label: 'الإنذارات والتنبيهات', icon: AlertTriangle, count: alerts.length },
+        { id: 'commercial', label: 'المنشآت التجارية', icon: Building2, count: reportType === 'commercial' ? reportData.length : 0 },
+        { id: 'unions', label: 'النقابات والاتحادات', icon: Users, count: reportType === 'unions' ? filteredEntities.length : entities.length },
+        { id: 'disputes', label: 'المنازعات والصلح', icon: Scale, count: reportType === 'disputes' ? reportData.length : 0 },
+        { id: 'expatriates', label: 'العمالة الوافدة', icon: Globe, count: reportType === 'expatriates' ? reportData.length : 0 },
+        { id: 'members', label: 'الكوادر العمالية', icon: Users, count: reportType === 'members' ? reportData.length : 0 },
+        { id: 'professions', label: 'المهن القياسية', icon: Briefcase, count: reportType === 'professions' ? reportData.length : professions.length },
+        { id: 'violations', label: 'المخالفات العمالية', icon: AlertTriangle, count: reportType === 'violations' ? reportData.length : 0 },
+        { id: 'inspections', label: 'التفتيش والسلامة', icon: ClipboardCheck, count: reportType === 'inspections' ? reportData.length : 0 },
+        { id: 'compliance', label: 'الامتثال المؤسسي', icon: Shield, count: reportType === 'compliance' ? reportData.length : 0 },
+        { id: 'dispatches', label: 'إرساليات العمالة', icon: FileText, count: reportType === 'dispatches' ? reportData.length : 0 },
+        { id: 'financial', label: 'التحصيل والرسوم', icon: TrendingUp, count: reportType === 'financial' ? reportData.length : 0 },
+        { id: 'risk_assessments', label: 'تقييم المخاطر', icon: AlertTriangle, count: reportType === 'risk_assessments' ? reportData.length : 0 },
+        { id: 'legal_references', label: 'الموسوعة القانونية', icon: Scale, count: reportType === 'legal_references' ? reportData.length : 0 },
+        { id: 'training', label: 'التدريب والتأهيل', icon: Award, count: reportType === 'training' ? reportData.length : 0 },
+        { id: 'licenses', label: 'تراخيص الأنشطة', icon: Globe, count: reportType === 'licenses' ? reportData.length : 0 },
+        { id: 'evaluations', label: 'شهادات الكفاءة', icon: BarChart3, count: reportType === 'evaluations' ? reportData.length : 0 },
+        { id: 'documents', label: 'مستندات النقابات', icon: FileText, count: reportType === 'documents' ? reportData.length : 0 },
+        { id: 'alerts', label: 'الإنذارات والتنبيهات', icon: AlertTriangle, count: reportType === 'alerts' ? reportData.length : 0 },
     ];
     const currentData = getReportData();
     const handleBatchRiskCalc = async () => {
@@ -468,7 +471,7 @@ export function ReportsManagement() {
             if (res.ok) {
                 const data = await res.json();
                 toast.success(`تم حساب المخاطر لـ ${data.processed} كيان`);
-                fetchAll();
+                fetchReportData(reportType);
             }
             else {
                 toast.error('خطأ في حساب المخاطر');
@@ -492,7 +495,7 @@ export function ReportsManagement() {
             <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary-dark">
               <Printer className="w-4 h-4"/> طباعة
             </button>
-            <button onClick={fetchAll} className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm hover:bg-muted">
+            <button onClick={() => fetchReportData(reportType)} className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm hover:bg-muted">
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}/> تحديث
             </button>
           </div>}/>
@@ -576,7 +579,9 @@ export function ReportsManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {currentData.data.length === 0 ? (<tr><td colSpan={currentData.columns.length + 1} className="px-4 py-8 text-center text-muted-foreground">لا توجد بيانات</td></tr>) : (currentData.data.map((row, i) => (<tr key={i} className={`${i % 2 === 0 ? 'bg-card' : 'bg-muted/30'} hover:bg-accent transition-colors`}>
+              {loading ? (<tr><td colSpan={currentData.columns.length + 1} className="px-4 py-8 text-center text-muted-foreground">
+                <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-primary"/> جاري التحميل...
+              </td></tr>) : currentData.data.length === 0 ? (<tr><td colSpan={currentData.columns.length + 1} className="px-4 py-8 text-center text-muted-foreground">لا توجد بيانات</td></tr>) : (currentData.data.map((row, i) => (<tr key={i} className={`${i % 2 === 0 ? 'bg-card' : 'bg-muted/30'} hover:bg-accent transition-colors`}>
                     <td className="px-3 py-2 text-center text-muted-foreground text-xs">{i + 1}</td>
                      {currentData.columns.map(col => (<td key={col.key} className="px-3 py-2 text-heading text-xs">
                         {col.format ? col.format(row[col.key]) : (col.key === 'status' || col.key.endsWith('_status') ? translateStatus(row[col.key]) : (row[col.key] ?? '—'))}

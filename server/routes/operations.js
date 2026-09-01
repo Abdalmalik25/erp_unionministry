@@ -1,5 +1,6 @@
 import { pool, paginate, countQuery, softDelete, softDeleteFilter } from '../middleware/shared.js';
 import express from 'express';
+import { invalidateCache } from '../middleware/cache.js';
 const router = express.Router();
 
 // ===================== Activities =====================
@@ -19,7 +20,7 @@ router.get('/api/activities', async (req, res) => {
 
     const total = await pool.query(_qs, _qp);
     const r = await pool.query(
-      `SELECT a.*, e.name_ar as entity_name FROM activities a
+      `SELECT a.id, a.entity_id, a.activity_number, a.activity_name, a.activity_type, a.status, a.start_date, a.end_date, a.actual_start_date, a.actual_end_date, a.location, a.description, a.objectives, a.outcomes, a.responsible, a.notes, a.planned_participants, a.actual_participants, a.beneficiaries_count, a.male_participants, a.female_participants, a.budget, a.actual_cost, a.funding_source, a.created_at, a.created_by, a.updated_at, a.updated_by, a.metadata, e.name_ar as entity_name FROM activities a
        JOIN organizational_entities e ON a.entity_id = e.entity_id
        WHERE ${where} ORDER BY a.created_at DESC LIMIT $${idx++} OFFSET $${idx++}`,
       [...params, limit, offset]
@@ -52,6 +53,7 @@ router.post('/api/activities', async (req, res) => {
       values
     );
     res.status(201).json({ success: true, activity: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     console.error('Activity create error:', err);
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
@@ -88,6 +90,7 @@ router.put('/api/activities/:id', async (req, res) => {
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, activity: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -98,6 +101,7 @@ router.delete('/api/activities/:id', async (req, res) => {
     const r = await pool.query('UPDATE activities SET deleted_at = NOW(), deleted_by = NULL WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -110,6 +114,7 @@ router.put('/api/activities/:id/restore', async (req, res) => {
     const r = await pool.query('UPDATE activities SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -159,6 +164,7 @@ router.post('/api/elections', async (req, res) => {
       `INSERT INTO elections (${fields.join(',')}) VALUES (${placeholders.join(',')}) RETURNING *`, values
     );
     res.status(201).json({ success: true, election: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -191,6 +197,7 @@ router.put('/api/elections/:id', async (req, res) => {
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, election: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -201,6 +208,7 @@ router.delete('/api/elections/:id', async (req, res) => {
     const r = await pool.query('UPDATE elections SET deleted_at = NOW(), deleted_by = NULL WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -213,6 +221,7 @@ router.put('/api/elections/:id/restore', async (req, res) => {
     const r = await pool.query('UPDATE elections SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -263,6 +272,7 @@ router.post('/api/documents', async (req, res) => {
       `INSERT INTO documents (${fields.join(',')}) VALUES (${placeholders.join(',')}) RETURNING *`, values
     );
     res.status(201).json({ success: true, document: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -294,6 +304,7 @@ router.put('/api/documents/:id', async (req, res) => {
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, document: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -304,6 +315,7 @@ router.delete('/api/documents/:id', async (req, res) => {
     const r = await pool.query('UPDATE documents SET deleted_at = NOW(), deleted_by = NULL WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -316,6 +328,7 @@ router.put('/api/documents/:id/restore', async (req, res) => {
     const r = await pool.query('UPDATE documents SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -329,7 +342,7 @@ router.get('/api/services', async (req, res) => {
     const { sql: _qs, params: _qp } = countQuery('services', where, []);
 
     const total = await pool.query(_qs, _qp);
-    const r = await pool.query(`SELECT * FROM services WHERE ${where} ORDER BY id LIMIT $${1} OFFSET $${2}`, [limit, offset]);
+    const r = await pool.query(`SELECT id, service_code, service_name, description, category, is_active, requires_documents, processing_days, fee_amount, fee_description, requirements, created_at FROM services WHERE ${where} ORDER BY id LIMIT $${1} OFFSET $${2}`, [limit, offset]);
     res.json({ data: r.rows, total: total.rows[0].count, page, limit });
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
@@ -353,6 +366,7 @@ router.post('/api/services', async (req, res) => {
       `INSERT INTO services (${fields.join(',')}) VALUES (${placeholders.join(',')}) RETURNING *`, values
     );
     res.status(201).json({ success: true, service: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     console.error('Service create error:', err);
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
@@ -383,6 +397,7 @@ router.put('/api/services/:id', async (req, res) => {
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, service: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -393,6 +408,7 @@ router.delete('/api/services/:id', async (req, res) => {
     const r = await pool.query('UPDATE services SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -405,6 +421,7 @@ router.put('/api/services/:id/restore', async (req, res) => {
     const r = await pool.query('UPDATE services SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -454,6 +471,7 @@ router.post('/api/service-requests', async (req, res) => {
       `INSERT INTO service_requests (${fields.join(',')}) VALUES (${placeholders.join(',')}) RETURNING *`, values
     );
     res.status(201).json({ success: true, request: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -484,6 +502,7 @@ router.put('/api/service-requests/:id', async (req, res) => {
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, request: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -494,6 +513,7 @@ router.delete('/api/service-requests/:id', async (req, res) => {
     const r = await pool.query('UPDATE service_requests SET deleted_at = NOW(), deleted_by = NULL WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -506,6 +526,7 @@ router.put('/api/service_requests/:id/restore', async (req, res) => {
     const r = await pool.query('UPDATE service_requests SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -552,6 +573,7 @@ router.post('/api/board-members', async (req, res) => {
       `INSERT INTO board_members (${fields.join(',')}) VALUES (${placeholders.join(',')}) RETURNING *`, values
     );
     res.status(201).json({ success: true, board_member: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     console.error('Board member create error:', err);
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
@@ -585,6 +607,7 @@ router.put('/api/board-members/:id', async (req, res) => {
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, board_member: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -595,6 +618,7 @@ router.delete('/api/board-members/:id', async (req, res) => {
     const r = await pool.query('UPDATE board_members SET deleted_at = NOW(), deleted_by = NULL WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -605,6 +629,7 @@ router.put('/api/board-members/:id/restore', async (req, res) => {
     const r = await pool.query('UPDATE board_members SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }

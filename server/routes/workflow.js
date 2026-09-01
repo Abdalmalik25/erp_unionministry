@@ -2,13 +2,14 @@
 import express from 'express';
 import { pool, paginate } from '../middleware/shared.js';
 import { requirePermission } from '../middleware/rbac.js';
+import { invalidateCache } from '../middleware/cache.js';
 
 const router = express.Router();
 
 // ========== Workflow Definitions ==========
 router.get('/api/v1/workflows/definitions', async (_req, res) => {
   try {
-    const r = await pool.query('SELECT * FROM workflow_definitions ORDER BY workflow_key, version DESC');
+    const r = await pool.query('SELECT id, workflow_key, name_ar, name_en, entity_type, version, is_active, definition, created_at, updated_at FROM workflow_definitions ORDER BY workflow_key, version DESC');
     res.json({ data: r.rows });
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
@@ -18,7 +19,7 @@ router.post('/api/v1/workflows/instances', requirePermission('admin:system'), as
   try {
     const { workflow_key, entity_type, entity_id, assigned_to, metadata } = req.body;
     if (!workflow_key || !entity_type || !entity_id) return res.status(400).json({ error: 'workflow_key, entity_type, entity_id مطلوبة' });
-    const def = await pool.query('SELECT * FROM workflow_definitions WHERE workflow_key = $1 AND is_active = true ORDER BY version DESC LIMIT 1', [workflow_key]);
+    const def = await pool.query('SELECT id, workflow_key, name_ar, name_en, entity_type, version, is_active, definition, created_at, updated_at FROM workflow_definitions WHERE workflow_key = $1 AND is_active = true ORDER BY version DESC LIMIT 1', [workflow_key]);
     if (!def.rows.length) return res.status(404).json({ error: 'تعريف Workflow غير موجود' });
     const initialState = (def.rows[0].definition?.states?.[0]) || 'draft';
     if (typeof initialState === 'object') initialState = initialState.state || 'draft';
@@ -28,14 +29,15 @@ router.post('/api/v1/workflows/instances', requirePermission('admin:system'), as
       [workflow_key, def.rows[0].version, entity_type, entity_id, typeof initialState === 'string' ? initialState : 'draft', assigned_to || null, req.user?.id || null, JSON.stringify(metadata || {})]
     );
     res.status(201).json(r.rows[0]);
+    invalidateCache('dashboard');
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.get('/api/v1/workflows/instances/:id', async (req, res) => {
   try {
-    const r = await pool.query('SELECT * FROM workflow_instances WHERE id = $1', [req.params.id]);
+    const r = await pool.query('SELECT id, workflow_key, workflow_version, entity_type, entity_id, current_state, previous_state, assigned_to, assigned_office_id, started_at, completed_at, due_at, metadata, created_by, updated_at FROM workflow_instances WHERE id = $1', [req.params.id]);
     if (!r.rows.length) return res.status(404).json({ error: 'غير موجود' });
-    const history = await pool.query('SELECT * FROM workflow_transitions_log WHERE workflow_instance_id = $1 ORDER BY created_at ASC', [req.params.id]);
+    const history = await pool.query('SELECT id, workflow_instance_id, from_state, to_state, action, actor_id, actor_role, comment, legal_basis, rule_evaluation_id, created_at FROM workflow_transitions_log WHERE workflow_instance_id = $1 ORDER BY created_at ASC', [req.params.id]);
     res.json({ ...r.rows[0], history: history.rows });
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
@@ -43,7 +45,7 @@ router.get('/api/v1/workflows/instances/:id', async (req, res) => {
 router.post('/api/v1/workflows/instances/:id/transition', async (req, res) => {
   try {
     const { action, to_state, comment } = req.body;
-    const inst = await pool.query('SELECT * FROM workflow_instances WHERE id = $1', [req.params.id]);
+    const inst = await pool.query('SELECT id, workflow_key, workflow_version, entity_type, entity_id, current_state, previous_state, assigned_to, assigned_office_id, started_at, completed_at, due_at, metadata, created_by, updated_at FROM workflow_instances WHERE id = $1', [req.params.id]);
     if (!inst.rows.length) return res.status(404).json({ error: 'غير موجود' });
     const current = inst.rows[0].current_state;
     const def = await pool.query('SELECT definition FROM workflow_definitions WHERE workflow_key = $1 ORDER BY version DESC LIMIT 1', [inst.rows[0].workflow_key]);
@@ -80,7 +82,7 @@ router.get('/api/v1/cases', async (req, res) => {
     }
     const where = 'WHERE ' + conds.join(' AND ');
     const total = await pool.query(`SELECT COUNT(*)::int as c FROM cases ${where}`, params);
-    const rows = await pool.query(`SELECT * FROM cases ${where} ORDER BY created_at DESC LIMIT $${i++} OFFSET $${i++}`, [...params, limit, offset]);
+    const rows = await pool.query(`SELECT id, case_number, case_type, subject, description, priority, status, jurisdiction_governorate, jurisdiction_directorate, office_id, assigned_to, assigned_office_id, legal_basis, legal_source_id, workflow_instance_id, sla_deadline, sla_status, parties, linked_entity_id, linked_entity_type, created_by, created_at, updated_at, deleted_at FROM cases ${where} ORDER BY created_at DESC LIMIT $${i++} OFFSET $${i++}`, [...params, limit, offset]);
     res.json({ data: rows.rows, total: total.rows[0].c, page, limit });
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
@@ -91,7 +93,7 @@ router.post('/api/v1/cases', async (req, res) => {
     if (!case_type || !subject) return res.status(400).json({ error: 'case_type و subject مطلوبان' });
     const case_number = `CASE-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2,5).toUpperCase()}`;
     // compute SLA
-    const sla = await pool.query(`SELECT * FROM sla_policies WHERE applies_to = $1 AND is_active = true LIMIT 1`, [case_type]);
+    const sla = await pool.query(`SELECT id, policy_key, name_ar, applies_to, duration_days, escalation_after_days, escalation_to_role, pause_on, is_active, created_at FROM sla_policies WHERE applies_to = $1 AND is_active = true LIMIT 1`, [case_type]);
     let sla_deadline = null;
     if (sla.rows.length) sla_deadline = new Date(Date.now() + sla.rows[0].duration_days * 86400000).toISOString();
     const r = await pool.query(
@@ -100,17 +102,18 @@ router.post('/api/v1/cases', async (req, res) => {
       [case_number, case_type, subject, description, priority || 'medium', jurisdiction_governorate || req.user?.governorate || null, jurisdiction_directorate || null, office_id || null, JSON.stringify(parties || []), linked_entity_id || null, linked_entity_type || null, sla_deadline, req.user?.id || null]
     );
     res.status(201).json(r.rows[0]);
+    invalidateCache('dashboard');
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.get('/api/v1/cases/:id', async (req, res) => {
   try {
-    const r = await pool.query('SELECT * FROM cases WHERE id = $1', [req.params.id]);
+    const r = await pool.query('SELECT id, case_number, case_type, subject, description, priority, status, jurisdiction_governorate, jurisdiction_directorate, office_id, assigned_to, assigned_office_id, legal_basis, legal_source_id, workflow_instance_id, sla_deadline, sla_status, parties, linked_entity_id, linked_entity_type, created_by, created_at, updated_at, deleted_at FROM cases WHERE id = $1', [req.params.id]);
     if (!r.rows.length) return res.status(404).json({ error: 'القضية غير موجودة' });
     const [actions, docs, hearings] = await Promise.all([
-      pool.query('SELECT * FROM case_actions WHERE case_id = $1 ORDER BY created_at ASC', [req.params.id]),
-      pool.query('SELECT * FROM case_documents WHERE case_id = $1', [req.params.id]),
-      pool.query('SELECT * FROM case_hearings WHERE case_id = $1 ORDER BY hearing_date ASC', [req.params.id]),
+      pool.query('SELECT id, case_id, action_type, description, actor_id, actor_role, due_date, completed_at, metadata, created_at FROM case_actions WHERE case_id = $1 ORDER BY created_at ASC', [req.params.id]),
+      pool.query('SELECT id, case_id, document_id, file_url, file_hash, uploaded_by, created_at FROM case_documents WHERE case_id = $1', [req.params.id]),
+      pool.query('SELECT id, case_id, hearing_date, location, parties_present, outcome, next_hearing_date, created_by, created_at FROM case_hearings WHERE case_id = $1 ORDER BY hearing_date ASC', [req.params.id]),
     ]);
     res.json({ ...r.rows[0], actions: actions.rows, documents: docs.rows, hearings: hearings.rows });
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
@@ -124,6 +127,7 @@ router.post('/api/v1/cases/:id/actions', async (req, res) => {
       [req.params.id, action_type, description, req.user?.id || null, req.user?.role || null, due_date || null]
     );
     res.status(201).json(r.rows[0]);
+    invalidateCache('dashboard');
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
@@ -131,7 +135,7 @@ router.post('/api/v1/cases/:id/actions', async (req, res) => {
 router.get('/api/v1/sla/overview', async (_req, res) => {
   try {
     const r = await pool.query(`SELECT sla_status, COUNT(*)::int as count FROM cases WHERE deleted_at IS NULL GROUP BY sla_status`);
-    const overdue = await pool.query(`SELECT * FROM cases WHERE sla_deadline < NOW() AND status NOT IN ('closed','resolved') AND deleted_at IS NULL LIMIT 20`);
+    const overdue = await pool.query(`SELECT id, case_number, case_type, subject, description, priority, status, sla_deadline, sla_status, created_at FROM cases WHERE sla_deadline < NOW() AND status NOT IN ('closed','resolved') AND deleted_at IS NULL LIMIT 20`);
     res.json({ by_status: r.rows, overdue: overdue.rows });
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
@@ -140,7 +144,7 @@ router.get('/api/v1/sla/overview', async (_req, res) => {
 router.get('/api/v1/correspondence', async (req, res) => {
   try {
     const { limit, page, offset } = paginate(req);
-    const rows = await pool.query('SELECT * FROM correspondences ORDER BY created_at DESC LIMIT $1 OFFSET $2', [limit, offset]);
+    const rows = await pool.query('SELECT id, reference_number, direction, subject, body, sender_entity_type, sender_entity_id, recipient_entity_type, recipient_entity_id, case_id, linked_entity_id, status, attachments, created_by, created_at FROM correspondences ORDER BY created_at DESC LIMIT $1 OFFSET $2', [limit, offset]);
     const total = await pool.query('SELECT COUNT(*)::int as c FROM correspondences');
     res.json({ data: rows.rows, total: total.rows[0].c, page, limit });
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
@@ -157,6 +161,7 @@ router.post('/api/v1/correspondence', async (req, res) => {
       [ref, direction || 'outgoing', subject, body, sender_entity_type, sender_entity_id, recipient_entity_type, recipient_entity_id, case_id || null, req.user?.id || null]
     );
     res.status(201).json(r.rows[0]);
+    invalidateCache('dashboard');
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 

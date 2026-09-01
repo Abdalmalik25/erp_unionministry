@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, Search, Download, Edit, Trash2, RefreshCw, Users, RotateCcw } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { Plus, Search, Download, Edit, Trash2, RefreshCw, Users, RotateCcw, ChevronRight, ChevronLeft } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -42,6 +42,13 @@ interface Member {
   [key: string]: any;
 }
 
+interface MembersApiResponse {
+  data: Member[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 const STATUS_OPTIONS = [
   { value: 'نشط', label: 'نشط' },
   { value: 'موقف', label: 'موقف' },
@@ -49,11 +56,16 @@ const STATUS_OPTIONS = [
   { value: 'متوفى', label: 'متوفى' },
 ];
 
+const PAGE_SIZE = 20;
+
 export function MembersManagement() {
   const [members, setMembers] = useState<Member[]>([]);
+  const [total, setTotal] = useState(0);
   const [entities, setEntities] = useState<Array<{ entity_id: string; entity_name: string; unified_code: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
   const [filterUnion, setFilterUnion] = useState('الكل');
   const [filterGender, setFilterGender] = useState('الكل');
   const [filterStatus, setFilterStatus] = useState('الكل');
@@ -64,39 +76,60 @@ export function MembersManagement() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setPage(1);
+    }, 400);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [searchTerm]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const deletedParam = showDeleted ? '?include_deleted=true' : '';
-      const [members_, entities_] = await Promise.all([
-        fetchList<Member>(`/api/members${deletedParam}`, undefined, ['members']),
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('limit', String(PAGE_SIZE));
+      if (debouncedSearch) params.set('search', debouncedSearch);
+      if (showDeleted) params.set('include_deleted', 'true');
+
+      const [membersRes, entities_] = await Promise.all([
+        fetch(`/api/members?${params.toString()}`).then(async (r) => {
+          if (!r.ok) return { data: [], total: 0 } as MembersApiResponse;
+          const json = await r.json();
+          return {
+            data: Array.isArray(json) ? json : json.data ?? json.members ?? [],
+            total: json.total ?? (Array.isArray(json) ? json.length : 0),
+            page: json.page ?? page,
+            limit: json.limit ?? PAGE_SIZE,
+          } as MembersApiResponse;
+        }),
         fetchList<{ entity_id: string; entity_name: string; unified_code: string }>('/api/entities', undefined, ['entities']),
       ]);
-      setMembers(members_);
+
+      setMembers(membersRes.data);
+      setTotal(membersRes.total);
       setEntities(entities_);
       logAudit({ action: 'view', resource: 'members' });
     } catch { toast.error('خطأ في تحميل البيانات'); }
     finally { setLoading(false); }
-  }, [showDeleted]);
+  }, [page, debouncedSearch, showDeleted]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const filteredMembers = useMemo(() => {
     return members.filter((member) => {
-      const q = searchTerm.toLowerCase();
-      const matchesSearch = !q ||
-        member.full_name?.toLowerCase().includes(q) ||
-        member.national_id?.includes(q) ||
-        member.member_number?.toLowerCase().includes(q) ||
-        member.phone?.includes(q) ||
-        member.email?.toLowerCase().includes(q);
       const matchesUnion = filterUnion === 'الكل' || member.unified_code === filterUnion;
       const matchesGender = filterGender === 'الكل' || member.gender === filterGender;
       const matchesStatus = filterStatus === 'الكل' || member.status === filterStatus;
-      return matchesSearch && matchesUnion && matchesGender && matchesStatus;
+      return matchesUnion && matchesGender && matchesStatus;
     });
-  }, [members, searchTerm, filterUnion, filterGender, filterStatus]);
+  }, [members, filterUnion, filterGender, filterStatus]);
 
   const entityOptions = useMemo(() => [
     { value: 'الكل', label: 'جميع النقابات والمنظمات' },
@@ -104,11 +137,11 @@ export function MembersManagement() {
   ], [entities]);
 
   const stats = useMemo(() => ({
-    total: members.length,
+    total,
     active: members.filter(m => m.status === 'نشط').length,
     male: members.filter(m => m.gender === 'ذكر').length,
     female: members.filter(m => m.gender === 'أنثى').length,
-  }), [members]);
+  }), [members, total]);
 
   const handleOpenModal = (member?: Member) => {
     if (member) {
@@ -215,17 +248,32 @@ export function MembersManagement() {
     } catch { toast.error('خطأ في الاتصال'); }
   };
 
-  const handleExport = () => {
-    const headers = ['الرقم الوطني', 'الاسم', 'الجنس', 'المهنة', 'الحالة', 'الهاتف', 'البريد', 'النقابة', 'تاريخ الانتساب'];
-    const rows = filteredMembers.map(m => [m.national_id, m.full_name, m.gender, m.profession, m.status, m.phone || '', m.email || '', m.unified_code || '', m.join_date || '']);
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
-    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `أعضاء_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    toast.success('تم التصدير بنجاح');
-    logAudit({ action: 'export', resource: 'members' });
+  const handleExport = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (debouncedSearch) params.set('search', debouncedSearch);
+      if (showDeleted) params.set('include_deleted', 'true');
+      params.set('limit', '99999');
+      params.set('page', '1');
+      const r = await fetch(`/api/members?${params.toString()}`);
+      if (!r.ok) { toast.error('خطأ في تحميل البيانات للتصدير'); return; }
+      const json = await r.json();
+      const allMembers: Member[] = Array.isArray(json) ? json : json.data ?? json.members ?? [];
+      const headers = ['الرقم الوطني', 'الاسم', 'الجنس', 'المهنة', 'الحالة', 'الهاتف', 'البريد', 'النقابة', 'تاريخ الانتساب'];
+      const rows = allMembers.map(m => [m.national_id, m.full_name, m.gender, m.profession, m.status, m.phone || '', m.email || '', m.unified_code || '', m.join_date || '']);
+      const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `أعضاء_${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+      toast.success('تم التصدير بنجاح');
+      logAudit({ action: 'export', resource: 'members' });
+    } catch { toast.error('خطأ في التصدير'); }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) setPage(newPage);
   };
 
   return (
@@ -353,8 +401,59 @@ export function MembersManagement() {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination */}
             <div className="px-6 py-4 bg-muted border-t border-border flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">عرض {filteredMembers.length} من {members.length} عضو</p>
+              <p className="text-sm text-muted-foreground">
+                عرض {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} من {total} عضو
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={page <= 1}
+                  icon={<ChevronRight size={16} />}
+                >
+                  السابق
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                    let pageNum: number;
+                    if (totalPages <= 7) {
+                      pageNum = i + 1;
+                    } else if (page <= 4) {
+                      pageNum = i + 1;
+                    } else if (page >= totalPages - 3) {
+                      pageNum = totalPages - 6 + i;
+                    } else {
+                      pageNum = page - 3 + i;
+                    }
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                          page === pageNum
+                            ? 'bg-primary-bright text-white'
+                            : 'hover:bg-accent text-muted-foreground'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={page >= totalPages}
+                  icon={<ChevronLeft size={16} />}
+                >
+                  التالي
+                </Button>
+              </div>
             </div>
           </>
         )}

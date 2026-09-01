@@ -1,6 +1,7 @@
 import express from 'express';
 import { pool, paginate, countQuery, softDelete, softDeleteFilter, safeSetClause } from '../middleware/shared.js';
 import { requirePermission } from '../middleware/rbac.js';
+import { invalidateCache } from '../middleware/cache.js';
 
 const router = express.Router();
 
@@ -20,7 +21,7 @@ router.get('/api/violations', async (req, res) => {
 
     const total = await pool.query(_qs, _qp);
     const r = await pool.query(
-      `SELECT v.*, e.name_ar as entity_name FROM violations v
+      `SELECT v.id, v.entity_id, v.violation_number, v.violation_type, v.violation_name, v.severity, v.status, v.description, v.legal_basis, v.detected_date, v.detected_by, v.decision_date, v.decision, v.penalty, v.penalty_amount, v.resolved_date, v.resolved_by, v.resolution_notes, v.appeal_date, v.appeal_status, v.appeal_decision, v.evidence_urls, v.created_at, v.created_by, v.updated_at, v.deleted_at, e.name_ar as entity_name FROM violations v
        JOIN organizational_entities e ON v.entity_id = e.entity_id
        WHERE ${where} ORDER BY v.created_at DESC LIMIT $${idx++} OFFSET $${idx++}`,
       [...params, limit, offset]
@@ -50,6 +51,7 @@ router.post('/api/violations', requirePermission('violations:create'), async (re
       `INSERT INTO violations (${fields.join(',')}) VALUES (${placeholders.join(',')}) RETURNING *`, values
     );
     res.status(201).json({ success: true, violation: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     console.error('Violation create error:', err);
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
@@ -83,6 +85,7 @@ router.put('/api/violations/:id', requirePermission('violations:edit'), async (r
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, violation: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -93,6 +96,7 @@ router.delete('/api/violations/:id', requirePermission('violations:delete'), asy
     const r = await softDelete('violations', req.params.id);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -103,6 +107,7 @@ router.put('/api/violations/:id/restore', async (req, res) => {
     const r = await pool.query('UPDATE violations SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -154,6 +159,7 @@ router.post('/api/inspections', requirePermission('inspections:create'), async (
       `INSERT INTO inspections (${fields.join(',')}) VALUES (${placeholders.join(',')}) RETURNING *`, values
     );
     res.status(201).json({ success: true, data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' });
   }
@@ -192,6 +198,7 @@ router.put('/api/inspections/:id', requirePermission('inspections:edit'), async 
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, inspection: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -202,6 +209,7 @@ router.delete('/api/inspections/:id', requirePermission('inspections:delete'), a
     const r = await softDelete('inspections', req.params.id);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -212,6 +220,7 @@ router.put('/api/inspections/:id/restore', async (req, res) => {
     const r = await pool.query('UPDATE inspections SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -249,6 +258,7 @@ router.post('/api/risk-assessments', requirePermission('risk:create'), async (re
       fields.map(c => d[c])
     );
     res.status(201).json({ success: true, data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
@@ -263,6 +273,7 @@ router.put('/api/risk-assessments/:id', requirePermission('risk:edit'), async (r
     const r = await pool.query(`UPDATE risk_assessments SET ${cols.join(', ')} WHERE id = $${vals.length} RETURNING *`, vals);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
@@ -271,6 +282,7 @@ router.delete('/api/risk-assessments/:id', requirePermission('risk:delete'), asy
     const r = await pool.query('UPDATE risk_assessments SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
@@ -280,6 +292,7 @@ router.put('/api/risk-assessments/:id/restore', async (req, res) => {
     const r = await pool.query('UPDATE risk_assessments SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -319,6 +332,7 @@ router.post('/api/compliance-matrices', requirePermission('compliance:create'), 
       fields.map(c => d[c])
     );
     res.status(201).json({ success: true, data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
@@ -333,6 +347,7 @@ router.put('/api/compliance-matrices/:id', requirePermission('compliance:edit'),
     const r = await pool.query(`UPDATE compliance_matrices SET ${cols.join(', ')} WHERE id = $${vals.length} RETURNING *`, vals);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
@@ -341,6 +356,7 @@ router.delete('/api/compliance-matrices/:id', requirePermission('compliance:dele
     const r = await pool.query('UPDATE compliance_matrices SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
@@ -350,6 +366,7 @@ router.put('/api/compliance-matrices/:id/restore', async (req, res) => {
     const r = await pool.query('UPDATE compliance_matrices SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -386,6 +403,7 @@ router.post('/api/maturity-assessments', requirePermission('compliance:create'),
       fields.map(c => d[c])
     );
     res.status(201).json({ success: true, data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
@@ -400,6 +418,7 @@ router.put('/api/maturity-assessments/:id', requirePermission('compliance:edit')
     const r = await pool.query(`UPDATE maturity_assessments SET ${cols.join(', ')} WHERE id = $${vals.length} RETURNING *`, vals);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
@@ -408,6 +427,7 @@ router.delete('/api/maturity-assessments/:id', requirePermission('compliance:del
     const r = await pool.query('UPDATE maturity_assessments SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
@@ -417,6 +437,7 @@ router.put('/api/maturity-assessments/:id/restore', async (req, res) => {
     const r = await pool.query('UPDATE maturity_assessments SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -439,7 +460,7 @@ router.get('/api/compliance-alerts', async (req, res) => {
 
     const total = await pool.query(_qs, _qp);
     const r = await pool.query(
-      `SELECT * FROM compliance_alerts WHERE ${where} ORDER BY created_at DESC LIMIT $${idx++} OFFSET $${idx++}`,
+      `SELECT id, enterprise_id, enterprise_name, alert_type, severity, title, description, source_table, source_id, due_date, is_acknowledged, acknowledged_by, acknowledged_at, resolution_notes, resolved_at, resolved_by, is_resolved, notification_sent, metadata, created_at, updated_at FROM compliance_alerts WHERE ${where} ORDER BY created_at DESC LIMIT $${idx++} OFFSET $${idx++}`,
       [...params, limit, offset]
     );
     res.json({ data: r.rows, total: total.rows[0].count, page, limit });
@@ -450,9 +471,10 @@ router.get('/api/compliance-alerts', async (req, res) => {
 
 router.get('/api/compliance-alerts/:id', async (req, res) => {
   try {
-    const r = await pool.query('SELECT * FROM compliance_alerts WHERE id = $1', [req.params.id]);
+    const r = await pool.query('SELECT id, enterprise_id, enterprise_name, alert_type, severity, title, description, source_table, source_id, due_date, is_acknowledged, acknowledged_by, acknowledged_at, resolution_notes, resolved_at, resolved_by, is_resolved, notification_sent, metadata, created_at, updated_at FROM compliance_alerts WHERE id = $1', [req.params.id]);
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json(r.rows[0]);
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -475,6 +497,7 @@ router.post('/api/compliance-alerts', requirePermission('compliance:create'), as
       `INSERT INTO compliance_alerts (${fields.join(',')}) VALUES (${placeholders.join(',')}) RETURNING *`, values
     );
     res.status(201).json({ success: true, alert: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -504,6 +527,7 @@ router.put('/api/compliance-alerts/:id', requirePermission('compliance:edit'), a
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, alert: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -518,6 +542,7 @@ router.put('/api/compliance-alerts/:id/acknowledge', requirePermission('complian
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود أو تم الإقرار مسبقاً' });
     res.json({ success: true, alert: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -532,6 +557,7 @@ router.put('/api/compliance-alerts/:id/resolve', requirePermission('compliance:e
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود أو تم الحل مسبقاً' });
     res.json({ success: true, alert: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -542,6 +568,7 @@ router.delete('/api/compliance-alerts/:id', requirePermission('compliance:delete
     const r = await softDelete('compliance_alerts', req.params.id);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -553,6 +580,7 @@ router.put('/api/compliance_alerts/:id/restore', async (req, res) => {
     const r = await pool.query('UPDATE compliance_alerts SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -698,6 +726,7 @@ router.put('/api/inspections/:id/workflow', async (req, res) => {
       [status, notes, req.params.id]
     );
     res.json({ success: true, inspection: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -728,6 +757,7 @@ router.put('/api/violations/:id/workflow', async (req, res) => {
       [status, notes, req.params.id]
     );
     res.json({ success: true, violation: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }

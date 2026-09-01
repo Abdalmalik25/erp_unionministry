@@ -1,7 +1,20 @@
 import { useState, useCallback } from 'react';
 import { apiBase, publicAnonKey } from '../../../utils/supabase/info';
 
-// استخدام API_BASE من البيئة أو الخادم المحلي
+/**
+ * @deprecated Use services/api.ts instead for full features:
+ * - ETag-based caching
+ * - Request deduplication
+ * - Exponential retry with jitter
+ * - Idempotency keys
+ * - Correlation IDs
+ * - AbortController support
+ * - 15s timeout
+ *
+ * This hook is kept for backward compatibility only.
+ * Migrate to: import { apiClient } from '../services/api';
+ */
+
 const API_BASE = apiBase || import.meta.env.VITE_API_BASE || '/api';
 
 interface ApiOptions {

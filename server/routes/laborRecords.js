@@ -4,6 +4,7 @@
 // يدعم: دمج persons للعرض، إنشاء/ربط الشخص تلقائياً، توليد الأرقام التسلسلية، soft-delete موحد.
 import { pool, paginate, countQuery, softDeleteFilter, auditLog } from '../middleware/shared.js';
 import express from 'express';
+import { invalidateCache } from '../middleware/cache.js';
 
 const router = express.Router();
 
@@ -192,6 +193,7 @@ function registerRecord(resource, def) {
       );
       if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
       res.json(r.rows[0]);
+    invalidateCache('dashboard');
     } catch (err) {
       console.error(`[${resource}] get error:`, err.message);
       res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
@@ -229,6 +231,7 @@ function registerRecord(resource, def) {
       );
       auditLog('create', table, req.user?.id || req.headers['x-user-id'], { id: r.rows[0].id }).catch(() => {});
       res.status(201).json({ success: true, record: r.rows[0] });
+    invalidateCache('dashboard');
     } catch (err) {
       if (err.code === '23505') return res.status(409).json({ error: 'القيمة مستخدمة مسبقاً (تكرار رقم تسلسلي)' });
       if (err.code === '23514') return res.status(400).json({ error: 'قيمة غير مطابقة لقيود الحقل: ' + err.detail });
@@ -262,6 +265,7 @@ function registerRecord(resource, def) {
       if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
       auditLog('update', table, req.user?.id || req.headers['x-user-id'], { id: req.params.id }).catch(() => {});
       res.json({ success: true, record: r.rows[0] });
+    invalidateCache('dashboard');
     } catch (err) {
       if (err.code === '23505') return res.status(409).json({ error: 'القيمة مستخدمة مسبقاً (تكرار رقم تسلسلي)' });
       if (err.code === '23514') return res.status(400).json({ error: 'قيمة غير مطابقة لقيود الحقل: ' + err.detail });
@@ -280,6 +284,7 @@ function registerRecord(resource, def) {
       if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
       auditLog('delete', table, req.user?.id || req.headers['x-user-id'], { id: req.params.id }).catch(() => {});
       res.json({ success: true });
+    invalidateCache('dashboard');
     } catch (err) {
       console.error(`[${resource}] delete error:`, err.message);
       res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
@@ -295,6 +300,7 @@ function registerRecord(resource, def) {
       );
       if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
       res.json({ success: true });
+    invalidateCache('dashboard');
     } catch (err) {
       console.error(`[${resource}] restore error:`, err.message);
       res.status(500).json({ error: 'خطأ في قاعدة البيانات' });

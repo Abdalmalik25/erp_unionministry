@@ -4,6 +4,7 @@ import express from 'express';
 import { pool, paginate } from '../middleware/shared.js';
 import { guard } from '../middleware/rbacFactory.js';
 import { embed, toPgVector } from '../lib/embeddings.js';
+import { invalidateCache } from '../middleware/cache.js';
 
 const router = express.Router();
 
@@ -19,7 +20,7 @@ router.get('/api/v1/legal/sources', async (req, res) => {
     if (search) { conds.push(`(title_ar ILIKE $${i} OR law_number ILIKE $${i})`); params.push(`%${search}%`); i++; }
     const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
     const total = await pool.query(`SELECT COUNT(*)::int as c FROM legal_sources ${where}`, params);
-    const rows = await pool.query(`SELECT * FROM legal_sources ${where} ORDER BY law_year DESC, law_number ASC LIMIT $${i++} OFFSET $${i++}`, [...params, limit, offset]);
+    const rows = await pool.query(`SELECT id, source_type, law_number, law_year, title_ar, title_en, issuing_authority, issue_date, effective_from, effective_to, status, version, parent_source_id, amendment_of, document_url, summary, metadata, created_at, updated_at, created_by, approved_by FROM legal_sources ${where} ORDER BY law_year DESC, law_number ASC LIMIT $${i++} OFFSET $${i++}`, [...params, limit, offset]);
     res.json({ data: rows.rows, total: total.rows[0].c, page, limit });
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
@@ -34,12 +35,13 @@ router.post('/api/v1/legal/sources', guard('regulatory','write'), async (req, re
       [source_type, law_number, law_year, title_ar, title_en, issuing_authority, issue_date, effective_from, effective_to, status || 'draft', summary, req.user?.id || null]
     );
     res.status(201).json(r.rows[0]);
+    invalidateCache('dashboard');
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
 router.get('/api/v1/legal/sources/:id/articles', async (req, res) => {
   try {
-    const r = await pool.query('SELECT * FROM legal_articles WHERE legal_source_id = $1 ORDER BY order_index, article_number', [req.params.id]);
+    const r = await pool.query('SELECT id, legal_source_id, chapter_id, article_number, title_ar, title_en, content_ar, content_en, scope, penalties, order_index, effective_from, effective_to, status, version, metadata, created_at, updated_at FROM legal_articles WHERE legal_source_id = $1 ORDER BY order_index, article_number', [req.params.id]);
     res.json({ data: r.rows });
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
@@ -55,6 +57,7 @@ router.post('/api/v1/legal/articles', guard('regulatory','write'), async (req, r
        toPgVector(embed(`${title_ar || ''} ${content_ar || ''}`))]
     );
     res.status(201).json(r.rows[0]);
+    invalidateCache('dashboard');
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
@@ -84,7 +87,7 @@ router.get('/api/v1/regulatory/rules/:id', async (req, res) => {
   try {
     const r = await pool.query('SELECT r.*, ls.title_ar as legal_source_title FROM regulatory_rules r LEFT JOIN legal_sources ls ON r.legal_source_id = ls.id WHERE r.id = $1', [req.params.id]);
     if (!r.rows.length) return res.status(404).json({ error: 'القاعدة غير موجودة' });
-    const versions = await pool.query('SELECT * FROM regulatory_rule_versions WHERE rule_id = $1 ORDER BY version DESC', [req.params.id]);
+    const versions = await pool.query('SELECT id, rule_id, version, snapshot, change_reason, changed_by, effective_from, effective_to, created_at FROM regulatory_rule_versions WHERE rule_id = $1 ORDER BY version DESC', [req.params.id]);
     res.json({ ...r.rows[0], versions: versions.rows });
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
@@ -101,6 +104,7 @@ router.post('/api/v1/regulatory/rules', guard('regulatory','write'), async (req,
     // initial version snapshot
     await pool.query(`INSERT INTO regulatory_rule_versions (rule_id, version, snapshot, effective_from) VALUES ($1, 1, $2, $3)`, [r.rows[0].id, JSON.stringify(r.rows[0]), effective_from]);
     res.status(201).json(r.rows[0]);
+    invalidateCache('dashboard');
   } catch (e) {
     if (e.code === '23505') return res.status(409).json({ error: 'رمز القاعدة مكرر' });
     res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' });
@@ -113,6 +117,7 @@ router.put('/api/v1/regulatory/rules/:id/approve', guard('regulatory','write'), 
     const r = await pool.query(`UPDATE regulatory_rules SET status = 'active', approved_by = $1, approved_at = NOW(), updated_at = NOW() WHERE id = $2 AND status IN ('draft','pending_review') RETURNING *`, [req.user?.id || null, id]);
     if (!r.rows.length) return res.status(404).json({ error: 'القاعدة غير موجودة أو غير قابلة للموافقة' });
     res.json(r.rows[0]);
+    invalidateCache('dashboard');
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
@@ -139,7 +144,7 @@ router.post('/api/v1/regulatory/evaluate', async (req, res) => {
     if (!subject_type || !payload) return res.status(400).json({ error: 'subject_type و payload مطلوبان' });
     const txDate = transaction_date || new Date().toISOString().split('T')[0];
     const rules = await pool.query(
-      `SELECT * FROM regulatory_rules WHERE status = 'active' AND effective_from <= $1 AND (effective_to IS NULL OR effective_to >= $1) AND $2 = ANY(applies_to) ORDER BY priority ASC`,
+      `SELECT id, rule_code, name_ar, name_en, description_ar, description_en, legal_source_id, article_id, article_reference, rule_type, condition, action, severity, applies_to, jurisdiction, effective_from, effective_to, priority, exceptions, status, version, is_hard_constraint, created_by, approved_by, approved_at, metadata, created_at, updated_at FROM regulatory_rules WHERE status = 'active' AND effective_from <= $1 AND (effective_to IS NULL OR effective_to >= $1) AND $2 = ANY(applies_to) ORDER BY priority ASC`,
       [txDate, subject_type]
     );
     const evaluations = [];
@@ -198,9 +203,9 @@ router.post('/api/v1/regulatory/evaluate', async (req, res) => {
 router.get('/api/v1/regulatory/impact/:sourceId', async (req, res) => {
   try {
     const { sourceId } = req.params;
-    const source = await pool.query('SELECT * FROM legal_sources WHERE id = $1', [sourceId]);
+    const source = await pool.query('SELECT id, source_type, law_number, law_year, title_ar, title_en, issuing_authority, issue_date, effective_from, effective_to, status, version, parent_source_id, amendment_of, document_url, summary, metadata, created_at, updated_at, created_by, approved_by FROM legal_sources WHERE id = $1', [sourceId]);
     if (!source.rows.length) return res.status(404).json({ error: 'المصدر غير موجود' });
-    const rules = await pool.query('SELECT * FROM regulatory_rules WHERE legal_source_id = $1', [sourceId]);
+    const rules = await pool.query('SELECT id, rule_code, name_ar, name_en, description_ar, description_en, legal_source_id, article_id, article_reference, rule_type, condition, action, severity, applies_to, jurisdiction, effective_from, effective_to, priority, exceptions, status, version, is_hard_constraint, created_by, approved_by, approved_at, metadata, created_at, updated_at FROM regulatory_rules WHERE legal_source_id = $1', [sourceId]);
     res.json({
       source: source.rows[0],
       affected_rules: rules.rows,

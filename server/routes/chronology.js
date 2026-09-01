@@ -34,8 +34,13 @@ router.get('/api/v1/chronology/:type/:id', async (req,res)=>{
 
 // Global chronology feed — for dashboards
 router.get('/api/v1/chronology', async (req,res)=>{
-  const r=await pool.query(`SELECT id, case_number as title, case_type, status, created_at FROM cases ORDER BY created_at DESC LIMIT 20`);
-  res.json({ data: r.rows.map(x=> ({ at: x.created_at, action:`${x.case_type} ${x.title} → ${x.status}`, hash:x.id.slice(0,6), type:'case' })) });
+  try {
+    const r=await pool.query(`SELECT id, case_number as title, case_type, status, created_at FROM cases ORDER BY created_at DESC LIMIT 20`);
+    res.json({ data: r.rows.map(x=> ({ at: x.created_at, action:`${x.case_type} ${x.title} → ${x.status}`, hash:x.id.slice(0,6), type:'case' })) });
+  } catch (err) {
+    console.error('[Chronology/Feed] error:', err);
+    res.status(500).json({ error: 'خطأ داخلي — تم تسجيل الحادثة', code: 'INTERNAL_ERROR' });
+  }
 });
 
 export default router;

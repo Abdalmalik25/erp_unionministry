@@ -2,6 +2,7 @@
 // APIs مؤسسية متقدمة للأدلة الوطنية �" Workflows + KPIs + التقارير
 import { pool } from '../middleware/shared.js';
 import express from 'express';
+import { invalidateCache } from '../middleware/cache.js';
 
 const router = express.Router();
 
@@ -40,6 +41,7 @@ router.post('/api/national-directory-workflows', async (req, res) => {
     );
 
     res.status(201).json({ data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     console.error('Create workflow error:', err);
     res.status(500).json({ error: 'خطأ في إنشاء طلب التغيير' });
@@ -135,6 +137,7 @@ router.post('/api/national-directory-workflows/:id/submit', async (req, res) => 
     if (r.rows.length === 0) return res.status(400).json({ error: 'لا يمكن تقديم هذا الطلب' });
 
     res.json({ data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في تقديم الطلب' });
   }
@@ -160,6 +163,7 @@ router.post('/api/national-directory-workflows/:id/review-impact', async (req, r
     if (r.rows.length === 0) return res.status(400).json({ error: 'لا يمكن مراجعة هذا الطلب' });
 
     res.json({ data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     console.error('Review impact error:', err);
     res.status(500).json({ error: 'خطأ في مراجعة الأثر' });
@@ -208,6 +212,7 @@ router.post('/api/national-directory-workflows/:id/approve', async (req, res) =>
     if (r.rows.length === 0) return res.status(400).json({ error: 'لا يمكن اعتماد هذا الطلب' });
 
     res.json({ data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     console.error('Approve error:', err);
     res.status(500).json({ error: 'خطأ في اعتماد الطلب' });
@@ -263,6 +268,7 @@ router.post('/api/national-directory-workflows/:id/publish', async (req, res) =>
 
       await client.query('COMMIT');
       res.json({ data: { success: true, workflow_id: id } });
+    invalidateCache('dashboard');
     } catch (e) {
       await client.query('ROLLBACK');
       throw e;
@@ -288,6 +294,7 @@ router.post('/api/national-directory-workflows/:id/rollback', async (req, res) =
     );
     if (r.rows.length === 0) return res.status(400).json({ error: 'لا يمكن التراجع عن هذا الطلب' });
     res.json({ data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في التراجع' });
   }
@@ -388,6 +395,7 @@ router.post('/api/national-directory-workflows/sla-alerts/:id/acknowledge', asyn
       [id, req.user?.id || null]
     );
     res.json({ data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في تأكيد التنبيه' });
   }

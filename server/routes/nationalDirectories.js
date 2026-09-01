@@ -3,6 +3,7 @@
 // وفق "المتطلبات الإضافية للنظام" — منصة العمل
 import { pool } from '../middleware/shared.js';
 import express from 'express';
+import { invalidateCache } from '../middleware/cache.js';
 
 const router = express.Router();
 
@@ -105,6 +106,7 @@ router.post('/api/national-directories', async (req, res) => {
       ]
     );
     res.status(201).json({ data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     if (err && err.code === '23505') {
       return res.status(409).json({ error: 'هذا الرمز موجود مسبقاً في نفس الدليل' });
@@ -150,6 +152,7 @@ router.put('/api/national-directories/:type/:code', async (req, res) => {
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'المدخل غير موجود' });
     res.json({ data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (_err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -169,6 +172,7 @@ router.delete('/api/national-directories/:type/:code', async (req, res) => {
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'المدخل غير موجود' });
     res.json({ message: `تم تعطيل المدخل ${code}` });
+    invalidateCache('dashboard');
   } catch (_err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -340,6 +344,7 @@ router.post('/api/registry/import', async (req, res) => {
       }
     }
     res.json({ ok: true, imported, total: rows.length });
+    invalidateCache('dashboard');
   } catch (_err) {
     res.status(500).json({ error: 'خطأ في الاستيراد' });
   }
@@ -580,6 +585,7 @@ router.post('/api/national-directories/:type/:code/propagate', async (req, res) 
 
     const total = Object.values(affected_by_type).reduce((a, b) => a + b, 0);
     res.json({ data: { affected_count: total, affected_by_type, errors } });
+    invalidateCache('dashboard');
   } catch (err) {
     console.error('Propagate error:', err);
     res.status(500).json({ error: 'خطأ في نشر التغييرات' });
@@ -635,6 +641,7 @@ router.post('/api/national-directories/:type/versions', async (req, res) => {
       [type, nextVersion, null, changes_summary, change_reasons, effective_from, stats.rows[0]?.total || 0, stats.rows[0]?.active || 0]
     );
     res.status(201).json({ data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     console.error('Create version error:', err);
     res.status(500).json({ error: 'خطأ في إنشاء الإصدار' });
@@ -652,6 +659,7 @@ router.post('/api/national-directories/:type/versions/:versionId/approve', async
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'الإصدار غير موجود' });
     res.json({ data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في اعتماد الإصدار' });
   }

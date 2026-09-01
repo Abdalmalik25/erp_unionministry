@@ -2,6 +2,7 @@ import '../lib/loadEnv.js';
 import express from 'express';
 import { pool } from '../middleware/shared.js';
 import { validateFieldDefinition, DEFINITION_REQUIRED_KEYS } from '../lib/dynamicFieldsValidation.mjs';
+import { invalidateCache } from '../middleware/cache.js';
 
 const router = express.Router();
 const AUTH_ENABLED = process.env.ENABLE_AUTH === 'true';
@@ -24,7 +25,7 @@ router.get('/api/custom-field-definitions', async (req, res) => {
     if (active === 'true') where += ' AND active = true';
     else if (active === 'false') where += ' AND active = false';
     const r = await pool.query(
-      `SELECT * FROM custom_field_definitions WHERE ${where} ORDER BY display_order, label`, params
+      `SELECT id, entity_type, field_key, label, description, data_type, required, default_value, options, validation_rules, reference_entity, visible_in_form, visible_in_list, searchable, filterable, sortable, reportable, printable, importable, exportable, scope, active, display_order, entity_id, created_at, updated_at FROM custom_field_definitions WHERE ${where} ORDER BY display_order, label`, params
     );
     res.json({ data: r.rows, total: r.rows.length });
   } catch (e) {
@@ -61,6 +62,7 @@ router.post('/api/custom-field-definitions', requireDefManager, async (req, res)
       values
     );
     res.status(201).json({ success: true, data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (e) {
     if (e.message && e.message.includes('uq_cfd_entity_key')) {
       return res.status(409).json({ error: 'مفتاح الحقل مكرر لنفس نوع الكيان' });
@@ -95,6 +97,7 @@ router.put('/api/custom-field-definitions/:id', requireDefManager, async (req, r
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (e) {
     res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' });
   }
@@ -105,6 +108,7 @@ router.delete('/api/custom-field-definitions/:id', requireDefManager, async (req
     const r = await pool.query('DELETE FROM custom_field_definitions WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (e) {
     res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' });
   }

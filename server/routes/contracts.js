@@ -37,6 +37,7 @@ import { requirePermission, auditContext, requireJurisdiction } from '../middlew
 import { structuredLogger } from '../middleware/observability.js';
 import { uploadMiddleware } from '../middleware/upload.js';
 import { eventBus } from '../utils/eventBus.js';
+import { invalidateCache } from '../middleware/cache.js';
 
 const router = Router();
 
@@ -118,6 +119,7 @@ router.get('/:id',
       contract.signatures = await req.db('contract_signatures').where('contract_id', id);
 
       res.json(contract);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -193,6 +195,7 @@ router.post('/',
       });
 
       res.status(201).json(contract);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -235,6 +238,7 @@ router.put('/:id',
         .returning('*');
 
       res.json(contract);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -263,6 +267,7 @@ router.delete('/:id',
       await req.db('contracts').where('id', id).delete();
 
       res.status(204).send();
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -319,6 +324,7 @@ router.post('/:id/sign/employer',
       });
 
       res.json(contract);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -375,6 +381,7 @@ router.post('/:id/sign/worker',
       });
 
       res.json(contract);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -432,6 +439,7 @@ router.post('/:id/approve',
       });
 
       res.json(contract);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -473,6 +481,7 @@ router.post('/:id/reject',
       });
 
       res.json(contract);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -517,6 +526,7 @@ router.post('/:id/amendments',
         .returning('*');
 
       res.status(201).json(amendment);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -547,6 +557,7 @@ router.post('/:id/amendments/:amendmentId/sign',
         .returning('*');
 
       res.json(amendment);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -595,6 +606,7 @@ router.post('/:id/amendments/:amendmentId/approve',
         .update({ ...contractUpdates, version: contract.version + 1, updated_at: new Date() });
 
       res.json(amendment);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -643,6 +655,7 @@ router.post('/:id/terminate',
       });
 
       res.json(contract);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -696,6 +709,7 @@ router.post('/:id/renew',
         .returning('*');
 
       res.status(201).json(newContract);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -732,6 +746,7 @@ router.post('/:id/attachments',
       }
 
       res.status(201).json(uploadedAttachments);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -843,6 +858,7 @@ router.get('/statistics',
       }
 
       res.json(stats);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -870,6 +886,7 @@ router.get('/export',
       res.setHeader('Content-Type', format === 'csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="contracts-export.${format}"`);
       res.json({ count: contracts.length, format });
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }

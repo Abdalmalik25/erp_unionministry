@@ -3,6 +3,7 @@ import express from 'express';
 import { pool, paginate } from '../middleware/shared.js';
 import { validate } from '../middleware/validation.js';
 import crypto from 'crypto';
+import { invalidateCache } from '../middleware/cache.js';
 
 const router = express.Router();
 
@@ -19,7 +20,7 @@ router.get('/api/v1/services/catalog', async (req,res)=>{
     if (search) { conds.push(`(title_ar ILIKE $${i} OR service_code ILIKE $${i})`); params.push(`%${search}%`); i++; }
     const where = conds.length? 'WHERE '+conds.join(' AND'):'';
     const total = await pool.query(`SELECT COUNT(*)::int as c FROM service_catalog ${where}`, params);
-    const rows = await pool.query(`SELECT * FROM service_catalog ${where} ORDER BY service_code LIMIT $${i++} OFFSET $${i++}`, [...params, limit, offset]);
+    const rows = await pool.query(`SELECT id, service_code, title_ar, title_en, category, stakeholder, description_ar, sla_days, sla_policy_key, workflow_key, requires_documents, eligibility_rule, eligibility_rule_id, fees, office_type, is_active, is_digital, physical_verification_reason, version, created_by, created_at, updated_at, deleted_at FROM service_catalog ${where} ORDER BY service_code LIMIT $${i++} OFFSET $${i++}`, [...params, limit, offset]);
     res.json({ data: rows.rows, total: total.rows[0].c, page, limit });
   }catch(e){ res.status(500).json({ error:'خطأ داخلي', code:'INTERNAL_ERROR' }); }
 });
@@ -43,6 +44,7 @@ router.post('/api/v1/services/catalog', async (req,res)=>{
       [service_code, title_ar, category, stakeholder||'all', sla_days||7, workflow_key||null, JSON.stringify(requires_documents||[]), eligibility_rule||null, office_type||'directorate', JSON.stringify(fees||{}), is_digital!==false, req.user.id]
     );
     res.status(201).json(r.rows[0]);
+    invalidateCache('dashboard');
   }catch(e){
     if(e.code==='23505') return res.status(409).json({ error:'رمز الخدمة مكرر', code:'DUPLICATE' });
     res.status(500).json({ error:'خطأ داخلي', code:'INTERNAL_ERROR' });
@@ -55,6 +57,7 @@ router.put('/api/v1/services/catalog/:code/toggle', async (req,res)=>{
   const r=await pool.query(`UPDATE service_catalog SET is_active = NOT is_active, updated_at=NOW() WHERE service_code=$1 RETURNING *`, [req.params.code]);
   if(!r.rows.length) return res.status(404).json({ error:'غير موجود', code:'NOT_FOUND' });
   res.json(r.rows[0]);
+  invalidateCache('dashboard');
 });
 
 // Update (no-code edit)
@@ -71,13 +74,14 @@ router.put('/api/v1/services/catalog/:code', async (req,res)=>{
   const r=await pool.query(`UPDATE service_catalog SET ${sets.join(',')}, updated_at=NOW() WHERE service_code=$${i} RETURNING *`, vals);
   if(!r.rows.length) return res.status(404).json({ error:'غير موجود', code:'NOT_FOUND' });
   res.json(r.rows[0]);
+  invalidateCache('dashboard');
 });
 
 // Instances — تقديم طلب خدمة (any stakeholder)
 router.post('/api/v1/services/instances', async (req,res)=>{
   const { service_code, applicant_type, applicant_id, payload, documents } = req.body;
   if(!service_code) return res.status(400).json({ error:'service_code مطلوب', code:'VALIDATION_ERROR' });
-  const svc=await pool.query(`SELECT * FROM service_catalog WHERE service_code=$1 AND deleted_at IS NULL`, [service_code]);
+  const svc=await pool.query(`SELECT id, service_code, title_ar, title_en, category, stakeholder, description_ar, sla_days, sla_policy_key, workflow_key, requires_documents, eligibility_rule, eligibility_rule_id, fees, office_type, is_active, is_digital, physical_verification_reason, version, created_by, created_at, updated_at, deleted_at FROM service_catalog WHERE service_code=$1 AND deleted_at IS NULL`, [service_code]);
   if(!svc.rows.length) return res.status(404).json({ error:'الخدمة غير موجودة', code:'NOT_FOUND' });
   if(!svc.rows[0].is_active) return res.status(403).json({ error:'الخدمة موقوفة حالياً', code:'SERVICE_SUSPENDED' });
   // SLA deadline
@@ -96,6 +100,7 @@ router.post('/api/v1/services/instances', async (req,res)=>{
     [num, service_code, applicant_type||'person', applicant_id||req.user?.id||null, JSON.stringify(payload||{}), JSON.stringify(documents||[]), wfId, deadline, req.user?.id||null]
   );
   res.status(201).json(r.rows[0]);
+  invalidateCache('dashboard');
 });
 
 router.get('/api/v1/services/instances', async (req,res)=>{
@@ -106,7 +111,7 @@ router.get('/api/v1/services/instances', async (req,res)=>{
   if(status){ conds.push(`status=$${i++}`); params.push(status); }
   const where=conds.length? 'WHERE '+conds.join(' AND'):'';
   const total=await pool.query(`SELECT COUNT(*)::int as c FROM service_instances ${where}`, params);
-  const rows=await pool.query(`SELECT * FROM service_instances ${where} ORDER BY created_at DESC LIMIT $${i++} OFFSET $${i++}`, [...params, limit, offset]);
+  const rows=await pool.query(`SELECT id, instance_number, service_code, applicant_type, applicant_id, payload, documents, workflow_instance_id, case_id, status, sla_deadline, decision, certificate_url, certificate_hash, created_by, created_at, updated_at FROM service_instances ${where} ORDER BY created_at DESC LIMIT $${i++} OFFSET $${i++}`, [...params, limit, offset]);
   res.json({ data: rows.rows, total: total.rows[0].c, page, limit });
 });
 
@@ -118,6 +123,7 @@ router.put('/api/v1/services/instances/:id/certificate', async (req,res)=>{
   const r=await pool.query(`UPDATE service_instances SET certificate_url=$1, certificate_hash=$2, status='completed', updated_at=NOW() WHERE id=$3 RETURNING *`, [url, hash, req.params.id]);
   if(!r.rows.length) return res.status(404).json({ error:'غير موجود', code:'NOT_FOUND' });
   res.json(r.rows[0]);
+  invalidateCache('dashboard');
 });
 
 export default router;

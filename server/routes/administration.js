@@ -2,6 +2,7 @@
 // الإعدادات العامة | الصلاحيات المؤسسية | النسخ الاحتياطي والجدولة | الاتصال الإداري
 import { pool } from '../middleware/shared.js';
 import express from 'express';
+import { invalidateCache } from '../middleware/cache.js';
 
 const router = express.Router();
 
@@ -32,6 +33,7 @@ router.put('/api/settings/:key', async (req, res) => {
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'الإعداد غير موجود' });
     res.json({ data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (_err) {
     res.status(500).json({ error: 'خطأ في تحديث الإعداد' });
   }
@@ -54,6 +56,7 @@ router.put('/api/settings', async (req, res) => {
       if (r.rowCount > 0) updated++;
     }
     res.json({ ok: true, updated });
+    invalidateCache('dashboard');
   } catch (_err) {
     res.status(500).json({ error: 'خطأ في تحديث الإعدادات' });
   }
@@ -100,6 +103,7 @@ router.put('/api/role-permissions/:id', async (req, res) => {
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'الصلاحية غير موجودة' });
     res.json({ data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (_err) {
     res.status(500).json({ error: 'خطأ في تحديث الصلاحية' });
   }
@@ -126,6 +130,7 @@ router.post('/api/role-permissions', async (req, res) => {
       ]
     );
     res.status(201).json({ data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (_err) {
     res.status(500).json({ error: 'خطأ في إنشاء المنح' });
   }
@@ -136,6 +141,7 @@ router.delete('/api/role-permissions/:id', async (req, res) => {
     const r = await pool.query(`DELETE FROM role_permissions WHERE id = $1 RETURNING id`, [req.params.id]);
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ message: 'تم حذف المنح' });
+    invalidateCache('dashboard');
   } catch (_err) {
     res.status(500).json({ error: 'خطأ في الحذف' });
   }
@@ -179,6 +185,7 @@ router.post('/api/backup/schedule', async (req, res) => {
       );
     }
     res.status(201).json({ data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (_err) {
     res.status(500).json({ error: 'خطأ في جدولة النسخ الاحتياطي' });
   }
@@ -207,6 +214,7 @@ router.post('/api/backup/run', async (req, res) => {
         [jobId, totalRows * 512, `logical_snapshot_${jobId}.json`]
       );
       res.json({ ok: true, job_id: jobId, tables: stats.rows.length, total_rows: totalRows });
+    invalidateCache('dashboard');
     } catch (innerErr) {
       await pool.query(
         `UPDATE backup_jobs SET status = 'failed', finished_at = NOW(), error_message = $2 WHERE id = $1`,
@@ -270,6 +278,7 @@ router.post('/api/admin-communications', async (req, res) => {
       ]
     );
     res.status(201).json({ data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (_err) {
     res.status(500).json({ error: 'خطأ في إنشاء التعاميم' });
   }
@@ -297,6 +306,7 @@ router.put('/api/admin-communications/:id', async (req, res) => {
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (_err) {
     res.status(500).json({ error: 'خطأ في التحديث' });
   }
@@ -314,6 +324,7 @@ router.post('/api/admin-communications/:id/acknowledge', async (req, res) => {
       [id, user_email]
     );
     res.json({ ok: true, acknowledged: r.rows.length > 0 });
+    invalidateCache('dashboard');
   } catch (_err) {
     res.status(500).json({ error: 'خطأ في تسجيل الإقرار' });
   }

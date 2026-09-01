@@ -14,7 +14,7 @@ import { useDebounce } from '../../hooks/useDebounce';
 import { logAudit } from '../../utils/security';
 import { exportReportToExcel } from '../../components/enterprise/PrintExportManager';
 import { toast } from 'sonner';
-import { useApi } from '../../hooks/useApi';
+const API_BASE = '/api';
 // ============================================================
 // الأنواع
 // ============================================================
@@ -74,7 +74,7 @@ const STATUS_LABELS: Record<ViolationStatus, string> = {
     closed: 'مغلقة',
     appealed: 'مستأنفة',
 };
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 20;
 // ============================================================
 // نموذج إضافة مخالفة
 // ============================================================
@@ -126,36 +126,37 @@ export default function ViolationsManagement() {
     const [severityFilter, setSeverityFilter] = useState<ViolationSeverity | 'all'>('all');
     const [currentPage, setCurrentPage] = useState(1);
     const { confirm, dialog: confirmDialog } = useConfirm();
-    const api = useApi();
     // تحميل البيانات من API
     useEffect(() => {
+        const controller = new AbortController();
         const fetchViolations = async () => {
             setLoading(true);
             try {
+                const headers: Record<string, string> = {};
+                const token = localStorage.getItem('auth_token');
+                if (token) headers['Authorization'] = `Bearer ${token}`;
+                
                 const [vRes, eRes] = await Promise.all([
-                    api.execute('/violations'),
-                    api.execute('/entities'),
+                    fetch(`${API_BASE}/violations?limit=200`, { signal: controller.signal, headers }).then(r => r.json()),
+                    fetch(`${API_BASE}/entities?limit=100`, { signal: controller.signal, headers }).then(r => r.json()),
                 ]);
-                if (vRes?.data && Array.isArray(vRes.data)) {
-                    setViolations(vRes.data);
+                
+                setViolations(vRes?.data || []);
+                if (eRes?.data && Array.isArray(eRes.data)) {
+                    setEntities(eRes.data.map((e: any) => ({ entity_id: e.entity_id, entity_name: e.name_ar })));
                 }
-                else {
+            } catch (error: any) {
+                if (error.name !== 'AbortError') {
+                    console.error('خطأ في تحميل المخالفات:', error);
                     setViolations([]);
                 }
-                if (eRes?.data && Array.isArray(eRes.data)) {
-                    setEntities(eRes.data);
-                }
-            }
-            catch (error) {
-                console.error('خطأ في تحميل المخالفات:', error);
-                setViolations([]);
-            }
-            finally {
+            } finally {
                 setLoading(false);
             }
         };
         fetchViolations();
-    }, [api]);
+        return () => controller.abort();
+    }, []);
     // ============================================================
     // التصفية
     // ============================================================
@@ -250,7 +251,13 @@ export default function ViolationsManagement() {
         if (!ok)
             return;
         try {
-            await api.execute(`/violations/${violation.id}`, { method: 'DELETE' });
+            const headers: Record<string, string> = {};
+            const token = localStorage.getItem('auth_token');
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            const csrfMatch = document.cookie.match(/(?:^|;\s*)csrf=([^;]+)/);
+            if (csrfMatch) headers['x-csrf-token'] = csrfMatch[1];
+            
+            await fetch(`${API_BASE}/violations/${violation.id}`, { method: 'DELETE', headers });
             setViolations(prev => prev.filter(v => v.id !== violation.id));
             logAudit({ action: 'delete', resource: 'violation', resourceId: violation.id, details: violation.violationNumber });
             toast.success(`تم حذف المخالفة ${violation.violationNumber} بنجاح`);
@@ -259,11 +266,17 @@ export default function ViolationsManagement() {
             console.error('خطأ في حذف المخالفة:', error);
             toast.error('حدث خطأ أثناء حذف المخالفة');
         }
-    }, [confirm, api]);
+    }, [confirm]);
     const handleSave = useCallback(async () => {
         if (!validateViolationForm(formValues))
             return;
         try {
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+            const token = localStorage.getItem('auth_token');
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            const csrfMatch = document.cookie.match(/(?:^|;\s*)csrf=([^;]+)/);
+            if (csrfMatch) headers['x-csrf-token'] = csrfMatch[1];
+
             if (editingViolation) {
                 const body = {
                     entity_id: formValues.entity_id,
@@ -274,10 +287,12 @@ export default function ViolationsManagement() {
                     legal_basis: formValues.legalBasis,
                     penalty_amount: formValues.penaltyAmount,
                 };
-                const result = await api.execute(`/violations/${editingViolation.id}`, {
+                const res = await fetch(`${API_BASE}/violations/${editingViolation.id}`, {
                     method: 'PUT',
-                    body: body as unknown as Record<string, unknown>,
+                    headers,
+                    body: JSON.stringify(body),
                 });
+                const result = await res.json();
                 if (result?.violation) {
                     setViolations(prev => prev.map(v => v.id === editingViolation.id ? result.violation : v));
                     logAudit({ action: 'update', resource: 'violation', resourceId: editingViolation.id, details: editingViolation.violation_number });
@@ -294,10 +309,12 @@ export default function ViolationsManagement() {
                     legal_basis: formValues.legalBasis,
                     penalty_amount: formValues.penaltyAmount,
                 };
-                const result = await api.execute('/violations', {
+                const res = await fetch(`${API_BASE}/violations`, {
                     method: 'POST',
-                    body: body as unknown as Record<string, unknown>,
+                    headers,
+                    body: JSON.stringify(body),
                 });
+                const result = await res.json();
                 if (result?.violation) {
                     setViolations(prev => [...prev, result.violation]);
                     logAudit({ action: 'create', resource: 'violation', resourceId: result.violation.id, details: result.violation.violation_number });
@@ -310,7 +327,7 @@ export default function ViolationsManagement() {
             console.error('خطأ في حفظ المخالفة:', error);
             toast.error('حدث خطأ أثناء حفظ المخالفة');
         }
-    }, [editingViolation, formValues, api]);
+    }, [editingViolation, formValues]);
     const openWorkflow = useCallback((violation: Violation) => {
         const nextStatuses = STATUS_WORKFLOW[violation.status];
         if (nextStatuses.length === 0) {
@@ -339,15 +356,23 @@ export default function ViolationsManagement() {
             return;
         }
         try {
-            const result = await api.execute(`/violations/${workflowTarget.id}`, {
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+            const token = localStorage.getItem('auth_token');
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            const csrfMatch = document.cookie.match(/(?:^|;\s*)csrf=([^;]+)/);
+            if (csrfMatch) headers['x-csrf-token'] = csrfMatch[1];
+
+            const res = await fetch(`${API_BASE}/violations/${workflowTarget.id}`, {
                 method: 'PUT',
-                body: {
+                headers,
+                body: JSON.stringify({
                     status: workflowValues.newStatus,
                     decision: workflowValues.decision || undefined,
                     resolution_notes: workflowValues.resolutionNotes || undefined,
                     resolved_date: workflowValues.resolvedDate || undefined,
-                },
+                }),
             });
+            const result = await res.json();
             if (result?.violation) {
                 setViolations(prev => prev.map(v => v.id === workflowTarget.id ? result.violation : v));
                 logAudit({
@@ -364,7 +389,7 @@ export default function ViolationsManagement() {
             console.error('خطأ في تغيير الحالة:', error);
             toast.error('حدث خطأ أثناء تغيير الحالة');
         }
-    }, [workflowTarget, workflowValues, api]);
+    }, [workflowTarget, workflowValues]);
     const handleExport = useCallback(() => {
         exportReportToExcel({
             title: 'تقرير المخالفات والعقوبات',

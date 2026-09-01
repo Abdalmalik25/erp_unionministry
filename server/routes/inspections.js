@@ -39,6 +39,7 @@ import { validateQuery } from '../middleware/validation.js';
 import { structuredLogger } from '../middleware/observability.js';
 import { uploadMiddleware } from '../middleware/upload.js';
 import { eventBus } from '../utils/eventBus.js';
+import { invalidateCache } from '../middleware/cache.js';
 
 const router = Router();
 
@@ -114,6 +115,7 @@ router.get('/:id',
       inspection.witnesses = await req.db('inspection_witnesses').where('inspection_id', id);
 
       res.json(inspection);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -187,6 +189,7 @@ router.post('/',
       });
 
       res.status(201).json(inspection);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -223,6 +226,7 @@ router.put('/:id',
         .returning('*');
 
       res.json(inspection);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -266,6 +270,7 @@ router.put('/:id/assign',
       });
 
       res.json(inspection);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -302,6 +307,7 @@ router.put('/:id/reassign',
       });
 
       res.json(inspection);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -345,6 +351,7 @@ router.put('/:id/reschedule',
       });
 
       res.json(inspection);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -385,6 +392,7 @@ router.post('/:id/start',
       });
 
       res.json(inspection);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -413,6 +421,7 @@ router.post('/:id/findings',
       const findingId = crypto.randomUUID();
 
       res.status(201).json({ findingId });
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -449,6 +458,7 @@ router.post('/:id/violations',
         .update({ status: 'violations_found', updated_at: new Date() });
 
       res.status(201).json(newViolation);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -477,6 +487,7 @@ router.put('/:id/violations/:violationId',
       }
 
       res.json(violation);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -513,6 +524,7 @@ router.post('/:id/attachments',
       }
 
       res.status(201).json(uploadedAttachments);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -538,6 +550,7 @@ router.post('/:id/witnesses',
         .returning('*');
 
       res.status(201).json(newWitness);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -582,6 +595,7 @@ router.post('/:id/complete',
       });
 
       res.json(inspection);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -617,6 +631,7 @@ router.post('/:id/report',
         .update({ status: 'report_submitted', updated_at: new Date() });
 
       res.status(201).json(reportRecord);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -653,6 +668,7 @@ router.post('/:id/approve',
       });
 
       res.json(inspection);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -704,6 +720,7 @@ router.post('/:id/follow-up',
         .returning('*');
 
       res.status(201).json(newInspection);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -736,6 +753,7 @@ router.post('/:id/cancel',
         .returning('*');
 
       res.json(inspection);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -770,6 +788,7 @@ router.post('/:id/escalate',
       });
 
       res.json(inspection);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -786,6 +805,7 @@ router.post('/:id/link/complaint', requirePermission('inspections:edit'), async 
     const { complaintId } = req.body;
     await req.db('inspections').where('id', id).update({ complaint_id: complaintId });
     res.json({ success: true });
+      invalidateCache('dashboard');
   } catch (err) { next(err); }
 });
 
@@ -795,6 +815,7 @@ router.post('/:id/link/dispute', requirePermission('inspections:edit'), async (r
     const { disputeId } = req.body;
     await req.db('inspections').where('id', id).update({ dispute_id: disputeId });
     res.json({ success: true });
+      invalidateCache('dashboard');
   } catch (err) { next(err); }
 });
 
@@ -804,6 +825,7 @@ router.post('/:id/link/osh', requirePermission('inspections:edit'), async (req, 
     const { oshIncidentId } = req.body;
     await req.db('inspections').where('id', id).update({ osh_incident_id: oshIncidentId });
     res.json({ success: true });
+      invalidateCache('dashboard');
   } catch (err) { next(err); }
 });
 
@@ -842,6 +864,7 @@ router.post('/:id/notify/employer',
       });
 
       res.json({ success: true });
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -868,6 +891,7 @@ router.post('/:id/notify/workers',
       });
 
       res.json({ success: true });
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -918,6 +942,7 @@ router.get('/statistics',
       }
 
       res.json(stats);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -943,6 +968,7 @@ router.get('/schedule/:inspectorId',
         .orderBy('scheduled_time', 'asc');
 
       res.json({ inspections });
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -983,6 +1009,7 @@ router.get('/checklist/:type',
       };
 
       res.json(checklists[type] || { sections: [] });
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -1009,6 +1036,7 @@ router.get('/export',
       res.setHeader('Content-Type', format === 'csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="inspections-export.${format}"`);
       res.json({ count: inspections.length, format });
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }

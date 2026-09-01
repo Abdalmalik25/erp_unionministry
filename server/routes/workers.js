@@ -1,6 +1,7 @@
 import { pool, paginate, countQuery, softDelete, softDeleteFilter, auditLog } from '../middleware/shared.js';
 import express from 'express';
 import { requirePermission } from '../middleware/rbac.js';
+import { invalidateCache } from '../middleware/cache.js';
 
 const router = express.Router();
 
@@ -20,7 +21,11 @@ router.get('/api/members', async (req, res) => {
 
     const total = await pool.query(_qs, _qp);
     const r = await pool.query(
-      `SELECT m.*, e.name_ar as entity_name, e.unified_code FROM members m
+      `SELECT m.id, m.entity_id, m.national_id, m.full_name, m.gender, m.status, m.birth_date,
+       m.nationality, m.specialization, m.qualification, m.experience_years, m.workplace,
+       m.mobile, m.email, m.governorate, m.city, m.join_date, m.membership_type,
+       m.membership_expiry, m.payment_status, m.created_at, m.updated_at,
+       e.name_ar as entity_name, e.unified_code FROM members m
        JOIN organizational_entities e ON m.entity_id = e.entity_id
        WHERE ${where} ORDER BY m.created_at DESC LIMIT $${idx++} OFFSET $${idx++}`,
       [...params, limit, offset]
@@ -51,6 +56,7 @@ router.post('/api/members', requirePermission('write:members'), async (req, res)
       `INSERT INTO members (${fields.join(',')}) VALUES (${placeholders.join(',')}) RETURNING *`,
       values
     );
+    invalidateCache('dashboard');
     res.status(201).json({ success: true, member: r.rows[0] });
   } catch (err) {
     console.error('Member create error:', err);
@@ -86,6 +92,7 @@ router.put('/api/members/:id', requirePermission('write:members'), async (req, r
       `UPDATE members SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`, values
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
+    invalidateCache('dashboard');
     res.json({ success: true, member: r.rows[0] });
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
@@ -96,6 +103,7 @@ router.delete('/api/members/:id', requirePermission('write:members'), async (req
   try {
     const r = await pool.query('UPDATE members SET deleted_at = NOW(), deleted_by = NULL WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
+    invalidateCache('dashboard');
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
@@ -134,7 +142,11 @@ router.get('/api/worker-profiles', async (req, res) => {
 
     const total = await pool.query(_qs, _qp);
     const r = await pool.query(
-      `SELECT worker_profiles.*, m.full_name AS worker_name, m.national_id AS person_national_id
+      `SELECT worker_profiles.id, worker_profiles.member_id, worker_profiles.current_enterprise_id,
+       worker_profiles.current_occupation_id, worker_profiles.employment_status,
+       worker_profiles.employment_start_date, worker_profiles.contract_type,
+       worker_profiles.compliance_score, worker_profiles.created_at, worker_profiles.updated_at,
+       m.full_name AS worker_name, m.national_id AS person_national_id
        FROM worker_profiles
        LEFT JOIN members m ON m.id = worker_profiles.member_id
        WHERE ${where} ORDER BY worker_profiles.created_at DESC LIMIT $${idx++} OFFSET $${idx++}`,
@@ -149,7 +161,15 @@ router.get('/api/worker-profiles', async (req, res) => {
 
 router.get('/api/worker-profiles/:id', async (req, res) => {
   try {
-    const r = await pool.query('SELECT * FROM worker_profiles WHERE id = $1', [req.params.id]);
+    const r = await pool.query(
+      `SELECT id, member_id, current_enterprise_id, current_occupation_id, link_id,
+       employment_status, employment_start_date, employment_end_date, contract_type,
+       social_insurance_number, current_salary_grade, skills, certifications,
+       last_medical_check_date, next_medical_check_date, total_experience_years,
+       compliance_score, notes, created_at, updated_at
+       FROM worker_profiles WHERE id = $1`,
+      [req.params.id]
+    );
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json(r.rows[0]);
   } catch (err) {
@@ -252,7 +272,11 @@ router.get('/api/dispatches', async (req, res) => {
 
     const total = await pool.query(_qs, _qp);
     const r = await pool.query(
-      `SELECT * FROM worker_dispatches WHERE ${where} ORDER BY created_at DESC LIMIT $${idx++} OFFSET $${idx++}`,
+      `SELECT id, dispatch_number, sending_enterprise_id, sending_enterprise_name,
+       receiving_enterprise_id, receiving_enterprise_name, worker_name, worker_national_id,
+       dispatch_date, expected_return_date, purpose, status, safety_briefing_done,
+       medical_clearance_done, created_at, updated_at
+       FROM worker_dispatches WHERE ${where} ORDER BY created_at DESC LIMIT $${idx++} OFFSET $${idx++}`,
       [...params, limit, offset]
     );
     res.json({ data: r.rows, total: total.rows[0].count, page, limit });
@@ -371,7 +395,9 @@ router.get('/api/reduction-requests', async (req, res) => {
 
     const total = await pool.query(_qs, _qp);
     const r = await pool.query(
-      `SELECT * FROM worker_reduction_requests WHERE ${where} ORDER BY created_at DESC LIMIT $${idx++} OFFSET $${idx++}`,
+      `SELECT id, request_number, enterprise_id, enterprise_name, requested_reduction_count,
+       current_employee_count, reduction_reason, reduction_category, status, created_at, updated_at
+       FROM worker_reduction_requests WHERE ${where} ORDER BY created_at DESC LIMIT $${idx++} OFFSET $${idx++}`,
       [...params, limit, offset]
     );
     res.json({ data: r.rows, total: total.rows[0].count, page, limit });

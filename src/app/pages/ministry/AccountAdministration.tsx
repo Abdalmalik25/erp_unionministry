@@ -200,19 +200,25 @@ function RequestsTab() {
 function UsersTab() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [q, setQ] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const LIMIT = 20;
   const load = useCallback(async () => {
     setLoading(true);
-    try { setUsers(await fetchList('/api/sector-users?includeDeleted=true')); }
-    catch { toast.error('تعذر تحميل المستخدمين'); } finally { setLoading(false); }
-  }, []);
+    try {
+      const r = await fetch(`/api/sector-users?page=${page}&limit=${LIMIT}&includeDeleted=true`);
+      const j = await r.json();
+      const data = Array.isArray(j.data?.data) ? j.data.data : Array.isArray(j.data) ? j.data : [];
+      setUsers(data);
+      if (j.data?.total !== undefined) {
+        setTotalItems(j.data.total);
+        setTotalPages(Math.max(1, Math.ceil(j.data.total / LIMIT)));
+      }
+    } catch { toast.error('تعذر تحميل المستخدمين'); } finally { setLoading(false); }
+  }, [page]);
   useEffect(() => { load(); }, [load]);
-
-  const filtered = useMemo(() => {
-    const s = q.trim().toLowerCase();
-    if (!s) return users;
-    return users.filter(u => u.name?.toLowerCase().includes(s) || u.email?.toLowerCase().includes(s) || ROLE_LABEL[u.role]?.includes(s));
-  }, [users, q]);
+  useEffect(() => { setPage(1); }, []);
 
   const changeRole = async (u: any, role: string) => {
     try {
@@ -234,10 +240,19 @@ function UsersTab() {
   if (loading) return <p className="text-sm text-muted-foreground py-6 text-center">جارٍ التحميل…</p>;
   return (
     <div className="space-y-3">
-      <div className="relative max-w-sm">
-        <Search className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="بحث بالاسم أو البريد أو الصلاحية…"
-          className="w-full pr-9 pl-3 py-2 border border-border rounded-xl text-sm bg-card focus:ring-2 focus:ring-blue-500 outline-none" />
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[11px] text-muted-foreground">إجمالي: {totalItems} مستخدم</p>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
+            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-card border border-border hover:bg-accent cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+            السابق
+          </button>
+          <span className="text-xs font-bold">صفحة {page} / {totalPages}</span>
+          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}
+            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-card border border-border hover:bg-accent cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+            التالي
+          </button>
+        </div>
       </div>
       <div className="bg-card border border-border rounded-xl overflow-x-auto">
         <table className="w-full text-sm min-w-[720px]">
@@ -246,7 +261,7 @@ function UsersTab() {
             <th className="px-4 py-3">الصلاحية</th><th className="px-4 py-3">آخر دخول</th><th className="px-4 py-3">الحالة</th><th className="px-4 py-3">إجراء</th>
           </tr></thead>
           <tbody className="divide-y divide-border">
-            {filtered.map(u => (
+            {users.map(u => (
               <tr key={u.id} className={`hover:bg-accent ${!u.is_active ? 'opacity-60' : ''}`}>
                 <td className="px-4 py-3"><p className="font-bold text-xs">{u.name}</p><p className="text-[10px] text-muted-foreground" dir="ltr">{u.email}</p></td>
                 <td className="px-4 py-3 text-xs">{u.user_type === 'ministry' ? 'وزارة' : 'جهة'}</td>
@@ -265,10 +280,41 @@ function UsersTab() {
                 </td>
               </tr>
             ))}
-            {filtered.length === 0 && <tr><td colSpan={6} className="py-8 text-center text-muted-foreground text-xs">لا نتائج مطابقة</td></tr>}
+            {users.length === 0 && <tr><td colSpan={6} className="py-8 text-center text-muted-foreground text-xs">لا نتائج</td></tr>}
           </tbody>
         </table>
       </div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 pt-2">
+          <button onClick={() => setPage(1)} disabled={page <= 1}
+            className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-card border border-border hover:bg-accent cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+            {'<<'}
+          </button>
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
+            className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-card border border-border hover:bg-accent cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+            {'<'}
+          </button>
+          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            const start = Math.max(1, Math.min(page - 2, totalPages - 4));
+            const pageNum = start + i;
+            if (pageNum > totalPages) return null;
+            return (
+              <button key={pageNum} onClick={() => setPage(pageNum)}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer ${pageNum === page ? 'bg-primary text-white' : 'bg-card border border-border hover:bg-accent'}`}>
+                {pageNum}
+              </button>
+            );
+          })}
+          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}
+            className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-card border border-border hover:bg-accent cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+            {'>'}
+          </button>
+          <button onClick={() => setPage(totalPages)} disabled={page >= totalPages}
+            className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-card border border-border hover:bg-accent cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+            {'>>'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

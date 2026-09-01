@@ -2,6 +2,7 @@
 // البحث بالاسم/الرقم الوطني • طلب تسجيل بحالة «بانتظار الموافقة» • تعدد فروع
 import express from 'express';
 import { pool, paginate } from '../middleware/shared.js';
+import { invalidateCache } from '../middleware/cache.js';
 
 const router = express.Router();
 
@@ -167,6 +168,7 @@ router.post('/api/establishments/register-request', async (req, res) => {
       message: 'تم استلام طلب التسجيل بنجاح — حالته الآن «طلب بانتظار الموافقة»',
       data: { ...est, status_label: AR_STATUS[PENDING], branches_registered: branchNo },
     });
+    invalidateCache('dashboard');
   } catch (err) {
     console.error('register-request error:', err);
     res.status(500).json({ error: 'تعذر حفظ طلب التسجيل' });
@@ -216,6 +218,7 @@ router.post('/api/establishments/:id/branches', async (req, res) => {
       message: 'تمت إضافة الفرع — بانتظار اعتماد موظف السجل',
       data: { ...ins.rows[0], status_label: 'بانتظار الموافقة' },
     });
+    invalidateCache('dashboard');
   } catch (err) {
     console.error('branch add error:', err.message);
     res.status(500).json({ error: 'تعذر إضافة الفرع' });
@@ -247,6 +250,7 @@ router.put('/api/establishments/:id/branches/:branchId', async (req, res) => {
     );
     if (up.rows.length === 0) return res.status(404).json({ error: 'الفرع غير موجود' });
     res.json({ message: 'تم تحديث بيانات الفرع', data: up.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     console.error('branch update error:', err.message);
     res.status(500).json({ error: 'تعذر تحديث الفرع' });
@@ -265,6 +269,7 @@ router.delete('/api/establishments/:id/branches/:branchId', async (req, res) => 
     );
     if (del.rows.length === 0) return res.status(404).json({ error: 'الفرع غير موجود' });
     res.json({ message: `تم حذف الفرع «${del.rows[0].branch_name}»` });
+    invalidateCache('dashboard');
   } catch (err) {
     console.error('branch delete error:', err.message);
     res.status(500).json({ error: 'تعذر حذف الفرع' });
@@ -301,6 +306,7 @@ router.patch('/api/establishments/:id/approve', async (req, res) => {
     if (up.rows.length === 0) return res.status(404).json({ error: 'لا يوجد طلب معلق بهذا المعرف' });
     await pool.query(`UPDATE commercial_branches SET is_active=true WHERE enterprise_id=$1`, [up.rows[0].id]);
     res.json({ message: `تمت الموافقة على «${up.rows[0].name_ar}» وتفعيل جميع فروعها`, data: up.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     console.error('approve error:', err.message);
     res.status(500).json({ error: 'تعذر الاعتماد' });
@@ -318,6 +324,7 @@ router.patch('/api/establishments/:id/reject', async (req, res) => {
     );
     if (up.rows.length === 0) return res.status(404).json({ error: 'لا يوجد طلب معلق بهذا المعرف' });
     res.json({ message: `تم رفض طلب «${up.rows[0].name_ar}» — السبب: ${reason}`, data: up.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     console.error('reject error:', err.message);
     res.status(500).json({ error: 'تعذر الرفض' });

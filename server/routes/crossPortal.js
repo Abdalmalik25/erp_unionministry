@@ -10,6 +10,7 @@ import { getAuthUser } from '../middleware/auth.js';
 import { requirePermission, auditContext } from '../middleware/rbac.js';
 import { structuredLogger } from '../middleware/observability.js';
 import { eventBus } from '../utils/eventBus.js';
+import { invalidateCache } from '../middleware/cache.js';
 
 const router = Router();
 
@@ -36,6 +37,7 @@ router.get('/registry/:type/:id',
       }
 
       res.json(entry);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -61,6 +63,7 @@ router.get('/registry/:type/search',
 
       const entries = await query.limit(50);
       res.json(entries);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -86,6 +89,7 @@ router.post('/registry/:type/:id/sync',
         });
 
       res.json({ syncedPortals, failedPortals: [] });
+      invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -170,6 +174,7 @@ router.post('/workflows/:workflowType/initiate',
       });
 
       res.status(201).json(workflow);
+      invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -188,6 +193,7 @@ router.get('/workflows/:workflowId',
       }
 
       res.json(workflow);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -240,6 +246,7 @@ router.post('/workflows/:workflowId/steps/:stepId/advance',
       }
 
       res.json(updated);
+      invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -301,6 +308,7 @@ router.post('/orchestrate/violation-cascade',
         inspectionId: inspection.id,
         workflowId: workflow.id
       });
+      invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -391,6 +399,7 @@ router.post('/orchestrate/contract-signed/:contractId',
         ministryRegistryUpdated,
         notificationsSent
       });
+      invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -472,6 +481,7 @@ router.post('/orchestrate/inspection-outcome/:inspectionId',
         employerNotified,
         unionNotified
       });
+      invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -494,6 +504,7 @@ router.get('/identity/:userId',
       }
 
       res.json(identity);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -611,6 +622,7 @@ router.post('/notifications/send',
       eventBus.emit('notification:sent', { notificationId: notification.id, recipient: recipientUserId || recipientRole });
 
       res.status(201).json({ notificationId: notification.id });
+      invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -639,6 +651,7 @@ router.post('/notifications/broadcast',
       const result = await req.db('cross_portal_notifications').insert(notifications).returning('*');
 
       res.json({ sentCount: result.length, failedCount: 0 });
+      invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -676,6 +689,7 @@ router.get('/notifications',
         .count();
 
       res.json({ notifications, unreadCount: Number(count) });
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -693,6 +707,7 @@ router.put('/notifications/:notificationId/read',
         .update({ read: true, read_at: new Date() });
 
       res.json({ success: true });
+      invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -708,6 +723,7 @@ router.put('/notifications/read-all',
         .update({ read: true, read_at: new Date() });
 
       res.json({ updatedCount: count });
+      invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }

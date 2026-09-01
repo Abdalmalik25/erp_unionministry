@@ -15,7 +15,7 @@ import { SplashScreen } from './components/ui/SplashScreen';
 import { OfflineIndicator, OfflineSyncBanner } from './components/OfflineIndicator';
 import { OfflineProvider } from './contexts/OfflineContext';
 import { LanguageProvider } from './contexts/LanguageContext';
-import { A11yAnnouncer } from './components/a11y/A11yAnnouncer';
+import { A11yAnnouncer, announce } from './components/a11y/A11yAnnouncer';
 import { SkipToContent } from './components/a11y/SkipToContent';
 
 function ToastContainer() {
@@ -47,6 +47,19 @@ function AppContent() {
     db.clearExpiredCache().catch((e) => {
       console.warn('[App] Cache cleanup failed:', e);
     });
+
+    // الإعلان عن تغيير المسار لقارئات الشاشة — عبر اشتراك مباشر في نسخة الـ router
+    // (وليس A11yAnnouncer + useLocation: فهو مركَّب خارج <RouterProvider> وuseLocation
+    //  فيه كانت تُسقط التطبيق كله عند أول تنقّل — الجذر الحقيقي لشاشة "حدث خطأ غير متوقع")
+    const unsubscribe = router.subscribe(() => {
+      try {
+        const title = typeof document !== 'undefined' ? document.title : router.state.location.pathname;
+        announce(`انتقلت إلى: ${title}`, 'polite');
+      } catch {
+        // الإعلان اختياري — لا يُسقط التطبيق أبداً
+      }
+    });
+    return unsubscribe;
   }, []);
 
   return (
@@ -76,7 +89,7 @@ export default function App() {
 
   return (
     <>
-      {showSplash && <SplashScreen onComplete={handleSplashComplete} duration={1200} />}
+      {showSplash && <SplashScreen onComplete={handleSplashComplete} duration={600} />}
       {!showSplash && (
         <ErrorBoundary>
           <ThemeProvider

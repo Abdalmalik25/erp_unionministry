@@ -2,6 +2,7 @@
 import express from 'express';
 import { pool } from '../middleware/shared.js';
 import crypto from 'crypto';
+import { invalidateCache } from '../middleware/cache.js';
 const router=express.Router();
 
 router.post('/api/v1/payments', async (req,res)=>{
@@ -13,6 +14,7 @@ router.post('/api/v1/payments', async (req,res)=>{
     [num, service_instance_id||null, payer_type||null, payer_id||req.user?.id||null, amount, method||'cash']
   );
   res.status(201).json(r.rows[0]);
+  invalidateCache('dashboard');
 });
 
 router.put('/api/v1/payments/:id/confirm', async (req,res)=>{
@@ -21,10 +23,11 @@ router.put('/api/v1/payments/:id/confirm', async (req,res)=>{
   const r=await pool.query(`UPDATE payments SET status='paid', receipt_hash=$1, paid_at=NOW() WHERE id=$2 RETURNING *`, [hash, req.params.id]);
   if(!r.rows.length) return res.status(404).json({ error:'غير موجود', code:'NOT_FOUND' });
   res.json(r.rows[0]);
+  invalidateCache('dashboard');
 });
 
 router.get('/api/v1/payments', async (req,res)=>{
-  const r=await pool.query(`SELECT * FROM payments ORDER BY created_at DESC LIMIT 20`);
+  const r=await pool.query(`SELECT id, payment_number, service_instance_id, payer_type, payer_id, amount, currency, method, status, receipt_url, receipt_hash, paid_at, created_at FROM payments ORDER BY created_at DESC LIMIT 20`);
   res.json({ data: r.rows });
 });
 
@@ -38,6 +41,7 @@ router.post('/api/v1/signatures', async (req,res)=>{
     [entity_type, entity_id, req.user?.id||null, signer_role||req.user?.role||'signer', hash, `/verify/${hash}`]
   );
   res.status(201).json(r.rows[0]);
+  invalidateCache('dashboard');
 });
 
 export default router;

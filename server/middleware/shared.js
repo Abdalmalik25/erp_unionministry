@@ -13,20 +13,30 @@ function getPool() {
     _pool = new pg.Pool({
       connectionString: connStr,
       ssl: useSSL ? { rejectUnauthorized: true } : false,
-      max: 10,
-      min: 0,
-      idleTimeoutMillis: 30000,
-      // Neon serverless cold-starts can exceed 2s — 15s prevents spurious failures
-      connectionTimeoutMillis: parseInt(process.env.DB_CONNECT_TIMEOUT_MS || '15000', 10),
-      query_timeout: 30000,
-      statement_timeout: 30000,
+      // National-grade: balanced for Neon serverless + high concurrency
+      max: parseInt(process.env.DB_POOL_MAX || '20', 10),
+      min: parseInt(process.env.DB_POOL_MIN || '3', 10),
+      idleTimeoutMillis: 15000,
+      connectionTimeoutMillis: parseInt(process.env.DB_CONNECT_TIMEOUT_MS || '8000', 10),
+      query_timeout: 15000,
+      statement_timeout: 15000,
       keepAlive: true,
-      allowExitOnIdle: false,
     });
-    _pool.on('error', (err) => console.error('Database pool error:', err));
-    _pool.on('connect', () => console.log('[DB] New connection established'));
+    _pool.on('error', (err) => console.error('[DB] Pool error:', err.message));
+    _pool.on('connect', () => console.log('[DB] Connection established'));
   }
   return _pool;
+}
+
+// Connection pool observability — exposes pool stats for health/metrics endpoints
+function getPoolStats() {
+  if (!_pool) return { totalCount: 0, idleCount: 0, waitingCount: 0 };
+  return {
+    totalCount: _pool.totalCount,
+    idleCount: _pool.idleCount,
+    waitingCount: _pool.waitingCount,
+    maxConnections: parseInt(process.env.DB_POOL_MAX || '20', 10),
+  };
 }
 
 const pool = new Proxy({}, {
@@ -42,6 +52,16 @@ function paginate(req) {
   const offset = (page - 1) * limit;
   const includeDeleted = req.query.include_deleted === 'true';
   return { limit, page, offset, includeDeleted };
+}
+
+// Cursor-based pagination for large datasets (P1: avoids OFFSET degradation)
+// Usage: ?cursor=<created_at value of last row>&limit=20
+function paginateCursor(req, defaultSortColumn = 'created_at') {
+  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+  const cursor = req.query.cursor || null;
+  const direction = req.query.direction === 'asc' ? 'ASC' : 'DESC';
+  const includeDeleted = req.query.include_deleted === 'true';
+  return { limit, cursor, direction, includeDeleted, sortColumn: defaultSortColumn };
 }
 
 function softDeleteFilter(table, includeDeleted, alias) {
@@ -152,6 +172,7 @@ function validateTableName(table) {
 }
 
 export {
-  pool, paginate, countQuery, softDelete, softDeleteFilter, auditLog, SOFT_DELETE_TABLES,
+  pool, paginate, paginateCursor, countQuery, softDelete, softDeleteFilter, auditLog,
+  getPoolStats, SOFT_DELETE_TABLES,
   TABLE_COLUMNS, validateColumns, ALLOWED_TABLES, safeSetClause, validateTableName,
 };

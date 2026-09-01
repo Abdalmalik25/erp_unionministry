@@ -3,6 +3,7 @@ import express from 'express';
 import crypto from 'crypto';
 import { pool, paginate } from '../middleware/shared.js';
 import { hashPassword } from '../middleware/auth.js';
+import { invalidateCache } from '../middleware/cache.js';
 
 const router = express.Router();
 
@@ -78,6 +79,7 @@ router.post('/api/account-requests', async (req, res) => {
       data: { id: r.rows[0].id, type_label: TYPE_LABEL[d.request_type] },
       message: 'تم استلام طلب فتح الحساب — سيتم التواصل معك بعد المراجعة',
     });
+    invalidateCache('dashboard');
   } catch (err) {
     console.error('Account request error:', err);
     res.status(500).json({ error: 'خطأ في الخادم' });
@@ -148,6 +150,7 @@ router.patch('/api/account-requests/:id/approve', requireAdmin, async (req, res)
       data: { user_id: cu.rows[0].id, email, temp_password: tempPassword, role },
       message: `تم اعتماد الطلب وإنشاء حساب ${TYPE_LABEL[reqRow.request_type]}`,
     });
+    invalidateCache('dashboard');
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {});
     console.error('Approve request error:', err);
@@ -169,6 +172,7 @@ router.patch('/api/account-requests/:id/reject', requireAdmin, async (req, res) 
       [reason, req.user?.id || null, req.params.id]);
     if (!r.rows.length) return res.status(409).json({ error: 'الطلب غير موجود أو تمت معالجته' });
     res.json({ success: true, message: 'تم رفض الطلب وتوثيق السبب' });
+    invalidateCache('dashboard');
   } catch (err) {
     console.error('Reject request error:', err);
     res.status(500).json({ error: 'خطأ في الخادم' });

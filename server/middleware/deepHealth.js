@@ -33,21 +33,32 @@ async function checkDatabase(pool) {
 }
 
 /**
- * Check pool health
+ * Check pool health — national-grade saturation monitoring
  */
 async function checkPool(pool) {
   try {
     const total = pool.totalCount || 0;
     const idle = pool.idleCount || 0;
     const waiting = pool.waitingCount || 0;
+    const maxConnections = parseInt(process.env.DB_POOL_MAX || '20', 10);
+    const utilizationPercent = total > 0 ? Math.round(((total - idle) / total) * 100) : 0;
+    const saturationPercent = maxConnections > 0 ? Math.round((total / maxConnections) * 100) : 0;
+
     return {
       total,
       idle,
+      active: total - idle,
       waiting,
-      healthy: total - idle < total * 0.9, // healthy if < 90% utilized
+      maxConnections,
+      utilizationPercent,
+      saturationPercent,
+      healthy: utilizationPercent < 85 && waiting === 0,
+      status: utilizationPercent >= 90 || waiting > 5 ? 'critical'
+        : utilizationPercent >= 75 || waiting > 0 ? 'warning'
+        : 'healthy',
     };
   } catch {
-    return { total: 0, idle: 0, waiting: 0, healthy: false, error: 'POOL_CHECK_FAILED' };
+    return { total: 0, idle: 0, active: 0, waiting: 0, healthy: false, error: 'POOL_CHECK_FAILED' };
   }
 }
 
@@ -137,7 +148,8 @@ export async function getDeepHealth(pool) {
     warnings: [
       ...(memory.healthy ? [] : [`Memory usage at ${memory.heapPercent}% — approaching limit`]),
       ...(eventLoop.healthy ? [] : [`Event loop lag ${eventLoop.eventLoopLagMs}ms — performance degraded`]),
-      ...(poolResult.healthy ? [] : [`DB pool utilization high: ${poolResult.total - poolResult.idle}/${poolResult.total}`]),
+      ...(poolResult.healthy ? [] : [`DB pool ${poolResult.status}: ${poolResult.active}/${poolResult.total} active, ${poolResult.waiting} waiting`]),
+      ...(poolResult.waiting > 0 ? [`DB connection queue: ${poolResult.waiting} requests waiting for connection`] : []),
     ],
   };
 }

@@ -19,14 +19,14 @@ router.get('/api/ai/risk-matrix/:id', async (req, res) => {
 
     // Fetch entity data
     const entityQuery = await pool.query(
-      `SELECT * FROM organizational_entities WHERE (entity_id::text = $1 OR establishment_id = $1) AND deleted_at IS NULL LIMIT 1`,
+      `SELECT entity_id, id, name_ar, name_en, entity_type, classification, sector, status, compliance_status, risk_level, ai_risk_score, employees_count, establishment_date, created_at, custom_data FROM organizational_entities WHERE (entity_id::text = $1 OR establishment_id = $1) AND deleted_at IS NULL LIMIT 1`,
       [id]
     );
 
     let entity = entityQuery.rows[0];
     if (!entity) {
       const commQuery = await pool.query(
-        `SELECT * FROM commercial_establishments WHERE (id::text = $1 OR unified_code = $1 OR establishment_id = $1) AND deleted_at IS NULL LIMIT 1`,
+        `SELECT id, name_ar, name_en, establishment_id, unified_code, commercial_register_number, entity_type, sector, classification, status, capital_amount, employees_count, license_date, expiry_date, address, phone, email, owner_name, license_number, governorate, city, deleted_at FROM commercial_establishments WHERE (id::text = $1 OR unified_code = $1 OR establishment_id = $1) AND deleted_at IS NULL LIMIT 1`,
         [id]
       );
       entity = commQuery.rows[0];

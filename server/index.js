@@ -14,6 +14,24 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+// ===================== Server-Side Cache (TTL-based) =====================
+// Reduces DB load for frequently-read dashboard data that changes infrequently
+const dashboardCache = new Map();
+const CACHE_TTL = 60 * 1000 * 5; // 5 minutes
+
+function cacheSet(key, value) {
+  dashboardCache.set(key, { value, expiry: Date.now() + CACHE_TTL });
+}
+function cacheGet(key) {
+  const entry = dashboardCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiry) {
+    dashboardCache.delete(key);
+    return null;
+  }
+  return entry.value;
+}
+
 // ===================== Core Middleware — Nuclear Hardening =====================
 app.use(cors({
   origin: process.env.CORS_ORIGIN
@@ -356,23 +374,48 @@ import telemetryRouter from './routes/telemetry.js';
 app.use(telemetryRouter);
 
 // ===================== Dashboard (inline — uses shared pool) =====================
-import { pool, paginate, countQuery } from './middleware/shared.js';
+import { pool, paginate, countQuery, getPoolStats } from './middleware/shared.js';
 
 app.get('/api/dashboard/stats', async (_req, res) => {
+  const cached = cacheGet('dashboard-stats');
+  if (cached) return res.json(cached);
+
   try {
+    // CTE-based single-pass query (replaces 9 correlated subqueries)
     const stats = await pool.query(`
+      WITH entity_stats AS (
+        SELECT
+          COUNT(*)::int AS total,
+          COUNT(*) FILTER (WHERE status = 'active')::int AS active,
+          COUNT(*) FILTER (WHERE compliance_status = 'compliant')::int AS compliant,
+          COUNT(*) FILTER (WHERE risk_level = 'high')::int AS high_risk,
+          COALESCE(SUM(member_count), 0)::int AS members
+        FROM organizational_entities WHERE deleted_at IS NULL
+      ),
+      activity_stats AS (
+        SELECT COUNT(*)::int AS total FROM activities WHERE deleted_at IS NULL
+      ),
+      violation_stats AS (
+        SELECT COUNT(*)::int AS open FROM violations WHERE deleted_at IS NULL AND status = 'open'
+      ),
+      license_stats AS (
+        SELECT COUNT(*)::int AS valid FROM licenses WHERE deleted_at IS NULL AND status = 'valid'
+      ),
+      alert_stats AS (
+        SELECT COUNT(*)::int AS unresolved FROM compliance_alerts WHERE is_resolved = false
+      )
       SELECT
-        (SELECT COUNT(*)::int FROM organizational_entities WHERE deleted_at IS NULL) AS total_entities,
-        (SELECT COUNT(*)::int FROM organizational_entities WHERE deleted_at IS NULL AND status = 'active') AS active_entities,
-        (SELECT COUNT(*)::int FROM organizational_entities WHERE deleted_at IS NULL AND compliance_status = 'compliant') AS compliant_entities,
-        (SELECT COUNT(*)::int FROM organizational_entities WHERE deleted_at IS NULL AND risk_level = 'high') AS high_risk_entities,
-        (SELECT COALESCE(SUM(member_count), 0)::int FROM organizational_entities WHERE deleted_at IS NULL) AS total_members,
-        (SELECT COUNT(*)::int FROM activities WHERE deleted_at IS NULL) AS total_activities,
-        (SELECT COUNT(*)::int FROM violations WHERE deleted_at IS NULL AND status = 'open') AS open_violations,
-        (SELECT COUNT(*)::int FROM licenses WHERE deleted_at IS NULL AND status = 'valid') AS valid_licenses,
-        (SELECT COUNT(*)::int FROM compliance_alerts WHERE is_resolved = false) AS unresolved_alerts
+        e.total AS total_entities, e.active AS active_entities,
+        e.compliant AS compliant_entities, e.high_risk AS high_risk_entities,
+        e.members AS total_members, a.total AS total_activities,
+        v.open AS open_violations, l.valid AS valid_licenses,
+        al.unresolved AS unresolved_alerts
+      FROM entity_stats e, activity_stats a, violation_stats v,
+           license_stats l, alert_stats al
     `);
-    res.json(stats.rows[0]);
+    const result = stats.rows[0];
+    cacheSet('dashboard-stats', result);
+    res.json(result);
   } catch (_err) {
     res.status(500).json({ error: 'خطأ داخلي — تم تسجيل الحادثة', code:'INTERNAL_ERROR' });
   }
@@ -380,23 +423,56 @@ app.get('/api/dashboard/stats', async (_req, res) => {
 
 // Optimized single-query enhanced stats — replaces 11 parallel queries with 1
 app.get('/api/dashboard/enhanced-stats', async (req, res) => {
+  const cached = cacheGet('enhanced-dashboard-stats');
+  if (cached) return res.json(cached);
+
   try {
+    // CTE-based single-pass query (replaces 12 correlated subqueries)
     const result = await pool.query(`
+      WITH entity_stats AS (
+        SELECT
+          COUNT(*)::int AS total,
+          COUNT(*) FILTER (WHERE status = 'active')::int AS active,
+          COUNT(*) FILTER (WHERE compliance_status = 'compliant')::int AS compliant,
+          COUNT(*) FILTER (WHERE risk_level = 'high')::int AS high_risk,
+          COALESCE(SUM(member_count), 0)::int AS members
+        FROM organizational_entities WHERE deleted_at IS NULL
+      ),
+      activity_stats AS (
+        SELECT COUNT(*)::int AS total FROM activities WHERE deleted_at IS NULL
+      ),
+      violation_stats AS (
+        SELECT COUNT(*)::int AS open FROM violations WHERE deleted_at IS NULL AND status = 'open'
+      ),
+      license_stats AS (
+        SELECT COUNT(*)::int AS valid FROM licenses WHERE deleted_at IS NULL AND status = 'valid'
+      ),
+      alert_stats AS (
+        SELECT COUNT(*)::int AS unresolved FROM compliance_alerts WHERE is_resolved = false
+      ),
+      dispatch_stats AS (
+        SELECT COUNT(*)::int AS total FROM worker_dispatches WHERE deleted_at IS NULL
+      ),
+      reduction_stats AS (
+        SELECT COUNT(*)::int AS total FROM worker_reduction_requests
+      ),
+      service_stats AS (
+        SELECT COUNT(*)::int AS total FROM services
+      )
       SELECT
-        (SELECT COUNT(*)::int FROM organizational_entities WHERE deleted_at IS NULL) AS total_entities,
-        (SELECT COUNT(*)::int FROM organizational_entities WHERE deleted_at IS NULL AND status = 'active') AS active_entities,
-        (SELECT COUNT(*)::int FROM organizational_entities WHERE deleted_at IS NULL AND compliance_status = 'compliant') AS compliant_entities,
-        (SELECT COUNT(*)::int FROM organizational_entities WHERE deleted_at IS NULL AND risk_level = 'high') AS high_risk_entities,
-        (SELECT COALESCE(SUM(member_count), 0)::int FROM organizational_entities WHERE deleted_at IS NULL) AS total_members,
-        (SELECT COUNT(*)::int FROM activities WHERE deleted_at IS NULL) AS total_activities,
-        (SELECT COUNT(*)::int FROM violations WHERE deleted_at IS NULL AND status = 'open') AS open_violations,
-        (SELECT COUNT(*)::int FROM licenses WHERE deleted_at IS NULL AND status = 'valid') AS valid_licenses,
-        (SELECT COUNT(*)::int FROM compliance_alerts WHERE is_resolved = false) AS unresolved_alerts,
-        (SELECT COUNT(*)::int FROM worker_dispatches WHERE deleted_at IS NULL) AS total_dispatches,
-        (SELECT COUNT(*)::int FROM worker_reduction_requests) AS total_reduction_requests,
-        (SELECT COUNT(*)::int FROM services) AS total_services
+        e.total AS total_entities, e.active AS active_entities,
+        e.compliant AS compliant_entities, e.high_risk AS high_risk_entities,
+        e.members AS total_members, a.total AS total_activities,
+        v.open AS open_violations, l.valid AS valid_licenses,
+        al.unresolved AS unresolved_alerts,
+        d.total AS total_dispatches,
+        r.total AS total_reduction_requests,
+        s.total AS total_services
+      FROM entity_stats e, activity_stats a, violation_stats v,
+           license_stats l, alert_stats al, dispatch_stats d,
+           reduction_stats r, service_stats s
     `);
-    res.json({
+    const data = {
       entities: result.rows[0].total_entities,
       activeEntities: result.rows[0].active_entities,
       compliantEntities: result.rows[0].compliant_entities,
@@ -409,11 +485,13 @@ app.get('/api/dashboard/enhanced-stats', async (req, res) => {
       totalDispatches: result.rows[0].total_dispatches,
       totalReductionRequests: result.rows[0].total_reduction_requests,
       totalServices: result.rows[0].total_services,
-    });
-    } catch (err) {
-      console.error('[Dashboard] enhanced-stats failed:', err.message);
-      res.status(500).json({ error: 'خطأ داخلي — تم تسجيل الحادثة', code: 'INTERNAL_ERROR' });
-    }
+    };
+    cacheSet('enhanced-dashboard-stats', data);
+    res.json(data);
+  } catch (err) {
+    console.error('[Dashboard] enhanced-stats failed:', err.message);
+    res.status(500).json({ error: 'خطأ داخلي — تم تسجيل الحادثة', code: 'INTERNAL_ERROR' });
+  }
 });
 
 app.get('/api/dashboard/time-series', async (_req, res) => {
@@ -605,10 +683,10 @@ app.delete('/api/metrics/errors', async (_req, res) => {
 import { getDeepHealth } from './middleware/deepHealth.js';
 app.get('/api/health/detailed', async (_req, res) => {
   try {
-    // pool is imported dynamically to avoid circular deps
     const { pool } = await import('./middleware/shared.js').catch(() => ({ pool: null }));
     if (!pool) return res.status(503).json({ status: 'unhealthy', error: 'Database not available', timestamp: new Date().toISOString() });
     const health = await getDeepHealth(pool);
+    health.dbPool = getPoolStats();
     res.status(health.status === 'healthy' ? 200 : 503).json(health);
   } catch (err) {
     res.status(503).json({ status: 'unhealthy', error: String(err.message || err), timestamp: new Date().toISOString() });
@@ -629,6 +707,7 @@ app.get('/api/version', (_req, res) => {
     authEnabled: AUTH_ENABLED,
     nodeVersion: process.version,
     uptimeSeconds: Math.floor(process.uptime()),
+    dbPool: getPoolStats(),
   });
 });
 

@@ -6,6 +6,7 @@ const metrics = {
   errors: 0,
   byRoute: new Map(),
   latencies: [],
+  latencySum: 0,
 };
 
 export function structuredLogger(req, res, next) {
@@ -19,6 +20,7 @@ export function structuredLogger(req, res, next) {
   res.send = function(body) {
     const dur = Date.now()-start;
     metrics.requests++;
+    metrics.latencySum += dur;
     metrics.latencies.push(dur);
     if (metrics.latencies.length>1000) metrics.latencies.shift();
     const key = `${req.method} ${req.path}`;
@@ -36,7 +38,6 @@ export function structuredLogger(req, res, next) {
       user: req.user?.id || 'anonymous',
       role: req.user?.role,
       ip: req.ip,
-      // PII masked
     };
     if (res.statusCode>=500) console.error(JSON.stringify(log));
     else if (process.env.LOG_LEVEL==='debug') console.log(JSON.stringify(log));
@@ -46,15 +47,21 @@ export function structuredLogger(req, res, next) {
 }
 
 export function metricsEndpoint(_req,res){
-  const avg = metrics.latencies.length? Math.round(metrics.latencies.reduce((a,b)=>a+b,0)/metrics.latencies.length):0;
-  const p95 = [...metrics.latencies].sort((a,b)=>a-b)[Math.floor(metrics.latencies.length*0.95)] || 0;
+  const avg = metrics.latencies.length? Math.round(metrics.latencySum/metrics.latencies.length):0;
+  // Optimized p95 — sort only once, reuse sorted copy
+  const sorted = [...metrics.latencies].sort((a,b)=>a-b);
+  const p95 = sorted[Math.floor(sorted.length*0.95)] || 0;
+  const p50 = sorted[Math.floor(sorted.length*0.50)] || 0;
+  const p99 = sorted[Math.floor(sorted.length*0.99)] || 0;
   res.json({
     uptime_s: Math.round(process.uptime()),
     requests: metrics.requests,
     errors: metrics.errors,
     error_rate: metrics.requests? +(metrics.errors/metrics.requests).toFixed(4):0,
     avg_latency_ms: avg,
+    p50_latency_ms: p50,
     p95_latency_ms: p95,
+    p99_latency_ms: p99,
     byRoute: Object.fromEntries(metrics.byRoute),
     timestamp: new Date().toISOString(),
   });
@@ -62,6 +69,5 @@ export function metricsEndpoint(_req,res){
 
 export function errorHandler(err, _req, res, _next){
   console.error(JSON.stringify({ level:'error', message: err.message, stack: err.stack?.slice(0,2000), timestamp: new Date().toISOString() }));
-  // Generic to client — TD-012 fix
   res.status(500).json({ error:'خطأ داخلي — تم تسجيل الحادثة', code:'INTERNAL_ERROR', correlationId: _req.correlationId });
 }

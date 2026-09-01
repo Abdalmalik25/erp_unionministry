@@ -2,11 +2,12 @@
 import express from 'express';
 import { pool } from '../middleware/shared.js';
 import crypto from 'crypto';
+import { invalidateCache } from '../middleware/cache.js';
 const router=express.Router();
 
 // List
 router.get('/api/v1/integrations', async (_req,res)=>{
-  const r=await pool.query(`SELECT * FROM external_integrations ORDER BY code`);
+  const r=await pool.query(`SELECT id, code, name_ar, name_en, party_type, base_url, auth_type, status, mode, is_required, timeout_ms, retry_count, last_check_at, last_error, config, created_at, updated_at FROM external_integrations ORDER BY code`);
   res.json({ data: r.rows });
 });
 // Toggle mode/status — بدون كود
@@ -16,6 +17,7 @@ router.put('/api/v1/integrations/:code/mode', async (req,res)=>{
   const r=await pool.query(`UPDATE external_integrations SET mode=COALESCE($1,mode), status=COALESCE($2,status), updated_at=NOW() WHERE code=$3 RETURNING *`, [mode||null, status||null, req.params.code]);
   if(!r.rows.length) return res.status(404).json({ error:'غير موجود', code:'NOT_FOUND' });
   res.json(r.rows[0]);
+  invalidateCache('dashboard');
 });
 
 // Verify — ذكي: يحاول live، يسقط لـ mock/cache/queue
@@ -23,7 +25,7 @@ router.post('/api/v1/integrations/:code/verify', async (req,res)=>{
   const { code } = req.params;
   const payload = req.body;
   const start=Date.now();
-  const integ = await pool.query(`SELECT * FROM external_integrations WHERE code=$1`, [code]);
+  const integ = await pool.query(`SELECT id, code, name_ar, name_en, party_type, base_url, auth_type, status, mode, is_required, timeout_ms, retry_count, last_check_at, last_error, config, created_at, updated_at FROM external_integrations WHERE code=$1`, [code]);
   if(!integ.rows.length) return res.status(404).json({ error:'التكامل غير موجود', code:'NOT_FOUND' });
   const cfg=integ.rows[0];
   const idem = req.headers['x-idempotency-key'] || `verify-${code}-${crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex').slice(0,12)}`;

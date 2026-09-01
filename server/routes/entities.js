@@ -2,6 +2,7 @@ import express from 'express';
 import { pool, paginate, countQuery } from '../middleware/shared.js';
 import { validate, schemas } from '../middleware/validation.js';
 import { requirePermission } from '../middleware/rbac.js';
+import { invalidateCache } from '../middleware/cache.js';
 
 const router = express.Router();
 
@@ -26,7 +27,13 @@ router.get('/api/entities', async (req, res) => {
     const where = 'WHERE ' + conditions.join(' AND ');
     const total = await pool.query(`SELECT COUNT(*)::int AS count FROM organizational_entities ${where}`, params);
     const r = await pool.query(
-      `SELECT * FROM organizational_entities ${where} ORDER BY created_at DESC LIMIT $${idx++} OFFSET $${idx++}`,
+      `SELECT entity_id, name_ar, name_en, entity_type, classification, sector, legal_form,
+       governance_level, geographic_scope, unified_code, registration_number, entity_code,
+       governorate, city, address, phone, fax, email, website,
+       president_name, vice_president_name, secretary_name, treasurer_name,
+       member_count, branch_count, establishment_date, registration_date,
+       compliance_status, risk_level, status, description, notes, created_at, updated_at
+       FROM organizational_entities ${where} ORDER BY created_at DESC LIMIT $${idx++} OFFSET $${idx++}`,
       [...params, limit, offset]
     );
     res.json({ data: r.rows, total: total.rows[0].count, page, limit });
@@ -38,7 +45,16 @@ router.get('/api/entities', async (req, res) => {
 
 router.get('/api/entities/:id', async (req, res) => {
   try {
-    const r = await pool.query('SELECT * FROM organizational_entities WHERE entity_id = $1 AND deleted_at IS NULL', [req.params.id]);
+    const r = await pool.query(
+      `SELECT entity_id, name_ar, name_en, entity_type, classification, sector, legal_form,
+       governance_level, geographic_scope, unified_code, registration_number, entity_code,
+       governorate, city, address, phone, fax, email, website,
+       president_name, president_phone, vice_president_name, secretary_name, treasurer_name,
+       member_count, branch_count, establishment_date, registration_date,
+       compliance_status, risk_level, status, description, notes, created_at, updated_at
+       FROM organizational_entities WHERE entity_id = $1 AND deleted_at IS NULL`,
+      [req.params.id]
+    );
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json(r.rows[0]);
   } catch (err) {
@@ -72,7 +88,9 @@ router.get('/api/entities/:id/overview', async (req, res) => {
   try {
     const { id } = req.params;
     const [entity, members, violations, inspections, occupations, relationships, activities, documents, licenses, dispatches, riskAssessments, complianceAlerts] = await Promise.all([
-      pool.query('SELECT * FROM organizational_entities WHERE entity_id = $1', [id]),
+      pool.query(`SELECT entity_id, name_ar, name_en, entity_type, classification, sector, status,
+       governorate, city, compliance_status, risk_level, member_count, created_at
+       FROM organizational_entities WHERE entity_id = $1`, [id]),
       pool.query('SELECT COUNT(*)::int as total, COUNT(CASE WHEN status = \'active\' THEN 1 END)::int as active FROM members WHERE entity_id = $1 AND deleted_at IS NULL', [id]),
       pool.query('SELECT COUNT(*)::int as total, COUNT(CASE WHEN status = \'open\' THEN 1 END)::int as open FROM violations WHERE entity_id = $1 AND deleted_at IS NULL', [id]),
       pool.query('SELECT COUNT(*)::int as total, COUNT(CASE WHEN status = \'completed\' THEN 1 END)::int as completed FROM inspections WHERE enterprise_id = $1', [id]),
@@ -128,6 +146,7 @@ router.post('/api/entities', validate(schemas.entityCreate), requirePermission('
       `INSERT INTO organizational_entities (${fields.map(f => `"${f}"`).join(',')}) VALUES (${placeholders.join(',')}) RETURNING *`,
       values
     );
+    invalidateCache('dashboard');
     res.status(201).json({ success: true, entity: r.rows[0] });
   } catch (err) {
     console.error('Entity create error:', err);
@@ -165,6 +184,7 @@ router.put('/api/entities/:id', requirePermission('write:entities'), async (req,
       values
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
+    invalidateCache('dashboard');
     res.json({ success: true, entity: r.rows[0] });
   } catch (err) {
     console.error('Entity update error:', err);
@@ -179,6 +199,7 @@ router.delete('/api/entities/:id', requirePermission('write:entities'), async (r
       [req.params.id]
     );
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
+    invalidateCache('dashboard');
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
@@ -223,22 +244,41 @@ router.get('/api/commercial', async (req, res) => {
 const handle360Dossier = async (req, res) => {
   try {
     const { id } = req.params;
+    const dossierLimit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50));
+
     // Find establishment by id, establishment_id, or unified_code
     const estRes = await pool.query(
-      `SELECT * FROM commercial_establishments WHERE id::text = $1 OR establishment_id = $1 OR unified_code = $1 OR commercial_register_number = $1 LIMIT 1`,
+      `SELECT id, name_ar, name_en, establishment_id, unified_code, commercial_register_number,
+       entity_type, sector, classification, status, capital_amount, employees_count,
+       license_date, expiry_date, address, phone, email, owner_name, license_number,
+       governorate, city, created_at, updated_at
+       FROM commercial_establishments
+       WHERE id::text = $1 OR establishment_id = $1 OR unified_code = $1 OR commercial_register_number = $1 LIMIT 1`,
       [id]
     );
     if (estRes.rows.length === 0) return res.status(404).json({ error: 'المنشأة غير موجودة' });
     const est = estRes.rows[0];
 
-    // Parallel fetch related 360 records
+    // Parallel fetch related 360 records — all LIMIT'd to prevent unbounded transfer
     const [occupations, dispatches, disputes, reductions, documents, certificates] = await Promise.all([
-      pool.query(`SELECT * FROM enterprise_occupation_links WHERE enterprise_id::text = $1 OR enterprise_name = $2 ORDER BY created_at DESC`, [est.id, est.name_ar]),
-      pool.query(`SELECT * FROM worker_dispatches WHERE sending_enterprise_id::text = $1 OR sending_enterprise_name = $2 OR receiving_enterprise_name = $2 ORDER BY created_at DESC`, [est.id, est.name_ar]),
-      pool.query(`SELECT * FROM labor_disputes WHERE enterprise_id::text = $1 OR enterprise_name ILIKE '%' || $2 || '%' ORDER BY created_at DESC`, [est.id, est.name_ar]),
-      pool.query(`SELECT * FROM worker_reduction_requests WHERE enterprise_id::text = $1 OR enterprise_name ILIKE '%' || $2 || '%' ORDER BY created_at DESC`, [est.id, est.name_ar]),
-      pool.query(`SELECT * FROM documents WHERE entity_id::text = $1 OR document_name ILIKE '%' || $2 || '%' ORDER BY created_at DESC`, [est.id, est.name_ar]),
-      pool.query(`SELECT * FROM evaluation_certificates WHERE enterprise_id::text = $1 OR evaluation_summary ILIKE '%' || $2 || '%' ORDER BY created_at DESC`, [est.id, est.name_ar]),
+      pool.query(`SELECT id, enterprise_id, enterprise_name, occupation_code, occupation_name_ar, link_status, compliance_score, created_at
+       FROM enterprise_occupation_links WHERE enterprise_id::text = $1 OR enterprise_name = $2
+       ORDER BY created_at DESC LIMIT $3`, [est.id, est.name_ar, dossierLimit]),
+      pool.query(`SELECT id, dispatch_number, sending_enterprise_name, receiving_enterprise_name, worker_name, worker_national_id, dispatch_date, status, created_at
+       FROM worker_dispatches WHERE sending_enterprise_id::text = $1 OR sending_enterprise_name = $2 OR receiving_enterprise_name = $2
+       ORDER BY created_at DESC LIMIT $3`, [est.id, est.name_ar, dossierLimit]),
+      pool.query(`SELECT id, enterprise_id, enterprise_name, dispute_type, status, filed_date, created_at
+       FROM labor_disputes WHERE enterprise_id::text = $1 OR enterprise_name ILIKE '%' || $2 || '%'
+       ORDER BY created_at DESC LIMIT $3`, [est.id, est.name_ar, dossierLimit]),
+      pool.query(`SELECT id, enterprise_id, enterprise_name, requested_reduction_count, status, created_at
+       FROM worker_reduction_requests WHERE enterprise_id::text = $1 OR enterprise_name ILIKE '%' || $2 || '%'
+       ORDER BY created_at DESC LIMIT $3`, [est.id, est.name_ar, dossierLimit]),
+      pool.query(`SELECT id, entity_id, document_name, document_type, status, created_at
+       FROM documents WHERE entity_id::text = $1 OR document_name ILIKE '%' || $2 || '%'
+       ORDER BY created_at DESC LIMIT $3`, [est.id, est.name_ar, dossierLimit]),
+      pool.query(`SELECT id, enterprise_id, evaluation_summary, score, status, created_at
+       FROM evaluation_certificates WHERE enterprise_id::text = $1 OR evaluation_summary ILIKE '%' || $2 || '%'
+       ORDER BY created_at DESC LIMIT $3`, [est.id, est.name_ar, dossierLimit]),
     ]);
 
     res.json({

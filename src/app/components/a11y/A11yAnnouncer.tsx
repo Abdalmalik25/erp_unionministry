@@ -1,8 +1,13 @@
 // src/app/components/a11y/A11yAnnouncer.tsx
 // يبث رسائل عاجلة لقارئات الشاشة (ARIA live regions)
+//
+// مهم معماريًا: هذا المكوّن يُركَّب على مستوى التطبيق (App.tsx) خارج <RouterProvider>،
+// لذلك يُمنع منعاً باتاً استخدام أي router hooks هنا (useLocation/useNavigate...) —
+// أي واحد منها يرمي "useLocation() may be used only in the context of a <Router>"
+// ويسقط التطبيق كله إلى ErrorBoundary. الإعلان عن تغيير المسار يتم عبر اشتراك
+// مباشر في نسخة الـ router (انظر App.tsx) وليس عبر hooks.
 
 import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router';
 
 interface Announcement {
   id: number;
@@ -23,7 +28,6 @@ export function announce(text: string, politeness: 'polite' | 'assertive' = 'pol
 export function A11yAnnouncer() {
   const [politeMsg, setPoliteMsg] = useState('');
   const [assertiveMsg, setAssertiveMsg] = useState('');
-  const location = useLocation();
 
   useEffect(() => {
     const handler = (msg: Announcement) => {
@@ -38,13 +42,6 @@ export function A11yAnnouncer() {
     listeners.add(handler);
     return () => { listeners.delete(handler); };
   }, []);
-
-  // عند التنقل بين الصفحات، يبلّغ قارئ الشاشة بتغيّر المسار
-  useEffect(() => {
-    const path = location.pathname;
-    const title = typeof document !== 'undefined' ? document.title : path;
-    announce(`انتقلت إلى: ${title}`, 'polite');
-  }, [location.pathname]);
 
   return (
     <>

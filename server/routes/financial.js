@@ -1,6 +1,7 @@
 import express from 'express';
 import { pool, paginate, countQuery, softDeleteFilter, safeSetClause } from '../middleware/shared.js';
 import { requirePermission } from '../middleware/rbac.js';
+import { invalidateCache } from '../middleware/cache.js';
 
 const router = express.Router();
 
@@ -21,7 +22,7 @@ router.get('/api/fee-payments', async (req, res) => {
 
     const total = await pool.query(_qs, _qp);
     const r = await pool.query(
-      `SELECT * FROM fee_payments WHERE ${where} ORDER BY payment_date DESC LIMIT $${idx++} OFFSET $${idx++}`,
+      `SELECT id, entity_id, member_id, service_id, amount, currency, payment_method, receipt_number, payment_date, status, description, processed_by, notes, metadata, created_at, updated_at FROM fee_payments WHERE ${where} ORDER BY payment_date DESC LIMIT $${idx++} OFFSET $${idx++}`,
       [...params, limit, offset]
     );
     res.json({ data: r.rows, total: total.rows[0].count, page, limit });
@@ -32,9 +33,10 @@ router.get('/api/fee-payments', async (req, res) => {
 
 router.get('/api/fee-payments/:id', async (req, res) => {
   try {
-    const r = await pool.query('SELECT * FROM fee_payments WHERE id = $1', [req.params.id]);
+    const r = await pool.query('SELECT id, entity_id, member_id, service_id, amount, currency, payment_method, receipt_number, payment_date, status, description, processed_by, notes, metadata, created_at, updated_at FROM fee_payments WHERE id = $1', [req.params.id]);
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json(r.rows[0]);
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -57,6 +59,7 @@ router.post('/api/fee-payments', requirePermission('fees:create'), async (req, r
       `INSERT INTO fee_payments (${fields.join(',')}) VALUES (${placeholders.join(',')}) RETURNING *`, values
     );
     res.status(201).json({ success: true, payment: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -87,6 +90,7 @@ router.put('/api/fee-payments/:id', requirePermission('fees:edit'), async (req, 
     );
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, payment: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -97,6 +101,7 @@ router.delete('/api/fee-payments/:id', requirePermission('fees:delete'), async (
     const r = await pool.query('UPDATE fee_payments SET deleted_at = NOW(), deleted_by = NULL WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -109,6 +114,7 @@ router.put('/api/fee_payments/:id/restore', async (req, res) => {
     const r = await pool.query('UPDATE fee_payments SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -157,6 +163,7 @@ router.post('/api/training-records', requirePermission('training:create'), async
       `INSERT INTO training_records (${fields.join(',')}) VALUES (${placeholders.join(',')}) RETURNING *`, values
     );
     res.status(201).json({ success: true, data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' });
   }
@@ -173,6 +180,7 @@ router.put('/api/training-records/:id', requirePermission('training:edit'), asyn
     const r = await pool.query(`UPDATE training_records SET ${cols.join(', ')} WHERE id = $${vals.length} RETURNING *`, vals);
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true, data: r.rows[0] });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' });
   }
@@ -183,6 +191,7 @@ router.delete('/api/training-records/:id', requirePermission('training:delete'),
     const r = await pool.query('UPDATE training_records SET deleted_at = NOW(), deleted_by = NULL WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }
@@ -193,6 +202,7 @@ router.put('/api/training-records/:id/restore', async (req, res) => {
     const r = await pool.query('UPDATE training_records SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
     res.json({ success: true });
+    invalidateCache('dashboard');
   } catch (err) {
     res.status(500).json({ error: 'خطأ في قاعدة البيانات' });
   }

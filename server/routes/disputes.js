@@ -44,6 +44,7 @@ import { structuredLogger } from '../middleware/observability.js';
 import { uploadMiddleware } from '../middleware/upload.js';
 import { eventBus } from '../utils/eventBus.js';
 import { webhookManager } from '../utils/webhookManager.js';
+import { invalidateCache } from '../middleware/cache.js';
 
 const router = Router();
 
@@ -192,6 +193,7 @@ router.get('/:id',
         .first();
 
       res.json(dispute);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -280,6 +282,7 @@ router.post('/',
       });
 
       res.status(201).json(dispute);
+      invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -318,6 +321,7 @@ router.put('/:id',
         .returning('*');
 
       res.json(dispute);
+      invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -397,6 +401,7 @@ router.put('/:id/status',
       });
 
       res.json(dispute);
+      invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -452,6 +457,7 @@ router.put('/:id/assign',
       });
 
       res.json(dispute);
+      invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -483,6 +489,7 @@ router.post('/:id/parties',
         .returning('*');
 
       res.status(201).json(newParty);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -508,6 +515,7 @@ router.delete('/:id/parties/:partyId',
       await req.db('dispute_parties').where('id', partyId).delete();
 
       res.status(204).send();
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -550,6 +558,7 @@ router.post('/:id/evidence',
       }
 
       res.status(201).json(uploadedEvidence);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -607,6 +616,7 @@ router.post('/:id/mediation/schedule',
       });
 
       res.status(201).json(timeline);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -652,6 +662,7 @@ router.post('/:id/mediation/outcome',
         .returning('*');
 
       res.status(201).json(timeline);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -727,6 +738,7 @@ router.post('/:id/arbitration/decision',
       });
 
       res.status(201).json(resolution);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -780,6 +792,7 @@ router.post('/:id/resolve',
         });
 
       res.status(201).json(updated);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -822,6 +835,7 @@ router.post('/:id/withdraw',
         });
 
       res.json(updated);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -871,6 +885,7 @@ router.post('/:id/escalate',
       });
 
       res.json(updated);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -918,6 +933,7 @@ router.post('/:id/appeal',
         });
 
       res.status(201).json({ success: true, message: 'Appeal filed successfully' });
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -1030,6 +1046,7 @@ router.get('/statistics',
       }
 
       res.json(stats);
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -1053,6 +1070,7 @@ router.post('/bulk/status',
         .update({ status, updated_at: new Date() });
 
       res.json({ success: true, updatedCount: disputeIds.length });
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -1076,6 +1094,7 @@ router.post('/bulk/assign',
         });
 
       res.json({ success: true, assignedCount: disputeIds.length });
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -1093,6 +1112,7 @@ router.post('/:id/link/osh', requirePermission('laborDisputes:edit'), async (req
     const { oshIncidentId } = req.body;
     // Link logic here
     res.json({ success: true, linked: { type: 'osh', id: oshIncidentId } });
+      invalidateCache('dashboard');
   } catch (err) { next(err); }
 });
 
@@ -1101,6 +1121,7 @@ router.post('/:id/link/contract', requirePermission('laborDisputes:edit'), async
     const { id } = req.params;
     const { contractId } = req.body;
     res.json({ success: true, linked: { type: 'contract', id: contractId } });
+      invalidateCache('dashboard');
   } catch (err) { next(err); }
 });
 
@@ -1109,6 +1130,7 @@ router.post('/:id/link/employer', requirePermission('laborDisputes:edit'), async
     const { id } = req.params;
     const { employerEntityId } = req.body;
     res.json({ success: true, linked: { type: 'employer', id: employerEntityId } });
+      invalidateCache('dashboard');
   } catch (err) { next(err); }
 });
 
@@ -1117,6 +1139,7 @@ router.post('/:id/link/worker', requirePermission('laborDisputes:edit'), async (
     const { id } = req.params;
     const { workerId } = req.body;
     res.json({ success: true, linked: { type: 'worker', id: workerId } });
+      invalidateCache('dashboard');
   } catch (err) { next(err); }
 });
 
@@ -1146,6 +1169,7 @@ router.post('/:id/notify/union',
       });
 
       res.json({ success: true });
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -1172,6 +1196,7 @@ router.post('/:id/notify/employer',
       });
 
       res.json({ success: true });
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }
@@ -1199,6 +1224,7 @@ router.get('/export',
       res.setHeader('Content-Type', format === 'csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="disputes-export.${format}"`);
       res.json({ count: disputes.length, format });
+        invalidateCache('dashboard');
     } catch (err) {
       next(err);
     }

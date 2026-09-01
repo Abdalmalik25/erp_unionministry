@@ -12,48 +12,62 @@ const SLOS = [
 ];
 
 router.get('/api/v1/excellence/slos', async (_req,res)=>{
-  // compute from metrics + cases
-  const cases=await pool.query(`SELECT COUNT(*)::int as total, COUNT(CASE WHEN sla_status='breached' OR sla_status='overdue' THEN 1 END)::int as breached FROM cases WHERE deleted_at IS NULL`);
-  const total=cases.rows[0].total||1;
-  const breached=cases.rows[0].breached||0;
-  const breachRate=+(breached/total*100).toFixed(2);
-  res.json({
-    slos: SLOS.map(s=> s.id==='sla_breach'? {...s, actual: breachRate, status: breachRate<=s.target?'healthy':'degraded'} : {...s, actual: s.id==='latency_p95'? 210 : s.id==='error_rate'? 0.4 : 99.95, status:'healthy'}),
-    timestamp: new Date().toISOString(),
-  });
+  try {
+    const cases=await pool.query(`SELECT COUNT(*)::int as total, COUNT(CASE WHEN sla_status='breached' OR sla_status='overdue' THEN 1 END)::int as breached FROM cases WHERE deleted_at IS NULL`);
+    const total=cases.rows[0].total||1;
+    const breached=cases.rows[0].breached||0;
+    const breachRate=+(breached/total*100).toFixed(2);
+    res.json({
+      slos: SLOS.map(s=> s.id==='sla_breach'? {...s, actual: breachRate, status: breachRate<=s.target?'healthy':'degraded'} : {...s, actual: s.id==='latency_p95'? 210 : s.id==='error_rate'? 0.4 : 99.95, status:'healthy'}),
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error('[Excellence/SLOs] error:', err);
+    res.status(500).json({ error: 'خطأ داخلي — تم تسجيل الحادثة', code: 'INTERNAL_ERROR' });
+  }
 });
 
 // Predictive — simple forecast from time-series
 router.get('/api/v1/excellence/forecast', async (_req,res)=>{
-  const r=await pool.query(`SELECT to_char(DATE_TRUNC('month', created_at),'YYYY-MM') as m, COUNT(*)::int as c FROM cases WHERE created_at >= NOW()-INTERVAL '6 months' GROUP BY 1 ORDER BY 1`);
-  const series=r.rows;
-  const avg = series.length? Math.round(series.reduce((a,b)=>a+b.c,0)/series.length):0;
-  res.json({
-    series,
-    forecast: [{ m:'2026-09', c: Math.round(avg*1.08), note:'+8% موسمي' }, { m:'2026-10', c: Math.round(avg*1.12) }],
-    model:'exponential_smoothing_alpha=0.6',
-    confidence:0.78,
-  });
+  try {
+    const r=await pool.query(`SELECT to_char(DATE_TRUNC('month', created_at),'YYYY-MM') as m, COUNT(*)::int as c FROM cases WHERE created_at >= NOW()-INTERVAL '6 months' GROUP BY 1 ORDER BY 1`);
+    const series=r.rows;
+    const avg = series.length? Math.round(series.reduce((a,b)=>a+b.c,0)/series.length):0;
+    res.json({
+      series,
+      forecast: [{ m:'2026-09', c: Math.round(avg*1.08), note:'+8% موسمي' }, { m:'2026-10', c: Math.round(avg*1.12) }],
+      model:'exponential_smoothing_alpha=0.6',
+      confidence:0.78,
+    });
+  } catch (err) {
+    console.error('[Excellence/Forecast] error:', err);
+    res.status(500).json({ error: 'خطأ داخلي — تم تسجيل الحادثة', code: 'INTERNAL_ERROR' });
+  }
 });
 
 // Maturity — from maturity_assessments + service_catalog coverage
 router.get('/api/v1/excellence/maturity', async (_req,res)=>{
-  const svc=await pool.query(`SELECT COUNT(*)::int as total, COUNT(CASE WHEN is_active THEN 1 END)::int as active FROM service_catalog WHERE deleted_at IS NULL`);
-  const contracts=await pool.query(`SELECT COUNT(*)::int as c FROM employment_contracts`);
-  const score = Math.min(100, 68 + Math.round(svc.rows[0].active / svc.rows[0].total * 22) + (contracts.rows[0].c>0? 5:0));
-  res.json({
-    overall: score,
-    dimensions: [
-      { name:'الحوكمة القانونية', score: 92 },
-      { name:'نسيج البيانات', score: 88 },
-      { name:'إدارة الخدمات', score: 94 },
-      { name:'التفتيش الذكي', score: 81 },
-      { name:'التجربة الموحدة', score: 89 },
-      { name:'الذكاء المحكوم', score: 76 },
-    ],
-    level: score>=90?'متقدم': score>=75?'ناضج':'نامٍ',
-    next: 'RAG pgvector + حضور لحظي + WAF',
-  });
+  try {
+    const svc=await pool.query(`SELECT COUNT(*)::int as total, COUNT(CASE WHEN is_active THEN 1 END)::int as active FROM service_catalog WHERE deleted_at IS NULL`);
+    const contracts=await pool.query(`SELECT COUNT(*)::int as c FROM employment_contracts`);
+    const score = Math.min(100, 68 + Math.round(svc.rows[0].active / svc.rows[0].total * 22) + (contracts.rows[0].c>0? 5:0));
+    res.json({
+      overall: score,
+      dimensions: [
+        { name:'الحوكمة القانونية', score: 92 },
+        { name:'نسيج البيانات', score: 88 },
+        { name:'إدارة الخدمات', score: 94 },
+        { name:'التفتيش الذكي', score: 81 },
+        { name:'التجربة الموحدة', score: 89 },
+        { name:'الذكاء المحكوم', score: 76 },
+      ],
+      level: score>=90?'متقدم': score>=75?'ناضج':'نامٍ',
+      next: 'RAG pgvector + حضور لحظي + WAF',
+    });
+  } catch (err) {
+    console.error('[Excellence/Maturity] error:', err);
+    res.status(500).json({ error: 'خطأ داخلي — تم تسجيل الحادثة', code: 'INTERNAL_ERROR' });
+  }
 });
 
 export default router;
