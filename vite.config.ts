@@ -170,7 +170,10 @@ export default defineConfig({
         assetFileNames: 'assets/[name]-[hash][extname]',
       },
       treeshake: {
-        moduleSideEffects: (id) => /\.css$/.test(id),
+        // ملاحظة حرجة: لا تُفعِّل moduleSideEffects المخصّصة على JavaScript!
+        // اِختُصرت وحدة تهيئة i18n (config.ts) بالكامل خارج الحزمة لأنها لم
+        // "تُصدّر قيمة" — فتعطّل كل التطبيق بـ "s.changeLanguage is not a function".
+        // Rollup الافتراضي يحافظ على الوحدات المستوردة لأثرها الجانبي.
         propertyReadSideEffects: false,
         tryCatchDeoptimization: false,
       },

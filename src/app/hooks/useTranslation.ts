@@ -12,7 +12,8 @@ export function useAppLanguage() {
   const { t, i18n, ready } = useI18nBase();
 
   const switchLanguage = useCallback((lng: string) => {
-    i18n.changeLanguage(lng).then(() => {
+    const p = Promise.resolve(typeof i18n.changeLanguage === 'function' ? i18n.changeLanguage(lng) : undefined).catch(() => {});
+    return p.then(() => {
       if (typeof document !== 'undefined') {
         const dir = lng === 'ar' ? 'rtl' : 'ltr';
         document.documentElement.setAttribute('lang', lng);

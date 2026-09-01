@@ -2,7 +2,13 @@
 // يوفر سياق اللغة وتبديلها مع مزامنة اتجاه المستند (RTL/LTR)
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
+import i18nInstance from '../i18n/config'; // القيمة المُهيّأة — استيراد بالقيمة يُبقي config.ts محمّلة دائماً
+
+// ملاحظة (Root-Cause TD): اعتمد المُزوِّد سابقاً على useTranslation().i18n — أي على
+// getI18n() العالمي داخل react-i18next. عندما يُسقِط bundler تهيئة config.ts
+// (moduleSideEffects المخصّصة) يصبح المثيل فارغاً {} → "s.changeLanguage is not a function"
+// → شاشة الخطأ. الآن نستخدم مثيل i18next المُهيّأ صراحةً (استيراد بالقيمة يُبقي config.ts
+// محمّلة دائماً) مع حارس (guard) يجعل فشل تبديل اللغة غير قاتل.
 
 export type Language = 'ar' | 'en';
 const RTL_LANGS: ReadonlySet<Language> = new Set<Language>(['ar']);
@@ -31,15 +37,15 @@ function readInitialLanguage(): Language {
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const { i18n } = useTranslation();
   const [current, setCurrent] = useState<Language>(() => readInitialLanguage());
 
-  // مزامنة الحالة مع i18next عند الإقلاع
+  // مزامنة الحالة مع i18next عند الإقلاع — غير قاتلة أبداً
   useEffect(() => {
-    if (i18n.language !== current) {
-      void i18n.changeLanguage(current);
+    if (typeof i18nInstance.changeLanguage !== 'function') return;
+    if (i18nInstance.language !== current) {
+      void i18nInstance.changeLanguage(current).catch(() => {});
     }
-  }, [current, i18n]);
+  }, [current]);
 
   // مزامنة اتجاه و lang في HTML
   useEffect(() => {
@@ -49,12 +55,18 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, [current]);
 
   const switchLanguage = useCallback(async (lng: Language) => {
-    await i18n.changeLanguage(lng);
+    try {
+      if (typeof i18nInstance.changeLanguage === 'function') {
+        await i18nInstance.changeLanguage(lng);
+      }
+    } catch {
+      // فشل تبديل اللغة غير قاتل
+    }
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(STORAGE_KEY, lng);
     }
     setCurrent(lng);
-  }, [i18n]);
+  }, []);
 
   const toggleLanguage = useCallback(async () => {
     await switchLanguage(current === 'ar' ? 'en' : 'ar');
