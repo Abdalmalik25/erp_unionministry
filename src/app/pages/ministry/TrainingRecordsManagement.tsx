@@ -10,6 +10,7 @@ import { PermissionGate } from '../../hooks/usePermissions';
 import { logAudit } from '../../utils/security';
 import { toast } from 'sonner';
 import { exportReportToExcel } from '../../components/enterprise/PrintExportManager';
+import { analyzeTraining } from '../../utils/trainingExpertLogic';
 interface TrainingRecord {
     id: string;
     entity_id: string;
@@ -208,6 +209,7 @@ export default function TrainingRecordsManagement() {
                   <th className="px-4 py-3 text-right font-medium text-muted-foreground">التاريخ</th>
                   <th className="px-4 py-3 text-center font-medium text-muted-foreground">المشاركون</th>
                   <th className="px-4 py-3 text-center font-medium text-muted-foreground">الحالة</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">التقييم الخبير</th>
                   <th className="px-4 py-3 text-right font-medium text-muted-foreground">الإجراءات</th>
                 </tr>
               </thead>
@@ -223,6 +225,18 @@ export default function TrainingRecordsManagement() {
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_CONFIG[rec.status]?.color || ''}`}>
                         {STATUS_CONFIG[rec.status]?.label || rec.status}
                       </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {(() => {
+                        const ex = analyzeTraining(rec);
+                        return ex.issue ? (
+                          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${ex.badge}`} title={ex.drivers.join('؛ ') || ex.recommendedAction}>
+                            {ex.issue === 'overshoot_in_progress' ? 'تجاوز الجدول' : ex.issue === 'pending_overdue' ? 'لم يبدأ' : ex.issue === 'certification_missing' ? 'دون شهادات' : ex.issue === 'no_participants' ? 'دون مشاركين' : 'دون نتيجة'}
+                          </span>
+                        ) : (
+                          <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">سليم</span>
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">

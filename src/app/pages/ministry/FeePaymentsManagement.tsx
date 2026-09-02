@@ -14,6 +14,7 @@ import { useConfirm } from '../../components/ui/ConfirmDialog';
 import { logAudit } from '../../utils/security';
 import { toast } from 'sonner';
 import { exportReportToExcel } from '../../components/enterprise/PrintExportManager';
+import { analyzeFeePayment } from '../../utils/feePaymentExpertLogic';
 
 interface FeePayment {
   id: string;
@@ -165,6 +166,7 @@ export default function FeePaymentsManagement() {
                 <th className="px-4 py-3 text-right font-medium text-gray-600">التاريخ</th>
                 <th className="px-4 py-3 text-right font-medium text-gray-600">الوصف</th>
                 <th className="px-4 py-3 text-right font-medium text-gray-600">الحالة</th>
+                <th className="px-4 py-3 text-right font-medium text-gray-600">التقييم الخبير</th>
                 <th className="px-4 py-3 text-right font-medium text-gray-600">الإجراءات</th>
               </tr>
             </thead>
@@ -180,6 +182,18 @@ export default function FeePaymentsManagement() {
                     <td className="px-4 py-3 text-xs">{p.payment_date}</td>
                     <td className="px-4 py-3 text-xs line-clamp-1">{p.description || '-'}</td>
                     <td className="px-4 py-3"><span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${sc.color}`}>{sc.label}</span></td>
+                    <td className="px-4 py-3">
+                      {(() => {
+                        const ex = analyzeFeePayment(p);
+                        return ex.issue ? (
+                          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${ex.badge}`} title={ex.drivers.join('؛ ') || ex.recommendedAction}>
+                            {ex.issue === 'pending_aging' ? `معلقة ${ex.daysPending} يوماً` : 'فشل بلا إعادة محاولة'}
+                          </span>
+                        ) : (
+                          <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">سليم</span>
+                        );
+                      })()}
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
                         <button onClick={() => setSelectedPayment(p)} className="p-1.5 hover:bg-gray-100 rounded" title="عرض"><Eye className="w-4 h-4" /></button>
@@ -211,6 +225,19 @@ export default function FeePaymentsManagement() {
               <div className="flex justify-between"><span className="text-gray-500">الحالة:</span><span className={`px-2 py-0.5 rounded-full text-xs ${STATUS_CONFIG[selectedPayment.status]?.color}`}>{STATUS_CONFIG[selectedPayment.status]?.label}</span></div>
               {selectedPayment.description && <div><span className="text-gray-500">الوصف:</span><p className="mt-1">{selectedPayment.description}</p></div>}
               {selectedPayment.notes && <div><span className="text-gray-500">ملاحظات:</span><p className="mt-1">{selectedPayment.notes}</p></div>}
+              {(() => {
+                const ex = analyzeFeePayment(selectedPayment);
+                if (!ex.issue) return null;
+                return (
+                  <div className={`rounded-lg p-3 border ${ex.badge.includes('red') ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'}`}>
+                    <p className="text-xs font-semibold text-gray-700 mb-1">التقييم الخبير</p>
+                    <ul className="list-disc list-inside text-xs text-gray-600 space-y-0.5 mb-1">
+                      {ex.drivers.map(d => <li key={d}>{d}</li>)}
+                    </ul>
+                    <p className="text-xs text-gray-700"><span className="font-semibold">الإجراء المقترح: </span>{ex.recommendedAction}</p>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>

@@ -20,6 +20,7 @@ import { exportReportToExcel } from '../../components/enterprise/PrintExportMana
 import DynamicFieldRenderer from '../../components/DynamicFieldRenderer';
 import CustomFieldManager from '../../components/CustomFieldManager';
 import { validateFieldValues } from '../../utils/dynamicFieldValidation';
+import { analyzeEvaluationCert } from '../../utils/evaluationCertExpertLogic';
 
 interface EvaluationCertificate {
   id: string;
@@ -304,6 +305,7 @@ export default function EvaluationCertificatesManagement() {
                 <th className="text-right p-3">المهنة</th>
                 <th className="text-right p-3">النوع</th>
                 <th className="text-right p-3">الحالة</th>
+                <th className="text-right p-3">التقييم الخبير</th>
                 <th className="text-right p-3">الصلاحية</th>
                 <th className="text-right p-3">الدرجة</th>
                 <th className="text-right p-3">إجراءات</th>
@@ -311,9 +313,9 @@ export default function EvaluationCertificatesManagement() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">جارٍ التحميل...</td></tr>
+                <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">جارٍ التحميل...</td></tr>
               ) : paginated.length === 0 ? (
-                <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">لا توجد شهادات</td></tr>
+                <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">لا توجد شهادات</td></tr>
               ) : paginated.map(c => {
                 const sc = STATUS_CONFIG[c.status] || { label: c.status, color: 'bg-gray-100 text-gray-600' };
                 return (
@@ -323,6 +325,18 @@ export default function EvaluationCertificatesManagement() {
                     <td className="p-3">{c.profession_name}</td>
                     <td className="p-3">{(CERT_TYPES.find(t => t.value === c.certificate_type) || {}).label || c.certificate_type}</td>
                     <td className="p-3"><span className={`px-2 py-1 rounded-full text-xs ${sc.color}`}>{sc.label}</span></td>
+                    <td className="p-3">
+                      {(() => {
+                        const ex = analyzeEvaluationCert(c);
+                        return ex.issue ? (
+                          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${ex.badge}`} title={ex.drivers.join('؛ ') || ex.recommendedAction}>
+                            {ex.issue === 'expired_still_valid' ? 'منتهية غير مُحدَّثة' : ex.issue === 'expiring_soon' ? 'إعادة تقييم قريبة' : ex.issue === 'conditional_active' ? 'شَرطية' : ex.issue === 'revoked_future_expiry' ? 'تعارض الحالة' : 'امتثال ضعيف'}
+                          </span>
+                        ) : (
+                          <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">سليم</span>
+                        );
+                      })()}
+                    </td>
                     <td className="p-3">{c.expiry_date ? (<span className={isExpired(c.expiry_date) ? 'text-red-600' : 'text-green-600'}>{c.expiry_date}</span>) : '—'}</td>
                     <td className="p-3">{c.overall_score}%</td>
                     <td className="p-3 flex gap-2">
