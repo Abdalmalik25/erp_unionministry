@@ -13,6 +13,7 @@ import { PermissionGate } from '../../hooks/usePermissions';
 import { useDebounce } from '../../hooks/useDebounce';
 import { logAudit } from '../../utils/security';
 import { exportReportToExcel } from '../../components/enterprise/PrintExportManager';
+import { analyzeViolation } from '../../utils/violationExpertLogic';
 import { toast } from 'sonner';
 const API_BASE = '/api';
 // ============================================================
@@ -519,6 +520,7 @@ export default function ViolationsManagement() {
                 <th className="py-3 px-4 text-right font-semibold text-muted-foreground">المنشأة</th>
                 <th className="py-3 px-4 text-right font-semibold text-muted-foreground">نوع المخالفة</th>
                 <th className="py-3 px-4 text-right font-semibold text-muted-foreground">الخطورة</th>
+                <th className="py-3 px-4 text-right font-semibold text-muted-foreground">التقييم الخبير</th>
                 <th className="py-3 px-4 text-right font-semibold text-muted-foreground">تاريخ الاكتشاف</th>
                 <th className="py-3 px-4 text-right font-semibold text-muted-foreground">الغرامة</th>
                 <th className="py-3 px-4 text-right font-semibold text-muted-foreground">الحالة</th>
@@ -527,7 +529,7 @@ export default function ViolationsManagement() {
             </thead>
             <tbody>
               {paginated.length === 0 ? (<tr>
-                  <td colSpan={9} className="py-8">
+                  <td colSpan={10} className="py-8">
                     <EmptyState
                       title={violations.length === 0 ? 'لا توجد مخالفات مسجلة' : 'لا توجد نتائج مطابقة للبحث'}
                       description={violations.length === 0 ? 'ابدأ بإضافة مخالفة جديدة عبر زر إضافة مخالفة' : 'جرّب تغيير كلمات البحث أو الفلاتر'}
@@ -563,6 +565,16 @@ export default function ViolationsManagement() {
                             {sev.label}
                           </span>
                         </td>
+                        <td className="py-3 px-4">
+                          {(() => {
+                            const ex = analyzeViolation(violation);
+                            return (
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${ex.badge}`}>
+                                {ex.drivers.length === 0 ? 'سليمة' : ex.drivers.length === 1 ? ex.drivers[0] : `${ex.drivers.length} ملاحظات`}
+                              </span>
+                            );
+                          })()}
+                        </td>
                         <td className="py-3 px-4 text-muted-foreground font-mono text-xs">{violation.detected_date}</td>
                         <td className="py-3 px-4 text-foreground text-xs font-medium">
                           {violation.penalty_amount != null ? `${violation.penalty_amount.toLocaleString('ar')} ر.ي` : '—'}
@@ -595,8 +607,32 @@ export default function ViolationsManagement() {
                       </tr>
                       {/* لوحة التفاصيل القابلة للتوسع */}
                       {isExpanded && (<tr key={`${violation.id}-details`}>
-                          <td colSpan={9} className="px-4 pb-4 bg-primary-bright/5">
+                          <td colSpan={10} className="px-4 pb-4 bg-primary-bright/5">
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+                              {(() => {
+                                const ex = analyzeViolation(violation);
+                                return (
+                                  <div className={`sm:col-span-3 rounded-lg p-3 border ${ex.drivers.length === 0 ? 'bg-emerald-50/60 dark:bg-emerald-900/10 border-emerald-200/40' : 'bg-primary-bright/5 border-primary-bright/15'}`}>
+                                    <div className="flex items-center justify-between mb-2">
+                                      <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                                        <ShieldAlert className="w-3.5 h-3.5"/>
+                                        التقييم الخبير
+                                      </p>
+                                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${ex.badge}`}>
+                                        {ex.drivers.length === 0 ? 'سليمة' : `${ex.daysOpen} يوماً · ${ex.drivers.length} ملاحظة`}
+                                      </span>
+                                    </div>
+                                    {ex.drivers.length > 0 && (
+                                      <ul className="list-disc list-inside text-xs text-foreground/80 space-y-0.5 mb-2">
+                                        {ex.drivers.map(d => <li key={d}>{d}</li>)}
+                                      </ul>
+                                    )}
+                                    <p className="text-xs text-foreground/80">
+                                      <span className="font-semibold text-muted-foreground">الإجراء المقترح: </span>{ex.recommendedAction}
+                                    </p>
+                                  </div>
+                                );
+                              })()}
                               {violation.description && (<div className="bg-card rounded-lg p-3 border border-primary-bright/15">
                                   <p className="text-xs font-semibold text-muted-foreground mb-1 flex items-center gap-1">
                                     <FileText className="w-3.5 h-3.5"/>

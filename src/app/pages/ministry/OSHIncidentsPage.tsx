@@ -14,6 +14,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Card } from '../../components/ui/Card';
 import { toast } from 'sonner';
 import { useTranslation } from '../../hooks/useTranslation';
+import { analyzeOSHIncident } from '../../utils/oshExpertLogic';
 
 const initialFilters: OSHFilters = {
   status: [],
@@ -231,6 +232,9 @@ export function OSHIncidentsPage() {
                     {t('osh.severity')}
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    التقييم الخبير
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
                     {t('osh.date')}
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
@@ -244,13 +248,13 @@ export function OSHIncidentsPage() {
               <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
                       {t('common.loading')}
                     </td>
                   </tr>
                 ) : incidents.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
                       {t('osh.no_incidents')}
                     </td>
                   </tr>
@@ -274,6 +278,16 @@ export function OSHIncidentsPage() {
                         <span className={`px-2 py-1 text-xs font-medium rounded ${getSeverityColor(incident.severity)}`}>
                           {t(`osh.severity.${incident.severity}`)}
                         </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {(() => {
+                          const ex = analyzeOSHIncident(incident);
+                          return (
+                            <span className={`px-2 py-1 text-xs font-medium rounded ${ex.badge}`}>
+                              {ex.responseLabel}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm">
                         {new Date(incident.incidentDate).toLocaleDateString('ar-YE')}
@@ -347,6 +361,31 @@ export function OSHIncidentsPage() {
                 </ul>
               </div>
             )}
+            {(() => {
+              const ex = analyzeOSHIncident(selected);
+              return (
+                <div className={`border rounded-lg p-4 space-y-2 ${ex.badge.replace('bg-', 'bg-').includes('red') ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' : ex.responseLabel === 'مراقبة نشطة' ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800' : 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800'}`}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">التقييم الخبير</span>
+                    <span className={`px-2 py-1 text-xs font-medium rounded ${ex.badge}`}>{ex.responseLabel}</span>
+                  </div>
+                  {ex.drivers.length > 0 && (
+                    <ul className="list-disc list-inside text-xs text-gray-700 dark:text-gray-200 space-y-0.5">
+                      {ex.drivers.map((d) => <li key={d}>{d}</li>)}
+                    </ul>
+                  )}
+                  {ex.mandatoryNotifications.length > 0 && (
+                    <div className="text-xs text-red-700 dark:text-red-300">
+                      <span className="font-semibold">إلزامات الإبلاغ: </span>
+                      {ex.mandatoryNotifications.join('؛ ')}
+                    </div>
+                  )}
+                  <p className="text-sm text-gray-700 dark:text-gray-200">
+                    <span className="text-xs text-gray-500">الإجراء المقترح: </span>{ex.recommendedAction}
+                  </p>
+                </div>
+              );
+            })()}
             {selected.investigation && (
               <div className="border-t pt-4">
                 <h4 className="text-sm font-medium text-gray-500 mb-2">{t('osh.investigation')}</h4>

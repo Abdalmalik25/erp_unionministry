@@ -10,6 +10,7 @@ import { PermissionGate } from '../../hooks/usePermissions';
 import { logAudit } from '../../utils/security';
 import { toast } from 'sonner';
 import { exportReportToExcel } from '../../components/enterprise/PrintExportManager';
+import { analyzeLicense } from '../../utils/licenseExpertLogic';
 interface License {
     id: string;
     license_number: string;
@@ -207,6 +208,7 @@ export default function LicensesManagement() {
                   <th className="px-4 py-3 text-right font-medium text-muted-foreground">المنشأة</th>
                   <th className="px-4 py-3 text-right font-medium text-muted-foreground">النوع</th>
                   <th className="px-4 py-3 text-center font-medium text-muted-foreground">الحالة</th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">التقييم الخبير</th>
                   <th className="px-4 py-3 text-right font-medium text-muted-foreground">تاريخ الانتهاء</th>
                   <th className="px-4 py-3 text-right font-medium text-muted-foreground">التجديد</th>
                   <th className="px-4 py-3 text-right font-medium text-muted-foreground">الإجراءات</th>
@@ -221,6 +223,18 @@ export default function LicensesManagement() {
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_CONFIG[lic.status]?.color || ''}`}>
                         {STATUS_CONFIG[lic.status]?.label || lic.status}
                       </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {(() => {
+                        const ex = analyzeLicense(lic);
+                        return ex.issue ? (
+                          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${ex.badge}`} title={ex.drivers.join('؛ ')}>
+                            {ex.issue === 'expired_pending_status' ? 'منتهي غير مُحدَّث' : ex.issue === 'renewal_window' ? 'يتطلب تجديداً' : ex.issue === 'renewal_rejected' ? 'تجديد مرفوض' : 'تعارض في الحالة'}
+                          </span>
+                        ) : (
+                          <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">سليم</span>
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-3 text-xs">
                       <span className={isExpired(lic.expiry_date) && lic.status !== 'expired' ? 'text-red-600 font-medium' : ''}>
