@@ -23,6 +23,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Card } from '../../components/ui/Card';
 import { toast } from 'sonner';
 import { useTranslation } from '../../hooks/useTranslation';
+import { analyzeContractLifecycle } from '../../utils/contractExpertLogic';
 
 interface Filters {
   status: ContractStatus[];
@@ -426,6 +427,9 @@ export function ContractManager() {
                     {t('contracts.start_date')}
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    دورة العقد (منطق خبير)
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     {t('common.actions')}
                   </th>
                 </tr>
@@ -433,13 +437,13 @@ export function ContractManager() {
               <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
                       {t('common.loading')}
                     </td>
                   </tr>
                 ) : contracts.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
                       {t('contracts.no_contracts')}
                     </td>
                   </tr>
@@ -470,6 +474,20 @@ export function ContractManager() {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                         {new Date(contract.startDate).toLocaleDateString('ar-YE')}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {(() => {
+                          const lc = analyzeContractLifecycle(contract);
+                          return (
+                            <span
+                              className={`inline-flex px-2 py-0.5 rounded text-xs font-semibold ${lc.badge}`}
+                              title={lc.drivers.join('، ') || lc.recommendedAction}
+                            >
+                              {lc.label}
+                              {lc.daysToEnd != null && lc.daysToEnd >= 0 ? ` (${lc.daysToEnd} يوماً)` : ''}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
@@ -556,10 +574,39 @@ export function ContractManager() {
               </div>
             </div>
 
+            {/* Expert lifecycle */}
+            {(() => {
+              const lc = analyzeContractLifecycle(selectedContract);
+              return (
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-medium text-gray-500 mb-2">دورة العقد — منطق خبير</h4>
+                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600 dark:text-gray-300">الحالة الخبيرة</span>
+                      <span className={`text-sm font-semibold px-2.5 py-0.5 rounded ${lc.badge}`}>{lc.label}</span>
+                    </div>
+                    {lc.daysToEnd != null && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600 dark:text-gray-300">الأيام المتبقية حتى النهاية</span>
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white">{lc.daysToEnd}</span>
+                      </div>
+                    )}
+                    {lc.drivers.length > 0 && (
+                      <ul className="list-disc list-inside text-xs text-gray-600 dark:text-gray-300 space-y-0.5">
+                        {lc.drivers.map((d) => <li key={d}>{d}</li>)}
+                      </ul>
+                    )}
+                    <p className="text-sm text-gray-700 dark:text-gray-200">
+                      <span className="text-xs text-gray-500">الإجراء: </span>{lc.recommendedAction}
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Contract Terms */}
             <div className="border-t pt-4">
-              <h4 className="text-sm font-medium text-gray-500 mb-2">{t('contracts.terms')}</h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <h4 className="text-sm font-medium text-gray-500 mb-2">{t('contracts.terms')}</h4>              <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-gray-500">{t('contracts.start_date')}:</span>{' '}
                   {new Date(selectedContract.startDate).toLocaleDateString('ar-YE')}

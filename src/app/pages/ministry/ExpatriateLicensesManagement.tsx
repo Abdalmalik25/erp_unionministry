@@ -10,6 +10,7 @@ import { logAudit } from '../../utils/security';
 import { toast } from 'sonner';
 import { exportReportToExcel } from '../../components/enterprise/PrintExportManager';
 import { useApi } from '../../hooks/useApi';
+import { analyzeExpatLicense } from '../../utils/expatLicenseExpertLogic';
 // ============================================================
 // الأنواع
 // ============================================================
@@ -311,14 +312,15 @@ export default function ExpatriateLicensesManagement() {
                   <th className="py-3 px-4 text-right font-semibold text-muted-foreground">الجنسية</th>
                   <th className="py-3 px-4 text-right font-semibold text-muted-foreground">المهنة</th>
                   <th className="py-3 px-4 text-right font-semibold text-muted-foreground">الكفيل</th>
-                  <th className="py-3 px-4 text-right font-semibold text-muted-foreground">تاريخ الانتهاء</th>
+<th className="py-3 px-4 text-right font-semibold text-muted-foreground">تاريخ الانتهاء</th>
+                  <th className="py-3 px-4 text-right font-semibold text-muted-foreground">الفحص الخبير</th>
                   <th className="py-3 px-4 text-right font-semibold text-muted-foreground">الحالة</th>
                   <th className="py-3 px-4 text-right font-semibold text-muted-foreground">الإجراءات</th>
                 </tr>
               </thead>
               <tbody>
                 {paginated.length === 0 ? (<tr>
-                    <td colSpan={9} className="py-16 text-center">
+                    <td colSpan={10} className="py-16 text-center">
                       <Globe className="w-12 h-12 text-muted-foreground mx-auto mb-3"/>
                       <p className="text-muted-foreground font-medium">لا توجد تراخيص أجانب مسجلة</p>
                     </td>
@@ -352,13 +354,26 @@ export default function ExpatriateLicensesManagement() {
                         <td className="py-3 px-4 text-xs">
                           <span className="text-muted-foreground">{license.sponsor_name}</span>
                         </td>
-                        <td className="py-3 px-4 text-xs">
+<td className="py-3 px-4 text-xs">
                           <div className="flex items-center gap-1">
                             {isExpiringSoon && (<AlertTriangle className="w-3 h-3 text-warning"/>)}
                             <span className={`font-mono ${isExpiringSoon ? 'text-warning-dark font-semibold' : 'text-muted-foreground'}`}>
                               {license.expiry_date}
                             </span>
                           </div>
+                        </td>
+                        <td className="py-3 px-4 text-xs">
+                          {(() => {
+                            const ex = analyzeExpatLicense(license);
+                            return (
+                              <span
+                                className={`inline-flex px-2 py-0.5 rounded text-xs font-semibold ${ex.badge}`}
+                                title={ex.drivers.join('، ') || ex.recommendedAction}
+                              >
+                                {ex.label}
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="py-3 px-4">
                           <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border ${stCfg.color} ${stCfg.bg} ${stCfg.border}`}>

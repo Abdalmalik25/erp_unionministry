@@ -9,6 +9,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { useConfirm } from '../../components/ui/ConfirmDialog';
 import { logAudit } from '../../utils/security';
 import { toast } from 'sonner';
+import { screenReductionRequest, REDUCTION_BADGE } from '../../utils/reductionExpertLogic';
 type ReductionStatus = 'مسودة' | 'قيد المراجعة' | 'تمت الموافقة النهائية' | 'مرفوض' | 'قيد التنفيذ' | 'مكتمل';
 interface ReductionRequest {
     id: string;
@@ -109,6 +110,11 @@ export default function ReductionRequestsManagement() {
             toast.error('التخفيض المطلوب يجب أن يكون أكبر من صفر');
             return;
         }
+        const screening = screenReductionRequest(form);
+        if (screening.verdict === 'blocked') {
+            toast.error(screening.flags[0] || 'الطلب غير منطقي');
+            return;
+        }
         setSaving(true);
         try {
             const method = editItem ? 'PUT' : 'POST';
@@ -200,6 +206,7 @@ export default function ReductionRequestsManagement() {
                 <th className="px-4 py-3 text-center font-semibold text-muted-foreground">العمال</th>
                 <th className="px-4 py-3 text-center font-semibold text-muted-foreground">التخفيض</th>
                 <th className="px-4 py-3 text-right font-semibold text-muted-foreground">الحالة</th>
+                <th className="px-4 py-3 text-right font-semibold text-muted-foreground">الفحص الخبير</th>
                 <th className="px-4 py-3 text-right font-semibold text-muted-foreground">الإجراءات</th>
               </tr>
             </thead>
@@ -217,6 +224,23 @@ export default function ReductionRequestsManagement() {
                       <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_CONFIG[req.status]?.color || 'bg-gray-100'}`}>
                         {req.status}
                       </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {(() => {
+                        const scr = screenReductionRequest(req);
+                        return (
+                          <div className="flex items-center gap-2">
+                            <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${REDUCTION_BADGE[scr.verdict]}`}>
+                              {scr.verdictLabel}
+                            </span>
+                            {scr.abbreviation_ratio != null && scr.abbreviation_ratio > 0 && (
+                              <span className="text-[11px] text-muted-foreground font-mono">
+                                {Math.round(scr.abbreviation_ratio * 100)}% من العمالة
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
@@ -268,6 +292,24 @@ export default function ReductionRequestsManagement() {
               <div><span className="text-muted-foreground">المبرر:</span><p className="mt-1 text-foreground">{selectedRequest.justification}</p></div>
               {selectedRequest.rejection_reason && <div><span className="text-muted-foreground">سبب الرفض:</span><p className="mt-1 text-error">{selectedRequest.rejection_reason}</p></div>}
               {selectedRequest.notes && <div><span className="text-muted-foreground">ملاحظات:</span><p className="mt-1 text-foreground">{selectedRequest.notes}</p></div>}
+              {(() => {
+                const scr = screenReductionRequest(selectedRequest);
+                return (
+                  <div className="mt-4 p-3 rounded-xl border border-border bg-muted/30">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-heading">الفحص الخبير (قانون العمل)</span>
+                      <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${REDUCTION_BADGE[scr.verdict]}`}>{scr.verdictLabel}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-1">{scr.recommendedAction}</p>
+                    {scr.scopeGuide && <p className="text-[11px] text-muted-foreground mb-1">{scr.scopeGuide}</p>}
+                    {scr.flags.length > 0 && (
+                      <ul className="text-[11px] text-foreground list-disc list-inside space-y-0.5">
+                        {scr.flags.map((f, i) => <li key={i}>{f}</li>)}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>)}
@@ -298,6 +340,18 @@ export default function ReductionRequestsManagement() {
                   <input type="number" value={form.requested_reduction_count} onChange={e => setForm({ ...form, requested_reduction_count: parseInt(e.target.value) || 0 })} className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/25 focus:border-ring" min={1}/>
                 </div>
               </div>
+              {(() => {
+                const scr = screenReductionRequest(form);
+                if (scr.verdict === 'eligible' && scr.abbreviation_ratio == null) return null;
+                return (
+                  <div className={`p-3 rounded-lg text-xs ${scr.verdict === 'blocked' ? 'bg-red-50 text-red-700' : 'bg-muted/40 text-muted-foreground'}`}>
+                    <span className="font-bold">فحص خبير: </span>
+                    {scr.verdictLabel}
+                    {scr.abbreviation_ratio != null && scr.abbreviation_ratio > 0 && ` — ${Math.round(scr.abbreviation_ratio * 100)}% من العمالة الحالية`}
+                    {scr.verdict === 'blocked' && scr.flags[0] ? ` (${scr.flags[0]})` : ''}
+                  </div>
+                );
+              })()}
               <div>
                 <label className="block text-sm font-semibold text-foreground mb-1.5">المبرر <span className="text-error">*</span></label>
                 <textarea value={form.justification} onChange={e => setForm({ ...form, justification: e.target.value })} rows={3} className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/25 focus:border-ring resize-none" placeholder="مبرر التخفيض..."/>
