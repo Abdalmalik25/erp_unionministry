@@ -15,6 +15,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Card } from '../../components/ui/Card';
 import { toast } from 'sonner';
 import { useTranslation } from '../../hooks/useTranslation';
+import { analyzeDispute } from '../../utils/disputeExpertLogic';
 
 interface Filters {
   status: DisputeStatus[];
@@ -345,6 +346,9 @@ export function LaborDisputesManagement() {
                     {t('disputes.priority')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    الفحص الخبير
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     {t('disputes.governorate')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -358,7 +362,7 @@ export function LaborDisputesManagement() {
               <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-12 text-center">
+                    <td colSpan={9} className="px-6 py-12 text-center">
                       <div className="flex justify-center">
                         <svg className="animate-spin h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -369,7 +373,7 @@ export function LaborDisputesManagement() {
                   </tr>
                 ) : disputes.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                    <td colSpan={9} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                       {t('disputes.no_disputes')}
                     </td>
                   </tr>
@@ -402,6 +406,19 @@ export function LaborDisputesManagement() {
                         }`}>
                           {t(`disputes.priority.${dispute.priority}`)}
                         </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {(() => {
+                          const ex = analyzeDispute(dispute);
+                          return (
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${ex.badge}`}
+                              title={ex.drivers.join('، ') || ex.escalationRoute}
+                            >
+                              {ex.ageBandLabel} ({ex.daysOpen} يوماً)
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         {dispute.governorate}
@@ -533,6 +550,29 @@ export function LaborDisputesManagement() {
                 ))}
               </div>
             </div>
+
+            {/* Expert escalation panel */}
+            {(() => {
+              const ex = analyzeDispute(selectedDispute);
+              return (
+                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">الفحص الخبير</span>
+                    <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${ex.badge}`}>
+                      {ex.ageBandLabel} ({ex.daysOpen} يوماً منذ الإيداع)
+                    </span>
+                  </div>
+                  {ex.drivers.length > 0 && (
+                    <ul className="list-disc list-inside text-xs text-gray-600 dark:text-gray-300 space-y-0.5">
+                      {ex.drivers.map((d) => <li key={d}>{d}</li>)}
+                    </ul>
+                  )}
+                  <p className="text-sm text-gray-700 dark:text-gray-200">
+                    <span className="text-xs text-gray-500">مسار الإحالة المقترح: </span>{ex.escalationRoute}
+                  </p>
+                </div>
+              );
+            })()}
 
             {/* Actions */}
             {canEdit && (
