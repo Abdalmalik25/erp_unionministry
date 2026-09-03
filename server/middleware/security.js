@@ -4,7 +4,11 @@
 import '../lib/loadEnv.js';
 import crypto from 'crypto';
 
-// CSRF: double-submit cookie pattern (stateless, no extra store)
+// P0 Gate: refuse to start with CSRF disabled in production
+if (process.env.DISABLE_CSRF === 'true' && process.env.NODE_ENV === 'production') {
+  console.error('[SECURITY] FATAL: DISABLE_CSRF=true in production — refusing to start (P0 Gate)');
+  process.exit(1);
+}
 export function csrfMiddleware(req, res, next) {
   if (['GET','HEAD','OPTIONS'].includes(req.method)) return next();
   // allowlist for login/health

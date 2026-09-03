@@ -1,6 +1,7 @@
 import { pool, paginate, countQuery, softDelete, softDeleteFilter } from '../middleware/shared.js';
 import express from 'express';
 import { invalidateCache } from '../middleware/cache.js';
+import { requirePermission } from '../middleware/rbac.js';
 const router = express.Router();
 
 // ===================== Activities =====================
@@ -31,7 +32,7 @@ router.get('/api/activities', async (req, res) => {
   }
 });
 
-router.post('/api/activities', async (req, res) => {
+router.post('/api/activities', requirePermission('write:activities'), async (req, res) => {
   try {
     const d = req.body;
     if (!d.entity_id) return res.status(400).json({ error: 'entity_id مطلوب' });
@@ -60,7 +61,7 @@ router.post('/api/activities', async (req, res) => {
   }
 });
 
-router.put('/api/activities/:id', async (req, res) => {
+router.put('/api/activities/:id', requirePermission('write:activities'), async (req, res) => {
   try {
     const fields = [];
     const values = [];
@@ -96,7 +97,7 @@ router.put('/api/activities/:id', async (req, res) => {
   }
 });
 
-router.delete('/api/activities/:id', async (req, res) => {
+router.delete('/api/activities/:id', requirePermission('write:activities'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE activities SET deleted_at = NOW(), deleted_by = NULL WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -109,7 +110,7 @@ router.delete('/api/activities/:id', async (req, res) => {
 
 // ===================== Elections =====================
 
-router.put('/api/activities/:id/restore', async (req, res) => {
+router.put('/api/activities/:id/restore', requirePermission('write:activities'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE activities SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -145,7 +146,7 @@ router.get('/api/elections', async (req, res) => {
   }
 });
 
-router.post('/api/elections', async (req, res) => {
+router.post('/api/elections', requirePermission('write:elections'), async (req, res) => {
   try {
     const d = req.body;
     if (!d.entity_id) return res.status(400).json({ error: 'entity_id مطلوب' });
@@ -170,7 +171,7 @@ router.post('/api/elections', async (req, res) => {
   }
 });
 
-router.put('/api/elections/:id', async (req, res) => {
+router.put('/api/elections/:id', requirePermission('write:elections'), async (req, res) => {
   try {
     const fields = [];
     const values = [];
@@ -203,7 +204,7 @@ router.put('/api/elections/:id', async (req, res) => {
   }
 });
 
-router.delete('/api/elections/:id', async (req, res) => {
+router.delete('/api/elections/:id', requirePermission('write:elections'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE elections SET deleted_at = NOW(), deleted_by = NULL WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -216,7 +217,7 @@ router.delete('/api/elections/:id', async (req, res) => {
 
 // ===================== Documents =====================
 
-router.put('/api/elections/:id/restore', async (req, res) => {
+router.put('/api/elections/:id/restore', requirePermission('write:elections'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE elections SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -253,7 +254,7 @@ router.get('/api/documents', async (req, res) => {
   }
 });
 
-router.post('/api/documents', async (req, res) => {
+router.post('/api/documents', requirePermission('write:documents'), async (req, res) => {
   try {
     const d = req.body;
     if (!d.entity_id) return res.status(400).json({ error: 'entity_id مطلوب' });
@@ -278,7 +279,7 @@ router.post('/api/documents', async (req, res) => {
   }
 });
 
-router.put('/api/documents/:id', async (req, res) => {
+router.put('/api/documents/:id', requirePermission('write:documents'), async (req, res) => {
   try {
     const fields = [];
     const values = [];
@@ -310,7 +311,7 @@ router.put('/api/documents/:id', async (req, res) => {
   }
 });
 
-router.delete('/api/documents/:id', async (req, res) => {
+router.delete('/api/documents/:id', requirePermission('write:documents'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE documents SET deleted_at = NOW(), deleted_by = NULL WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -323,7 +324,7 @@ router.delete('/api/documents/:id', async (req, res) => {
 
 // ===================== Services =====================
 
-router.put('/api/documents/:id/restore', async (req, res) => {
+router.put('/api/documents/:id/restore', requirePermission('write:documents'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE documents SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -349,7 +350,7 @@ router.get('/api/services', async (req, res) => {
   }
 });
 
-router.post('/api/services', async (req, res) => {
+router.post('/api/services', requirePermission('write:services'), async (req, res) => {
   try {
     const d = req.body;
     const cols = [
@@ -373,7 +374,7 @@ router.post('/api/services', async (req, res) => {
   }
 });
 
-router.put('/api/services/:id', async (req, res) => {
+router.put('/api/services/:id', requirePermission('write:services'), async (req, res) => {
   try {
     const fields = [];
     const values = [];
@@ -403,7 +404,7 @@ router.put('/api/services/:id', async (req, res) => {
   }
 });
 
-router.delete('/api/services/:id', async (req, res) => {
+router.delete('/api/services/:id', requirePermission('write:services'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE services SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -416,7 +417,7 @@ router.delete('/api/services/:id', async (req, res) => {
 
 // ===================== Service Requests =====================
 
-router.put('/api/services/:id/restore', async (req, res) => {
+router.put('/api/services/:id/restore', requirePermission('write:services'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE services SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -454,7 +455,7 @@ router.get('/api/service-requests', async (req, res) => {
   }
 });
 
-router.post('/api/service-requests', async (req, res) => {
+router.post('/api/service-requests', requirePermission('write:service_requests'), async (req, res) => {
   try {
     const d = req.body;
     if (!d.entity_id || !d.service_id) return res.status(400).json({ error: 'entity_id و service_id مطلوبان' });
@@ -477,7 +478,7 @@ router.post('/api/service-requests', async (req, res) => {
   }
 });
 
-router.put('/api/service-requests/:id', async (req, res) => {
+router.put('/api/service-requests/:id', requirePermission('write:service_requests'), async (req, res) => {
   try {
     const fields = [];
     const values = [];
@@ -508,7 +509,7 @@ router.put('/api/service-requests/:id', async (req, res) => {
   }
 });
 
-router.delete('/api/service-requests/:id', async (req, res) => {
+router.delete('/api/service-requests/:id', requirePermission('write:service_requests'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE service_requests SET deleted_at = NOW(), deleted_by = NULL WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -521,7 +522,7 @@ router.delete('/api/service-requests/:id', async (req, res) => {
 
 // ===================== Board Members =====================
 
-router.put('/api/service_requests/:id/restore', async (req, res) => {
+router.put('/api/service_requests/:id/restore', requirePermission('write:service_requests'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE service_requests SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -554,7 +555,7 @@ router.get('/api/board-members', async (req, res) => {
   }
 });
 
-router.post('/api/board-members', async (req, res) => {
+router.post('/api/board-members', requirePermission('write:board_members'), async (req, res) => {
   try {
     const d = req.body;
     if (!d.entity_id) return res.status(400).json({ error: 'entity_id مطلوب' });
@@ -580,7 +581,7 @@ router.post('/api/board-members', async (req, res) => {
   }
 });
 
-router.put('/api/board-members/:id', async (req, res) => {
+router.put('/api/board-members/:id', requirePermission('write:board_members'), async (req, res) => {
   try {
     const fields = [];
     const values = [];
@@ -613,7 +614,7 @@ router.put('/api/board-members/:id', async (req, res) => {
   }
 });
 
-router.delete('/api/board-members/:id', async (req, res) => {
+router.delete('/api/board-members/:id', requirePermission('write:board_members'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE board_members SET deleted_at = NOW(), deleted_by = NULL WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -624,7 +625,7 @@ router.delete('/api/board-members/:id', async (req, res) => {
   }
 });
 
-router.put('/api/board-members/:id/restore', async (req, res) => {
+router.put('/api/board-members/:id/restore', requirePermission('write:board_members'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE board_members SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });

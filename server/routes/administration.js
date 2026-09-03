@@ -3,11 +3,30 @@
 import { pool } from '../middleware/shared.js';
 import express from 'express';
 import { invalidateCache } from '../middleware/cache.js';
+import { getAuthUser } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// حارس الصلاحيات الإدارية: مصادقة + صلاحية إدارية
+function requireAdminAuth(req, res, next) {
+  getAuthUser(req, res, () => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'غير مصرح — يرجى تسجيل الدخول', code: 'UNAUTHORIZED' });
+    }
+    if (!['ministry_admin', 'super_admin'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'غير مصرح — مطلوب صلاحية إدارية', code: 'ADMIN_REQUIRED' });
+    }
+    next();
+  });
+}
+
+// حارس المصادقة فقط (للقراءة)
+function requireAuth(req, res, next) {
+  getAuthUser(req, res, next);
+}
+
 // ===================== الإعدادات العامة =====================
-router.get('/api/settings', async (_req, res) => {
+router.get('/api/settings', requireAdminAuth, async (_req, res) => {
   try {
     const r = await pool.query(
       `SELECT setting_key, setting_value, value_type, category, description, updated_by, updated_at
@@ -19,7 +38,7 @@ router.get('/api/settings', async (_req, res) => {
   }
 });
 
-router.put('/api/settings/:key', async (req, res) => {
+router.put('/api/settings/:key', requireAdminAuth, async (req, res) => {
   try {
     const { key } = req.params;
     const { setting_value, updated_by } = req.body || {};
@@ -40,7 +59,7 @@ router.put('/api/settings/:key', async (req, res) => {
 });
 
 // تحديث دفعة واحدة من الإعدادات
-router.put('/api/settings', async (req, res) => {
+router.put('/api/settings', requireAdminAuth, async (req, res) => {
   try {
     const { settings, updated_by } = req.body || {};
     if (!settings || typeof settings !== 'object') {
@@ -63,7 +82,7 @@ router.put('/api/settings', async (req, res) => {
 });
 
 // ===================== الصلاحيات المؤسسية الحقيقية =====================
-router.get('/api/role-permissions', async (req, res) => {
+router.get('/api/role-permissions', requireAdminAuth, async (req, res) => {
   try {
     const { role_key } = req.query;
     let where = '1=1';
@@ -81,7 +100,7 @@ router.get('/api/role-permissions', async (req, res) => {
 });
 
 // تحديث صلاحية واحدة (دور × مورد)
-router.put('/api/role-permissions/:id', async (req, res) => {
+router.put('/api/role-permissions/:id', requireAdminAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const flags = ['can_view', 'can_create', 'can_edit', 'can_delete', 'can_export', 'can_approve'];
@@ -110,7 +129,7 @@ router.put('/api/role-permissions/:id', async (req, res) => {
 });
 
 // إضافة منح جديد (دور × مورد)
-router.post('/api/role-permissions', async (req, res) => {
+router.post('/api/role-permissions', requireAdminAuth, async (req, res) => {
   try {
     const { role_key, resource } = req.body || {};
     if (!role_key || !resource) return res.status(400).json({ error: 'الدور والمورد مطلوبان' });
@@ -136,7 +155,7 @@ router.post('/api/role-permissions', async (req, res) => {
   }
 });
 
-router.delete('/api/role-permissions/:id', async (req, res) => {
+router.delete('/api/role-permissions/:id', requireAdminAuth, async (req, res) => {
   try {
     const r = await pool.query(`DELETE FROM role_permissions WHERE id = $1 RETURNING id`, [req.params.id]);
     if (r.rows.length === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -148,7 +167,7 @@ router.delete('/api/role-permissions/:id', async (req, res) => {
 });
 
 // ===================== النسخ الاحتياطي والجدولة =====================
-router.get('/api/backup/jobs', async (req, res) => {
+router.get('/api/backup/jobs', requireAdminAuth, async (req, res) => {
   try {
     const limit = Math.min(Number(req.query.limit) || 20, 100);
     const r = await pool.query(
@@ -164,7 +183,7 @@ router.get('/api/backup/jobs', async (req, res) => {
 });
 
 // جدولة مهمة نسخ احتياطي جديدة
-router.post('/api/backup/schedule', async (req, res) => {
+router.post('/api/backup/schedule', requireAdminAuth, async (req, res) => {
   try {
     const { job_type = 'full', scheduled_at, triggered_by } = req.body || {};
     const validTypes = ['full', 'incremental', 'schema_only'];
@@ -192,7 +211,7 @@ router.post('/api/backup/schedule', async (req, res) => {
 });
 
 // تشغيل نسخة احتياطية فورية (منطقي — يسجل المهمة ويجمع إحصاءات الجداول)
-router.post('/api/backup/run', async (req, res) => {
+router.post('/api/backup/run', requireAdminAuth, async (req, res) => {
   try {
     const startedAt = new Date();
     const job = await pool.query(
@@ -228,7 +247,7 @@ router.post('/api/backup/run', async (req, res) => {
 });
 
 // ===================== الاتصال الإداري =====================
-router.get('/api/admin-communications', async (req, res) => {
+router.get('/api/admin-communications', requireAuth, async (req, res) => {
   try {
     const { comm_type, include_inactive } = req.query;
     let where = '1=1';
@@ -252,7 +271,7 @@ router.get('/api/admin-communications', async (req, res) => {
   }
 });
 
-router.post('/api/admin-communications', async (req, res) => {
+router.post('/api/admin-communications', requireAdminAuth, async (req, res) => {
   try {
     const { comm_type = 'circular', title, body, priority = 'normal',
             target_roles, target_sectors, effective_date, expiry_date,
@@ -284,7 +303,7 @@ router.post('/api/admin-communications', async (req, res) => {
   }
 });
 
-router.put('/api/admin-communications/:id', async (req, res) => {
+router.put('/api/admin-communications/:id', requireAdminAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const allowed = ['title', 'body', 'priority', 'effective_date', 'expiry_date', 'is_active'];
@@ -313,7 +332,7 @@ router.put('/api/admin-communications/:id', async (req, res) => {
 });
 
 // إقرار استلام تعميم
-router.post('/api/admin-communications/:id/acknowledge', async (req, res) => {
+router.post('/api/admin-communications/:id/acknowledge', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { user_email } = req.body || {};

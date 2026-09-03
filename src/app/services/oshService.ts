@@ -1,10 +1,11 @@
+import type { PaginationMeta } from '../types/api';
 /**
  * oshService.ts — Production-Grade OSH (Occupational Safety & Health) Platform Service
  * Yemen National Labor Platform — Law 23/1997 (OSH)
  * Integrates: Ministry OSH Unit ↔ Inspector Field App ↔ Employer OS ↔ Worker Passport
  */
 
-import { get, post, put, del, getFile, uploadFile, postFormData } from './api';
+import { get, post, put, getFile, postFormData } from './api';
 
 export type OSHIncidentSeverity = 'minor' | 'moderate' | 'serious' | 'critical' | 'fatal';
 export type OSHIncidentStatus = 'reported' | 'investigating' | 'under_review' | 'remediation_in_progress' | 'closed' | 'escalated';
@@ -145,7 +146,7 @@ export interface OSHFilters {
 export interface ServiceResponse<T> {
   success: boolean;
   data: T;
-  meta?: any;
+  meta?: PaginationMeta;
 }
 
 // ============================================================
@@ -186,7 +187,7 @@ export const oshService = {
   /**
    * List incidents
    */
-  async listIncidents(filters: OSHFilters = {}): Promise<ServiceResponse<{ incidents: OSHIncident[]; meta: any }>> {
+  async listIncidents(filters: OSHFilters = {}): Promise<ServiceResponse<{ incidents: OSHIncident[]; meta: PaginationMeta }>> {
     const params = new URLSearchParams();
     if (filters.type?.length) params.set('type', filters.type.join(','));
     if (filters.severity?.length) params.set('severity', filters.severity.join(','));
@@ -327,7 +328,6 @@ export const oshService = {
     if (filters.governorate) params.set('governorate', filters.governorate);
     params.set('format', format);
     return getFile(`/osh/report?${params.toString()}`);
-  },
-};
+  } };
 
 export default oshService;

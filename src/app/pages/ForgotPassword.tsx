@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { Mail, ArrowLeft, CheckCircle2, AlertCircle, Loader2, Lock } from 'lucide-react';
-import { BRAND } from '../branding';
 
 export function ForgotPassword() {
   const navigate = useNavigate();
@@ -9,20 +8,32 @@ export function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [resendIn, setResendIn] = useState(0);
+  const [fieldError, setFieldError] = useState('');
+
+  React.useEffect(() => {
+    if (resendIn <= 0) return;
+    const t = setInterval(() => setResendIn(s => s > 0 ? s - 1 : 0), 1000);
+    return () => clearInterval(t);
+  }, [resendIn]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const em = email.trim();
+    if (!em || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { setFieldError('أدخل بريداً صحيحاً مثل name@yemen.gov.ye'); return; }
+    if (loading || resendIn > 0) return;
     setLoading(true);
-    setError('');
+    setError(''); setFieldError('');
     try {
       const res = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: em }),
       });
       const data = await res.json().catch(() => null);
       if (res.ok) {
         setStep('success');
+        setResendIn(60);
       } else {
         setError(data?.error?.message || data?.message || 'حدث خطأ أثناء إرسال رابط إعادة تعيين كلمة المرور');
       }
@@ -74,14 +85,15 @@ export function ForgotPassword() {
                     id="forgot-email"
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => { setEmail(e.target.value); if (fieldError) setFieldError(''); }}
                     placeholder="name@yemen.gov.ye"
                     required
                     aria-describedby="forgot-email-desc"
-                    className="w-full pr-12 pl-4 py-3.5 rounded-xl bg-white/90 border-2 border-slate-200 focus:border-amber-400 focus:outline-none transition-colors placeholder:text-slate-400"
+                    aria-invalid={!!fieldError}
+                    className={`w-full pr-12 pl-4 py-3.5 rounded-xl bg-white/90 border-2 focus:outline-none transition-colors placeholder:text-slate-400 ${fieldError ? 'border-red-300 focus:border-red-400' : 'border-slate-200 focus:border-amber-400'}`}
                   />
                 </div>
-                <p id="forgot-email-desc" className="text-xs text-slate-500 mt-1">سيتم إرسال رابط إعادة التعيين إلى هذا البريد</p>
+                {fieldError ? <p className="text-xs text-red-600 mt-1" role="alert">{fieldError}</p> : <p id="forgot-email-desc" className="text-xs text-slate-500 mt-1">سيتم إرسال رابط صالح 30 دقيقة — تحقق أيضاً من البريد المزعج</p>}
               </div>
 
               {error && (
@@ -93,14 +105,17 @@ export function ForgotPassword() {
 
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full py-4 rounded-xl font-bold text-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white shadow-lg shadow-amber-500/30 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                disabled={loading || resendIn > 0}
+                aria-busy={loading}
+                className="w-full py-4 rounded-xl font-bold text-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white shadow-lg shadow-amber-500/30 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
               >
                 {loading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
                     جاري الإرسال...
                   </>
+                ) : resendIn > 0 ? (
+                  <>إعادة الإرسال بعد {resendIn}ث</>
                 ) : (
                   <>
                     <Mail className="w-5 h-5" />
@@ -108,6 +123,7 @@ export function ForgotPassword() {
                   </>
                 )}
               </button>
+              <p className="text-xs text-center text-slate-500">خيار بديل: تواصل مع مسؤول النظام — التحقق يدوي خلال ساعات العمل</p>
             </form>
           ) : (
             <div className="text-center py-8">

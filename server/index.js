@@ -46,7 +46,7 @@ app.use(securityHeadersMiddleware);
 app.use(threatDetectionMiddleware);
 app.use(requestSizeLimitMiddleware(10 * 1024 * 1024));
 // Performance: response caching with ETag
-import { startCacheCleanup } from './middleware/cache.js';
+import { startCacheCleanup, invalidateCache } from './middleware/cache.js';
 startCacheCleanup();
 // Security hardening (sanitization + CSRF + MFA) — TD-006/022/028/029
 import { sanitizeBody, csrfMiddleware, ensureCsrfCookie, requireMFA } from './middleware/security.js';
@@ -56,6 +56,19 @@ import { structuredLogger, metricsEndpoint, errorHandler } from './middleware/ob
 import { performanceMonitorMiddleware } from './middleware/performanceMonitor.js';
 app.use(performanceMonitorMiddleware);
 
+// ===================== Nuclear Shield — Zero Trust & Behavioral Analysis =====================
+import { zeroTrustMiddleware } from './middleware/zeroTrust.js';
+import { behavioralAnalysisMiddleware } from './middleware/behavioralAnalysis.js';
+import { codeAuditMiddleware } from './middleware/codeAudit.js';
+
+// Initialize Nuclear Cryptography (HSM simulation)
+import { initHSM } from './lib/nuclearCrypto.js';
+const nukCryptoSecret = process.env.ENCRYPTION_KEY || process.env.JWT_SECRET;
+if (nukCryptoSecret) {
+  initHSM(nukCryptoSecret);
+  console.log('[NUCLEAR-SHIELD] Cryptography module initialized');
+}
+
 app.use(sanitizeQuery);
 app.use(sanitizeBody);
 // إصدار كوكي CSRF على الطلبات الآمنة حتى يتوفر للعميل ما يُرجعه في رأس x-csrf-token
@@ -63,6 +76,12 @@ app.use(ensureCsrfCookie);
 app.use(csrfMiddleware);
 app.use(requireMFA);
 app.use(structuredLogger);
+// Nuclear Zero Trust — per-request verification
+app.use(zeroTrustMiddleware);
+// Behavioral malware detection — deep feature monitoring
+app.use(behavioralAnalysisMiddleware);
+// Code audit middleware — request logging for security analysis
+app.use(codeAuditMiddleware);
 
 // ===================== Response Compression (dependency-free gzip) =====================
 import zlib from 'zlib';
@@ -121,21 +140,7 @@ app.use((_req, res, next) => {
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  // Content Security Policy — اجازه فقط أصول مرخصة ومنع أي�اقمك interpret الصفحات
-            res.setHeader('Content-Security-Policy',
-    "default-src 'self' data: blob: 'unsafe-inline' https: http:; " +
-    "script-src 'self' 'unsafe-eval' https: http:; " +
-    "style-src 'self' 'unsafe-inline' https: http:; " +
-    "img-src 'self' data: https:; " +
-    "connect-src 'self' https: http: wss:; " +
-    "font-src 'self' data: https:; " +
-    "frame-ancestors 'self' https: http:; " +
-    "object-src 'none';"
-  );
-  if (_req.path.startsWith('/api')) {
-    // API routes: restrict to no content execution
-    res.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
-  }
+  // CSP is handled by securityHeadersMiddleware — no duplicate here
   next();
 });
 
@@ -207,7 +212,7 @@ app.use(async (req, res, next) => {
   const publicPaths = ['/api/health','/api/auth/login','/api/auth/me','/api/isic4','/api/geography/governorates'];
   // مسارات البوابة العامة المقيدة بالطريقة — شاشة الدخول وطلبات فتح الحسابات
   const PUBLIC_GET = ['/api/system/branding', '/api/system/policy', '/api/establishments/lookup'];
-  const PUBLIC_POST = ['/api/account-requests', '/api/audit-log'];
+  const PUBLIC_POST = ['/api/account-requests'];
 
 // مانع إغراق مخصص لقيود التدقيق العامة: 30 طلباً/دقيقة لكل عنوان — يحمي جدول التدقيق من التعبئة
 const AUDIT_POST_LIMITER = (() => {
@@ -312,6 +317,8 @@ import intelligenceV2Router from './routes/intelligenceV2.js';
 import disputesRouter from './routes/disputes.js';
 import inspectionsRouter from './routes/inspections.js';
 import crossPortalRouter from './routes/crossPortal.js';
+// Nuclear Shield Dashboard
+import nuclearShieldRouter from './routes/nuclearShield.js';
 
 // ===================== Automated Server-Side Mutation Audit =====================
 import { auditLog } from './middleware/shared.js';
@@ -338,6 +345,8 @@ app.use((req, res, next) => {
 app.use('/api/disputes', disputesRouter);
 app.use('/api/inspections', inspectionsRouter);
 app.use('/api/cross-portal', crossPortalRouter);
+// Nuclear Shield Dashboard
+app.use(nuclearShieldRouter);
 
 app.use(entitiesRouter);
 app.use(registrationRouter);
@@ -629,9 +638,149 @@ const schedulerInterval = setInterval(async () => {
   } catch (e) { console.error('[Scheduler] Error:', e.message); }
 }, 6 * 60 * 60 * 1000);
 
+// ===================== Scheduled Analytics Materialized View Refresh =====================
+// Refresh analytical MVs periodically (non-blocking CONCURRENTLY where possible)
+let analyticsRefreshRunning = false;
+async function refreshAnalyticsViews() {
+  if (analyticsRefreshRunning) return;
+  analyticsRefreshRunning = true;
+  try {
+    await pool.query(`SELECT fn_refresh_analytics_views()`);
+  } catch (e) {
+    console.error('[Analytics-Refresh] Error:', e.message);
+  } finally {
+    analyticsRefreshRunning = false;
+  }
+}
+// Every 60 minutes (aligned with hourly refresh cadence of the base MVs)
+const analyticsRefreshInterval = setInterval(() => {
+  refreshAnalyticsViews().catch(() => {});
+}, 60 * 60 * 1000);
+// Initial warm-up after server start (delayed 30s to not block startup)
+setTimeout(() => refreshAnalyticsViews().catch(() => {}), 30000).unref();
+
+// ===================== Analytics Report Endpoints =====================
+// Serve pre-aggregated analytical reports from business-intelligence functions (live schema)
+app.get('/api/dashboard/analytics/sectors', async (_req, res) => {
+  const cached = cacheGet('analytics-sectors');
+  if (cached) return res.json(cached);
+  try {
+    const r = await pool.query(`SELECT sector, governorate AS entity_governorate, entities AS entity_count, active_entities, compliant_entities, members AS total_workers, compliance_rate, high_risk_entities FROM fn_sector_governorate_matrix() ORDER BY compliance_rate DESC NULLS LAST`);
+    const data = { sectors: r.rows };
+    cacheSet('analytics-sectors', data);
+    res.json(data);
+  } catch (e) { res.status(500).json({ error: 'Sector analytics unavailable', code: 'INTERNAL_ERROR' }); }
+});
+
+app.get('/api/dashboard/analytics/governorates', async (_req, res) => {
+  const cached = cacheGet('analytics-governorates');
+  if (cached) return res.json(cached);
+  try {
+    const r = await pool.query(`SELECT * FROM fn_inspection_performance_by_governorate() ORDER BY total_inspections DESC`);
+    const data = { governorates: r.rows };
+    cacheSet('analytics-governorates', data);
+    res.json(data);
+  } catch (e) { res.status(500).json({ error: 'Governorate analytics unavailable', code: 'INTERNAL_ERROR' }); }
+});
+
+app.get('/api/dashboard/analytics/cross-portal', async (req, res) => {
+  const { governorate, sector, risk_band } = req.query;
+  const key = `cross-portal-${req.originalUrl}`;
+  const cached = cacheGet(key);
+  if (cached) return res.json(cached);
+  try {
+    const params = [];
+    let where = '1=1';
+    let idx = 1;
+    if (governorate) { where += ` AND governorate ILIKE $${idx++}`; params.push(`%${governorate}%`); }
+    if (sector) { where += ` AND sector = $${idx++}`; params.push(sector); }
+    if (risk_band) { where += ` AND risk_band = $${idx++}`; params.push(risk_band); }
+    const r = await pool.query(
+      `SELECT entity_id, entity_name, governorate, sector, status, compliance_status, risk_level, open_violations, critical_violations, pending_alerts, expiring_documents, expired_documents, expiring_licenses, low_assessments, composite_risk_score, risk_band FROM fn_composite_risk_matrix() WHERE ${where} ORDER BY composite_risk_score DESC`,
+      params
+    );
+    const data = r.rows;
+    cacheSet(key, data);
+    res.json(data);
+  } catch (e) { res.status(500).json({ error: 'Cross-portal analytics unavailable', code: 'INTERNAL_ERROR' }); }
+});
+
+app.get('/api/dashboard/analytics/evaluations', async (_req, res) => {
+  const cached = cacheGet('analytics-evaluations');
+  if (cached) return res.json(cached);
+  try {
+    const r = await pool.query(`SELECT * FROM fn_license_document_summary()`);
+    const data = { summary: r.rows[0] };
+    cacheSet('analytics-evaluations', data);
+    res.json(data);
+  } catch (e) { res.status(500).json({ error: 'Evaluation analytics unavailable', code: 'INTERNAL_ERROR' }); }
+});
+
+// ===================== Business Intelligence Endpoints =====================
+app.get('/api/dashboard/analytics/pulse', async (_req, res) => {
+  const cached = cacheGet('analytics-pulse');
+  if (cached) return res.json(cached);
+  try {
+    const r = await pool.query(`SELECT * FROM v_national_executive_pulse`);
+    cacheSet('analytics-pulse', r.rows[0]);
+    res.json(r.rows[0]);
+  } catch (e) { res.status(500).json({ error: 'Pulse unavailable', code: 'INTERNAL_ERROR' }); }
+});
+
+app.get('/api/dashboard/analytics/time-series', async (req, res) => {
+  const months = parseInt(req.query.months, 10) || 12;
+  try {
+    const r = await pool.query(`SELECT * FROM fn_time_series_trends($1)`, [months]);
+    res.json({ trends: r.rows });
+  } catch (e) { res.status(500).json({ error: 'Time-series unavailable', code: 'INTERNAL_ERROR' }); }
+});
+
+app.get('/api/dashboard/analytics/workforce', async (_req, res) => {
+  try {
+    const r = await pool.query(`SELECT * FROM fn_workforce_analytics()`);
+    res.json(r.rows[0]);
+  } catch (e) { res.status(500).json({ error: 'Workforce analytics unavailable', code: 'INTERNAL_ERROR' }); }
+});
+
+app.get('/api/dashboard/analytics/financial', async (_req, res) => {
+  try {
+    const r = await pool.query(`SELECT * FROM fn_financial_aging_summary()`);
+    res.json(r.rows[0]);
+  } catch (e) { res.status(500).json({ error: 'Financial analytics unavailable', code: 'INTERNAL_ERROR' }); }
+});
+
+app.get('/api/dashboard/analytics/service-performance', async (_req, res) => {
+  try {
+    const r = await pool.query(`SELECT * FROM fn_service_performance_report()`);
+    res.json(r.rows[0]);
+  } catch (e) { res.status(500).json({ error: 'Service performance unavailable', code: 'INTERNAL_ERROR' }); }
+});
+
+app.get('/api/dashboard/analytics/inspection-types', async (_req, res) => {
+  try {
+    const r = await pool.query(`SELECT * FROM fn_inspection_analytics_by_type()`);
+    res.json({ types: r.rows });
+  } catch (e) { res.status(500).json({ error: 'Inspection-type analytics unavailable', code: 'INTERNAL_ERROR' }); }
+});
+
+// Trigger analytics refresh (admin)
+app.post('/api/dashboard/analytics/refresh', requireMetricsAuth, async (_req, res) => {
+  try {
+    await refreshAnalyticsViews();
+    invalidatePlatformCache();
+    res.json({ success: true, message: 'Analytics views refreshed', at: new Date().toISOString() });
+  } catch (e) { res.status(500).json({ error: 'Refresh failed', code: 'INTERNAL_ERROR' }); }
+});
+
+function invalidatePlatformCache() {
+  dashboardCache.clear();
+  invalidateCache('dashboard');
+}
+
 function gracefulShutdown(signal) {
   console.log(`\n[Server] ${signal} — shutting down gracefully...`);
   clearInterval(schedulerInterval);
+  clearInterval(analyticsRefreshInterval);
   // إغلاق تجمع قاعدة البيانات بأمان مع مهلة قصوى
   const forceTimer = setTimeout(() => process.exit(0), 8000);
   import('./middleware/shared.js').then(({ pool }) => pool.end())
@@ -649,20 +798,27 @@ process.on('unhandledRejection', (reason) => {
 });
 
 // ===================== Metrics & Observability =====================
-app.get('/api/metrics', metricsEndpoint);
+// Metrics require admin auth — operational data not for general users
+function requireMetricsAuth(req, res, next) {
+  if (!req.user || !['super_admin', 'ministry_admin'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'غير مصرح — مطلوب صلاحية إدارية', code: 'ADMIN_REQUIRED' });
+  }
+  next();
+}
+app.get('/api/metrics', requireMetricsAuth, metricsEndpoint);
 
 // Phase 5: Performance monitoring metrics
 import { getPerformanceMetrics } from './middleware/performanceMonitor.js';
-app.get('/api/metrics/performance', (_req, res) => {
+app.get('/api/metrics/performance', requireMetricsAuth, (_req, res) => {
   res.json(getPerformanceMetrics());
 });
 
 // Phase 5: Circuit breaker states
 import { getAllBreakerStates, resetBreaker } from './middleware/circuitBreaker.js';
-app.get('/api/metrics/circuit-breakers', (_req, res) => {
+app.get('/api/metrics/circuit-breakers', requireMetricsAuth, (_req, res) => {
   res.json(getAllBreakerStates());
 });
-app.post('/api/metrics/circuit-breakers/:name/reset', (req, res) => {
+app.post('/api/metrics/circuit-breakers/:name/reset', requireMetricsAuth, (req, res) => {
   const ok = resetBreaker(req.params.name);
   if (!ok) return res.status(404).json({ error: 'Breaker not found' });
   res.json({ ok: true, message: `Circuit breaker "${req.params.name}" reset` });
@@ -670,10 +826,10 @@ app.post('/api/metrics/circuit-breakers/:name/reset', (req, res) => {
 
 // Phase 5: Error tracking stats + middleware
 import { getErrorStats, errorTrackerMiddleware } from './middleware/errorTracker.js';
-app.get('/api/metrics/errors', (_req, res) => {
+app.get('/api/metrics/errors', requireMetricsAuth, (_req, res) => {
   res.json(getErrorStats());
 });
-app.delete('/api/metrics/errors', async (_req, res) => {
+app.delete('/api/metrics/errors', requireMetricsAuth, async (_req, res) => {
   const { resetErrorStats } = await import('./middleware/errorTracker.js');
   resetErrorStats();
   res.json({ ok: true, message: 'Error stats reset' });
@@ -687,9 +843,16 @@ app.get('/api/health/detailed', async (_req, res) => {
     if (!pool) return res.status(503).json({ status: 'unhealthy', error: 'Database not available', timestamp: new Date().toISOString() });
     const health = await getDeepHealth(pool);
     health.dbPool = getPoolStats();
+    health.memory = {
+      rss: Math.round(process.memoryUsage().rss / 1024 / 1024) + 'MB',
+      heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB',
+      heapTotal: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + 'MB',
+    };
+    health.uptime = Math.floor(process.uptime()) + 's';
+    health.version = APP_VERSION;
     res.status(health.status === 'healthy' ? 200 : 503).json(health);
   } catch (err) {
-    res.status(503).json({ status: 'unhealthy', error: String(err.message || err), timestamp: new Date().toISOString() });
+    res.status(503).json({ status: 'unhealthy', error: 'Internal error', timestamp: new Date().toISOString() });
   }
 });
 
@@ -703,11 +866,7 @@ const APP_VERSION = (() => {
 app.get('/api/version', (_req, res) => {
   res.json({
     version: APP_VERSION,
-    environment: process.env.NODE_ENV || 'development',
-    authEnabled: AUTH_ENABLED,
-    nodeVersion: process.version,
     uptimeSeconds: Math.floor(process.uptime()),
-    dbPool: getPoolStats(),
   });
 });
 
@@ -750,9 +909,53 @@ if (process.env.VERCEL !== '1') {
     console.log(`📡 Running on http://localhost:${PORT}`);
     console.log(`🔐 Auth: ${AUTH_ENABLED ? 'ENABLED' : 'DISABLED (dev mode)'}`);
     console.log(`📊 Health: http://localhost:${PORT}/api/health`);
-    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`📦 Version: ${APP_VERSION}\n`);
+    console.log(`📦 Version: ${APP_VERSION}`);
+    console.log(`🛡️  Nuclear Shield: ACTIVE`);
+    console.log(`🔄 Offline-First: ${process.env.DATABASE_URL ? 'ENABLED (Neon + SQLite)' : 'LOCAL ONLY'}`);
+    console.log(`⏱️  Started at: ${new Date().toISOString()}\n`);
   });
+
+  // Graceful shutdown with connection draining
+  let isShuttingDown = false;
+  const SHUTDOWN_TIMEOUT_MS = parseInt(process.env.SHUTDOWN_TIMEOUT_MS || '30000', 10);
+
+  async function gracefulShutdown(signal) {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+    console.log(`\n[Server] ${signal} received — initiating graceful shutdown...`);
+
+    // Stop accepting new connections
+    server.close(() => {
+      console.log('[Server] All connections drained');
+    });
+
+    // Force close after timeout
+    const forceClose = setTimeout(() => {
+      console.error(`[Server] Forced shutdown after ${SHUTDOWN_TIMEOUT_MS}ms`);
+      process.exit(1);
+    }, SHUTDOWN_TIMEOUT_MS);
+    forceClose.unref();
+
+    try {
+      // Stop auto-sync
+      const { stopAutoSync } = await import('./lib/localDb.js').catch(() => ({ stopAutoSync: null }));
+      if (stopAutoSync) stopAutoSync();
+
+      // Close DB pool
+      const { pool } = await import('./middleware/shared.js').catch(() => ({ pool: null }));
+      if (pool?.end) await pool.end();
+
+      console.log('[Server] Cleanup complete — exiting');
+      process.exit(0);
+    } catch (err) {
+      console.error('[Server] Shutdown error:', err.message);
+      process.exit(1);
+    }
+  }
+
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
       console.error(`[Server] المنفذ ${PORT} قيد الاستخدام — أوقف العملية القديمة أو غيّر PORT`);

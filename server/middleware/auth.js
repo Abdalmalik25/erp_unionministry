@@ -8,12 +8,9 @@ if (!SECRET) {
   console.error('[SECURITY] FATAL: JWT_SECRET is not set — refusing to start (P0 Gate)');
   process.exit(1);
 }
-if (process.env.NODE_ENV === 'production' && SECRET.length < 32) {
-  console.error('[SECURITY] FATAL: JWT_SECRET too short for production — refusing to start (P0 Gate)');
-  process.exit(1);
-}
 if (SECRET.length < 32) {
-  console.warn('[SECURITY] WARNING: JWT_SECRET <32 chars — weak for HS256');
+  console.error('[SECURITY] FATAL: JWT_SECRET must be at least 32 characters — refusing to start');
+  process.exit(1);
 }
 
 export function hashPassword(password) {

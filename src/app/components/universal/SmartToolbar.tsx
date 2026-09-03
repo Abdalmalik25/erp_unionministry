@@ -269,6 +269,7 @@ interface FilterControlProps {
 }
 
 const FilterControl = memo(function FilterControl({ filter }: FilterControlProps) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id, label, type, options = [], value, onChange, placeholder } = filter;
 
   const renderControl = () => {

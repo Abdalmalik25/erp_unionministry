@@ -109,7 +109,7 @@ router.delete('/api/fee-payments/:id', requirePermission('fees:delete'), async (
 
 // ===================== Training Records =====================
 
-router.put('/api/fee_payments/:id/restore', async (req, res) => {
+router.put('/api/fee_payments/:id/restore', requirePermission('fees:edit'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE fee_payments SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -197,7 +197,7 @@ router.delete('/api/training-records/:id', requirePermission('training:delete'),
   }
 });
 
-router.put('/api/training-records/:id/restore', async (req, res) => {
+router.put('/api/training-records/:id/restore', requirePermission('training:edit'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE training_records SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });

@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { getLandingPath } from '../utils/portals';
 import { ProfessionalLoader } from './ui/SplashScreen';
 import { usePermissions } from '../hooks/usePermissions';
+import { logAudit } from '../utils/security';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -25,11 +26,14 @@ export function ProtectedRoute({
   const { user, loading } = useAuth();
   const { can } = usePermissions();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (loading) return;
     if (!user) {
-      navigate('/login', { replace: true });
+      const ret = location.pathname + location.search;
+      logAudit({ action: 'GUARD_REDIRECT', resource: 'auth', details: { reason: 'unauthenticated', attempted: ret } });
+      navigate(`/login?returnTo=${encodeURIComponent(ret)}`, { replace: true });
       return;
     }
 
@@ -47,18 +51,19 @@ export function ProtectedRoute({
     }
 
     if (requiredRoles && !requiredRoles.includes(user.role)) {
+      logAudit({ action: 'GUARD_DENY', resource: 'rbac', details: { role: user.role, requiredRoles, attempted: location.pathname } });
       navigate(getLandingPath(user), { replace: true });
+      return;
     }
-    
+
     if (requiredPermissions) {
       const hasPerm = requiredPermissions.every((perm) => can(perm));
       if (!hasPerm) {
+        logAudit({ action: 'GUARD_DENY', resource: 'rbac', details: { role: user.role, requiredPermissions, attempted: location.pathname } });
         navigate(getLandingPath(user), { replace: true });
       }
     }
-  // تأثير الجارديان: `can` غير مستقرة الهوية (تتغير كل render) فنستبعدها عمداً لمنع إعادة التشغيل المتكرر
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, loading, navigate, requireMinistry, requireOrganization, requiredRoles, requiredPermissions]);
+  }, [user, loading, navigate, location.pathname, location.search, requireMinistry, requireOrganization, requiredRoles, requiredPermissions, can]);
 
   if (loading) {
     return (

@@ -1,10 +1,11 @@
+import type { PaginationMeta } from '../types/api';
 /**
  * employerService.ts — Production-Grade Employer OS (Employer Operations System) Service
  * Yemen National Labor Platform
  * Employer self-service, compliance, workforce management, financial operations
  */
 
-import { get, post, put, del, getFile, uploadFile, postFormData } from './api';
+import { get, post, put } from './api';
 
 export interface EmployerEntity {
   id: string;
@@ -86,7 +87,7 @@ export interface EmployerDashboard {
 export interface ServiceResponse<T> {
   success: boolean;
   data: T;
-  meta?: any;
+  meta?: PaginationMeta;
 }
 
 // ============================================================
@@ -159,7 +160,7 @@ export const employerService = {
     search?: string;
     page?: number;
     limit?: number;
-  }): Promise<ServiceResponse<{ employees: any[]; meta: any }>> {
+  }): Promise<ServiceResponse<{ employees: any[]; meta: PaginationMeta }>> {
     const params = new URLSearchParams();
     if (filters?.status?.length) params.set('status', filters.status.join(','));
     if (filters?.department) params.set('department', filters.department);
@@ -173,7 +174,7 @@ export const employerService = {
   /**
    * Get pending services/applications
    */
-  async getPendingServices(): Promise<ServiceResponse<{ services: any[]; meta: any }>> {
+  async getPendingServices(): Promise<ServiceResponse<{ services: any[]; meta: PaginationMeta }>> {
     return get<any>('/employer/me/services/pending');
   },
 
@@ -238,7 +239,6 @@ export const employerService = {
    */
   async payFees(data: { feeIds: string[]; paymentMethod: string; reference?: string }): Promise<ServiceResponse<{ paymentId: string; receiptUrl: string }>> {
     return post<any>('/employer/me/fees/pay', data);
-  },
-};
+  } };
 
 export default employerService;

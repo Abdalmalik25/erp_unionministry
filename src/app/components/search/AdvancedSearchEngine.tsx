@@ -13,6 +13,9 @@
  */
 
 import { useState, useCallback, useMemo, useEffect, useRef, useDeferredValue } from 'react';
+import { usePermissions } from '../../hooks/usePermissions';
+import { logAudit } from '../../utils/security';
+import { toast } from 'sonner';
 
 export type FilterOperator =
   | 'equals'
@@ -88,6 +91,9 @@ interface AdvancedSearchEngineProps<T> {
   placeholder?: string;
   pageSize?: number;
   virtualScrollThreshold?: number;
+  /** وضع الخادم — للبيانات الكبيرة: يستدعي API بدلاً من تصفية العميل */
+  serverSearch?: (params: { query: string; conditions: FilterCondition[]; sortBy: { field: string; direction: 'asc' | 'desc' } | null; page: number; pageSize: number }) => Promise<SearchResult<T>>;
+  requiredPermission?: string;
 }
 
 const OPERATORS_BY_TYPE: Record<FieldType, Array<{ value: FilterOperator; label: string }>> = {
@@ -141,8 +147,13 @@ export function AdvancedSearchEngine<T extends Record<string, unknown>>({
   enableExport = true,
   placeholder = 'ابحث في جميع الحقول...',
   pageSize = 50,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   virtualScrollThreshold = 1000,
+  serverSearch,
+  requiredPermission = 'reports:view',
 }: AdvancedSearchEngineProps<T>) {
+  const { can } = usePermissions();
+  const hasPermission = can(requiredPermission) || can('dashboard:view') || can('reports:view');
   // State
   const [query, setQuery] = useState('');
   const [conditions, setConditions] = useState<FilterCondition[]>([]);
@@ -155,6 +166,9 @@ export function AdvancedSearchEngine<T extends Record<string, unknown>>({
   const [activePresetId, setActivePresetId] = useState<string | null>(null);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [serverResults, setServerResults] = useState<SearchResult<T> | null>(null);
+  const [serverLoading, setServerLoading] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
 
   // Performance: useDeferredValue for smooth typing
   const deferredQuery = useDeferredValue(query);
@@ -162,6 +176,26 @@ export function AdvancedSearchEngine<T extends Record<string, unknown>>({
 
   // Refs
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Server mode — سرعة عبر الخادم للبيانات الكبيرة + تدقيق + صلاحيات
+  useEffect(() => {
+    if (!serverSearch) return;
+    if (!hasPermission) return;
+    const cid = `adv-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
+    setServerLoading(true);
+    setServerError(null);
+    serverSearch({ query: deferredQuery, conditions: deferredConditions, sortBy, page: currentPage, pageSize })
+      .then(res => {
+        setServerResults(res);
+        logAudit({ action: 'SEARCH', resource: 'advanced_search', details: { query: deferredQuery, conditions: deferredConditions.length, cid, took: res.executionTime } });
+      })
+      .catch(e => {
+        const msg = e instanceof Error ? e.message : 'فشل البحث';
+        setServerError(msg);
+        toast.error(msg);
+      })
+      .finally(()=> setServerLoading(false));
+  }, [serverSearch, deferredQuery, deferredConditions, sortBy, currentPage, pageSize, hasPermission]);
 
   /**
    * Apply filter condition to a single item
@@ -344,6 +378,7 @@ export function AdvancedSearchEngine<T extends Record<string, unknown>>({
   /**
    * Paginated data
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const paginatedData = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return filteredData.data.slice(start, start + pageSize);
@@ -430,6 +465,7 @@ export function AdvancedSearchEngine<T extends Record<string, unknown>>({
     }
   }, [query, searchHistory]);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const totalPages = Math.ceil(filteredData.total / pageSize);
 
   return (

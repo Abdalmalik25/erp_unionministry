@@ -8,7 +8,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { usePermissions } from '../../hooks/usePermissions';
 import { inspectionService, type Inspection, type InspectionFilters } from '../../services/inspectionService';
 import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
+
 import { Modal } from '../../components/ui/Modal';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Card } from '../../components/ui/Card';
@@ -21,8 +21,7 @@ import {
   triageInspection,
   sortByRisk,
   URGENCY_LABEL,
-  type TriageUrgency,
-} from '../../utils/inspectionExpertLogic';
+  type TriageUrgency } from '../../utils/inspectionExpertLogic';
 
 interface Filters {
   type: string[];
@@ -41,8 +40,7 @@ const initialFilters: Filters = {
   governorate: '',
   search: '',
   dateFrom: '',
-  dateTo: '',
-};
+  dateTo: '' };
 
 export function InspectionsManagement() {
   const { can } = usePermissions();
@@ -51,6 +49,7 @@ export function InspectionsManagement() {
   const [inspections, setInspections] = useState<Inspection[]>([]);
   const [selectedInspection, setSelectedInspection] = useState<Inspection | null>(null);
   const [loading, setLoading] = useState(true);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const debouncedSearch = useDebounce(filters.search, 350);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
@@ -74,16 +73,14 @@ export function InspectionsManagement() {
         dateFrom: filters.dateFrom || undefined,
         dateTo: filters.dateTo || undefined,
         page: pagination.page,
-        limit: pagination.limit,
-      });
+        limit: pagination.limit });
       
       setInspections(response.data.inspections || []);
       if (response.meta) {
         setPagination(prev => ({
           ...prev,
           total: response.meta?.total || 0,
-          totalPages: response.meta?.totalPages || 0,
-        }));
+          totalPages: response.meta?.totalPages || 0 }));
       }
     } catch (error) {
       console.error('Failed to load inspections:', error);
@@ -118,6 +115,7 @@ export function InspectionsManagement() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleAssign = async (inspectionId: string, inspectorId: string) => {
     try {
       await inspectionService.assignInspector(inspectionId, inspectorId);
@@ -133,8 +131,7 @@ export function InspectionsManagement() {
   const handleStart = async (inspectionId: string) => {
     try {
       await inspectionService.startInspection(inspectionId, {
-        actualStartTime: new Date().toISOString(),
-      });
+        actualStartTime: new Date().toISOString() });
       toast.success(t('inspections.started'));
       loadInspections();
     } catch (error) {
@@ -185,8 +182,7 @@ export function InspectionsManagement() {
       priority,
       routine,
       awaitingInspector: awaitingInspector.length,
-      topPick: ranked[0] ?? null,
-    };
+      topPick: ranked[0] ?? null };
   }, [inspections, ranked]);
 
   return (

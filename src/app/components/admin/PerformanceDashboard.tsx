@@ -66,7 +66,7 @@ export function PerformanceDashboard() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [cacheStats, setCacheStats] = useState<{ name: string; size: number }[]>([]);
 
-  const summary = useMemo(() => getSummary(), [vitals, resources, apiCalls, getSummary]);
+  const summary = useMemo(() => getSummary(), [getSummary]);
 
   // Get cache statistics from Service Worker
   useEffect(() => {

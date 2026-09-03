@@ -3,8 +3,23 @@
 import express from 'express';
 import { pool, paginate } from '../middleware/shared.js';
 import { invalidateCache } from '../middleware/cache.js';
+import { getAuthUser } from '../middleware/auth.js';
 
 const router = express.Router();
+
+// حارس المصادقة: يُطبّق على جميع مسارات التعديل والاعتماد
+function requireAuth(req, res, next) {
+  getAuthUser(req, res, next);
+}
+
+function requireAdminAuth(req, res, next) {
+  getAuthUser(req, res, () => {
+    if (!req.user || !['ministry_admin', 'super_admin'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'غير مصرح — مطلوب صلاحية إدارية', code: 'ADMIN_REQUIRED' });
+    }
+    next();
+  });
+}
 
 const PENDING = 'under_review';
 const AR_STATUS = { under_review: 'طلب بانتظار الموافقة', active: 'نشطة', inactive: 'مرفوضة', suspended: 'معلقة', dissolved: 'منحلة' };
@@ -192,7 +207,7 @@ router.get('/api/establishments/:id/branches', async (req, res) => {
   }
 });
 
-router.post('/api/establishments/:id/branches', async (req, res) => {
+router.post('/api/establishments/:id/branches', requireAuth, async (req, res) => {
   try {
     const b = req.body || {};
     if (!b.branch_name?.trim()) return res.status(400).json({ error: 'اسم الفرع مطلوب' });
@@ -226,7 +241,7 @@ router.post('/api/establishments/:id/branches', async (req, res) => {
 });
 
 // تعديل فرع قائم
-router.put('/api/establishments/:id/branches/:branchId', async (req, res) => {
+router.put('/api/establishments/:id/branches/:branchId', requireAuth, async (req, res) => {
   try {
     const b = req.body || {};
     if (b.branch_name !== undefined && !String(b.branch_name).trim()) {
@@ -258,7 +273,7 @@ router.put('/api/establishments/:id/branches/:branchId', async (req, res) => {
 });
 
 // حذف فرع (ناعم — يحفظ السجل التاريخي)
-router.delete('/api/establishments/:id/branches/:branchId', async (req, res) => {
+router.delete('/api/establishments/:id/branches/:branchId', requireAuth, async (req, res) => {
   try {
     const del = await pool.query(
       `UPDATE commercial_branches SET deleted_at = NOW()
@@ -277,7 +292,7 @@ router.delete('/api/establishments/:id/branches/:branchId', async (req, res) => 
 });
 
 // ============ 4) دورة الاعتماد لموظفي السجل الرسمي ============
-router.get('/api/establishments/pending', async (_req, res) => {
+router.get('/api/establishments/pending', requireAdminAuth, async (_req, res) => {
   try {
     const { limit, offset } = paginate(_req);
     const r = await pool.query(
@@ -295,7 +310,7 @@ router.get('/api/establishments/pending', async (_req, res) => {
   }
 });
 
-router.patch('/api/establishments/:id/approve', async (req, res) => {
+router.patch('/api/establishments/:id/approve', requireAdminAuth, async (req, res) => {
   try {
     const up = await pool.query(
       `UPDATE commercial_establishments SET status='active',
@@ -313,7 +328,7 @@ router.patch('/api/establishments/:id/approve', async (req, res) => {
   }
 });
 
-router.patch('/api/establishments/:id/reject', async (req, res) => {
+router.patch('/api/establishments/:id/reject', requireAdminAuth, async (req, res) => {
   try {
     const reason = String(req.body?.reason || 'غير محدد').slice(0, 300);
     const up = await pool.query(

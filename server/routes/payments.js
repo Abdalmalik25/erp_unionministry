@@ -1,11 +1,12 @@
 // server/routes/payments.js — Institutional payments (gateway-agnostic, no hard external dep)
 import express from 'express';
 import { pool } from '../middleware/shared.js';
+import { requirePermission } from '../middleware/rbac.js';
 import crypto from 'crypto';
 import { invalidateCache } from '../middleware/cache.js';
 const router=express.Router();
 
-router.post('/api/v1/payments', async (req,res)=>{
+router.post('/api/v1/payments', requirePermission('write:payments'), async (req,res)=>{
   const { service_instance_id, amount, method, payer_type, payer_id } = req.body;
   if(!amount) return res.status(400).json({ error:'amount مطلوب', code:'VALIDATION_ERROR' });
   const num=`PAY-${Date.now().toString(36).toUpperCase()}`;
@@ -17,7 +18,7 @@ router.post('/api/v1/payments', async (req,res)=>{
   invalidateCache('dashboard');
 });
 
-router.put('/api/v1/payments/:id/confirm', async (req,res)=>{
+router.put('/api/v1/payments/:id/confirm', requirePermission('write:payments'), async (req,res)=>{
   if(!req.user || !['super_admin','ministry_admin','financial_officer'].includes(req.user.role)) return res.status(403).json({ error:'صلاحية مالية فقط', code:'FORBIDDEN' });
   const hash=crypto.createHash('sha256').update(req.params.id).digest('hex');
   const r=await pool.query(`UPDATE payments SET status='paid', receipt_hash=$1, paid_at=NOW() WHERE id=$2 RETURNING *`, [hash, req.params.id]);
@@ -32,7 +33,7 @@ router.get('/api/v1/payments', async (req,res)=>{
 });
 
 // Signature
-router.post('/api/v1/signatures', async (req,res)=>{
+router.post('/api/v1/signatures', requirePermission('write:payments'), async (req,res)=>{
   const { entity_type, entity_id, signer_role } = req.body;
   if(!entity_type || !entity_id) return res.status(400).json({ error:'entity_type/entity_id مطلوب', code:'VALIDATION_ERROR' });
   const hash=crypto.createHash('sha256').update(entity_type+entity_id+Date.now()).digest('hex');

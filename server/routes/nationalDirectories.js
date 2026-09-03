@@ -4,6 +4,7 @@
 import { pool } from '../middleware/shared.js';
 import express from 'express';
 import { invalidateCache } from '../middleware/cache.js';
+import { requirePermission } from '../middleware/rbac.js';
 
 const router = express.Router();
 
@@ -81,7 +82,7 @@ router.get('/api/national-directories/stats', async (_req, res) => {
 });
 
 // ===================== إنشاء مدخل دليل وطني =====================
-router.post('/api/national-directories', async (req, res) => {
+router.post('/api/national-directories', requirePermission('write:national_directories'), async (req, res) => {
   try {
     const { directory_type, code, name_ar, name_en, parent_code, level, sort_order } = req.body || {};
     if (!DIRECTORY_TYPES.includes(directory_type)) {
@@ -116,7 +117,7 @@ router.post('/api/national-directories', async (req, res) => {
 });
 
 // ===================== تعديل مدخل دليل وطني =====================
-router.put('/api/national-directories/:type/:code', async (req, res) => {
+router.put('/api/national-directories/:type/:code', requirePermission('write:national_directories'), async (req, res) => {
   try {
     const { type, code } = req.params;
     if (!DIRECTORY_TYPES.includes(type)) {
@@ -159,7 +160,7 @@ router.put('/api/national-directories/:type/:code', async (req, res) => {
 });
 
 // ===================== تعطيل/تفعيل مدخل (حذف ناعم) =====================
-router.delete('/api/national-directories/:type/:code', async (req, res) => {
+router.delete('/api/national-directories/:type/:code', requirePermission('write:national_directories'), async (req, res) => {
   try {
     const { type, code } = req.params;
     if (!DIRECTORY_TYPES.includes(type)) {
@@ -284,7 +285,7 @@ const EXPORTABLE_TABLES = new Set([
   'organizational_entities', 'professions', 'isic4_classifications',
 ]);
 
-router.get('/api/registry/export', async (req, res) => {
+router.get('/api/registry/export', requirePermission('read:national_directories'), async (req, res) => {
   try {
     const { table, format = 'json' } = req.query;
     if (!table || !EXPORTABLE_TABLES.has(String(table))) {
@@ -315,7 +316,7 @@ router.get('/api/registry/export', async (req, res) => {
 });
 
 // استيراد JSON إلى أي جدول مسموح (إدراج جماعي)
-router.post('/api/registry/import', async (req, res) => {
+router.post('/api/registry/import', requirePermission('write:national_directories'), async (req, res) => {
   try {
     const { table, rows } = req.body || {};
     if (!table || !EXPORTABLE_TABLES.has(String(table))) {
@@ -328,8 +329,10 @@ router.post('/api/registry/import', async (req, res) => {
       return res.status(400).json({ error: 'الحد الأقصى 1000 سجل لكل دفعة' });
     }
     let imported = 0;
+    // Column name whitelist validation — prevents SQL injection via column names
+    const SAFE_COL_RE = /^[a-z_][a-z0-9_]*$/;
     for (const row of rows) {
-      const cols = Object.keys(row).filter(c => c !== 'id' && c !== 'created_at' && c !== 'updated_at');
+      const cols = Object.keys(row).filter(c => c !== 'id' && c !== 'created_at' && c !== 'updated_at' && SAFE_COL_RE.test(c));
       if (cols.length === 0) continue;
       const placeholders = cols.map((_, i) => `$${i + 1}`).join(',');
       const values = cols.map(c => row[c] ?? null);
@@ -551,7 +554,7 @@ router.get('/api/national-directories/:type/:code/usage', async (req, res) => {
 });
 
 // نشر التغييرات على السجلات المرتبطة
-router.post('/api/national-directories/:type/:code/propagate', async (req, res) => {
+router.post('/api/national-directories/:type/:code/propagate', requirePermission('write:national_directories'), async (req, res) => {
   try {
     const { type, code } = req.params;
     const { target_entity_types = [], cascade_update = false } = req.body || {};
@@ -607,7 +610,7 @@ router.get('/api/national-directories/:type/versions', async (req, res) => {
   }
 });
 
-router.post('/api/national-directories/:type/versions', async (req, res) => {
+router.post('/api/national-directories/:type/versions', requirePermission('write:national_directories'), async (req, res) => {
   try {
     const { type } = req.params;
     const { changes_summary, change_reasons = [], effective_from } = req.body || {};
@@ -648,7 +651,7 @@ router.post('/api/national-directories/:type/versions', async (req, res) => {
   }
 });
 
-router.post('/api/national-directories/:type/versions/:versionId/approve', async (req, res) => {
+router.post('/api/national-directories/:type/versions/:versionId/approve', requirePermission('write:national_directories'), async (req, res) => {
   try {
     const { type, versionId } = req.params;
     const userId = req.user?.id || null;

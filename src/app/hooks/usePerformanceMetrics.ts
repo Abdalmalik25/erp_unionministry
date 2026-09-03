@@ -171,7 +171,7 @@ function reportMetric(
 
   if (import.meta.env.DEV) {
     const color = rating === 'good' ? '#22c55e' : rating === 'needs-improvement' ? '#eab308' : '#ef4444';
-    console.log(`%c[WebVitals] ${name}: ${value.toFixed(2)} ${unit} (${rating})`, `color: ${color}`);
+    console.warn(`[WebVitals] ${name}: ${value.toFixed(2)} ${unit} (${rating}) — ${color}`);
   }
 
   if (typeof window !== 'undefined') {
@@ -233,7 +233,7 @@ export function usePerformanceMetrics(): PerformanceMetrics & {
 
   useEffect(() => {
     if (import.meta.env.DEV) {
-      console.log('[Navigation]', location.pathname, metricsStore);
+      console.warn('[Navigation]', location.pathname, metricsStore);
     }
   }, [location]);
 

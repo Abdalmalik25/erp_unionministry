@@ -184,6 +184,30 @@ export async function getMinistryDashboard(): Promise<DashboardSummary | null> {
   }
 }
 
+export interface IntelligenceDashboard {
+  generated_at: string;
+  took_ms?: number;
+  optimized?: boolean;
+  professions: { total: number; detailed: number; hazardous: number };
+  inspections: { total: number; compliant: number; non_compliant: number; avg_score: number | null };
+  evaluations: { total: number; passing: number; avg_score: number | null };
+  entities: { total: number; active: number };
+  violations: { open: number };
+  alerts: { unresolved: number };
+  service_requests: { pending: number };
+}
+
+// Optimized intelligence dashboard — backed by fn_intelligence_dashboard_fast() (single query)
+export async function getIntelligenceDashboard(): Promise<IntelligenceDashboard | null> {
+  try {
+    const response = await api.get('/v2/intelligence/dashboard') as any;
+    return response?.data as IntelligenceDashboard | null;
+  } catch (error) {
+    console.error('Failed to fetch intelligence dashboard:', error);
+    return null;
+  }
+}
+
 export async function getOrganizationDashboard(orgId: string): Promise<DashboardSummary | null> {
   try {
     const response = await api.get(`/dashboard/organization/${orgId}`) as any;

@@ -3,15 +3,15 @@ import express from 'express';
 import crypto from 'crypto';
 import { pool, paginate } from '../middleware/shared.js';
 import { hashPassword } from '../middleware/auth.js';
+import { requirePermission } from '../middleware/rbac.js';
 import { invalidateCache } from '../middleware/cache.js';
 
 const router = express.Router();
 
-const AUTH_ENABLED = process.env.ENABLE_AUTH === 'true';
+// Use centralized RBAC — no auth bypass possible
 function requireAdmin(req, res, next) {
-  if (!AUTH_ENABLED) return next();
   if (!req.user) return res.status(401).json({ error: 'غير مصرح — يرجى تسجيل الدخول' });
-  if (req.user.role !== 'ministry_admin') return res.status(403).json({ error: 'صلاحية مدير النظام فقط' });
+  if (!['super_admin', 'ministry_admin'].includes(req.user.role)) return res.status(403).json({ error: 'صلاحية مدير النظام فقط' });
   next();
 }
 

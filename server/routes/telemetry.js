@@ -77,6 +77,9 @@ router.post('/api/telemetry/errors', express.json({ limit: '512kb' }), async (re
 
 // Admin-only: summary of recent client errors for the DiagnosticPanel
 router.get('/api/telemetry/errors/summary', async (req, res) => {
+  if (!req.user || !['super_admin', 'ministry_admin'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'غير مصرح', code: 'FORBIDDEN' });
+  }
   try {
     const r = await pool.query(`
       SELECT

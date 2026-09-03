@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { 
   Building2, Users, FileCheck, Shield, BarChart3, 
   Globe, ChevronRight, ChevronLeft, Play, Pause,
-  CheckCircle2, ArrowRight, Menu, X, Eye, EyeOff,
+  CheckCircle2, Eye, EyeOff,
   Briefcase, UserCheck, AlertTriangle, ClipboardCheck,
   TrendingUp, Award, Calendar, FileText, MapPin
 } from 'lucide-react';
@@ -26,10 +26,10 @@ const tourSlides = [
     color: 'from-blue-600 to-blue-800',
     bgPattern: true,
     features: [
-      { icon: Users, label: 'إدارة العمال', labelEn: 'Worker Management', value: '50,000+' },
-      { icon: Building2, label: 'المنشآت', labelEn: 'Establishments', value: '12,000+' },
-      { icon: FileCheck, label: 'العقود', labelEn: 'Contracts', value: '100,000+' },
-      { icon: Shield, label: 'الجهات الرقابية', labelEn: 'Inspector Bodies', value: '350+' },
+      { icon: Users, label: 'إدارة العمال', labelEn: 'Worker Management', value: '' },
+      { icon: Building2, label: 'المنشآت', labelEn: 'Establishments', value: '' },
+      { icon: FileCheck, label: 'العقود', labelEn: 'Contracts', value: '' },
+      { icon: Shield, label: 'الجهات الرقابية', labelEn: 'Inspector Bodies', value: '' },
     ]
   },
   {
@@ -161,31 +161,7 @@ function GlowCard({ children, className = '', colorClass = 'from-blue-500/20 to-
   );
 }
 
-// مكون الايقونة المتحركة
-function AnimatedIcon({ icon: Icon, className = '', delay = 0 }: { 
-  icon: any; 
-  className?: string;
-  delay?: number;
-}) {
-  const [isVisible, setIsVisible] = useState(false);
-  
-  useEffect(() => {
-    const timer = setTimeout(() => setIsVisible(true), delay);
-    return () => clearTimeout(timer);
-  }, [delay]);
 
-  return (
-    <div 
-      className={`
-        transform transition-all duration-700 ease-out
-        ${isVisible ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}
-        ${className}
-      `}
-    >
-      <Icon className="w-full h-full" />
-    </div>
-  );
-}
 
 // مكون شريط التقدم
 function ProgressBar({ current, total, onSelect }: { 
@@ -308,7 +284,7 @@ function TourSlide({ slide, index, current, isRTL }: {
 
 // مكون العرض الرئيسي
 export default function ProductTour() {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const isRTL = i18n.language === 'ar';
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -373,8 +349,6 @@ export default function ProductTour() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isRTL, isFullscreen]);
-
-  const currentSlideData = tourSlides[currentSlide];
 
   return (
     <div 

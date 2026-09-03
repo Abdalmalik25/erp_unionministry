@@ -309,7 +309,7 @@ router.get('/api/commercial/:id/360', handle360Dossier);
 router.get('/api/commercial-360/:id', handle360Dossier);
 router.get('/api/commercial/dossier/:id', handle360Dossier);
 
-router.post('/api/commercial', async (req, res) => {
+router.post('/api/commercial', requirePermission('write:entities'), async (req, res) => {
   try {
     const d = req.body;
     const cols = [
@@ -333,7 +333,7 @@ router.post('/api/commercial', async (req, res) => {
   }
 });
 
-router.put('/api/commercial/:id', async (req, res) => {
+router.put('/api/commercial/:id', requirePermission('write:entities'), async (req, res) => {
   try {
     const fields = [];
     const values = [];
@@ -364,7 +364,7 @@ router.put('/api/commercial/:id', async (req, res) => {
   }
 });
 
-router.delete('/api/commercial/:id', async (req, res) => {
+router.delete('/api/commercial/:id', requirePermission('write:entities'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE commercial_establishments SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -395,7 +395,7 @@ router.get('/api/commercial-establishments', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.post('/api/commercial-establishments', async (req, res) => {
+router.post('/api/commercial-establishments', requirePermission('write:entities'), async (req, res) => {
   try {
     const d = req.body;
     const cols = ['name_ar','name_en','establishment_id','unified_code','commercial_register_number','entity_type','sector','classification','status','capital_amount','employees_count','license_date','expiry_date','address','phone','email','owner_name','license_number','governorate','city'];
@@ -410,7 +410,7 @@ router.post('/api/commercial-establishments', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.put('/api/commercial-establishments/:id', async (req, res) => {
+router.put('/api/commercial-establishments/:id', requirePermission('write:entities'), async (req, res) => {
   try {
     const d = req.body;
     const valid = safeSetClause('commercial_establishments', d);
@@ -424,7 +424,7 @@ router.put('/api/commercial-establishments/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.delete('/api/commercial-establishments/:id', async (req, res) => {
+router.delete('/api/commercial-establishments/:id', requirePermission('write:entities'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE commercial_establishments SET deleted_at=NOW(), deleted_by=$1 WHERE id=$2 AND deleted_at IS NULL RETURNING id', [req.user?.id||null, req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود', code:'NOT_FOUND' });
@@ -457,7 +457,7 @@ router.get('/api/enterprise-occupation-links', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.post('/api/enterprise-occupation-links', async (req, res) => {
+router.post('/api/enterprise-occupation-links', requirePermission('write:entities'), async (req, res) => {
   try {
     const d = req.body;
     if (!d.enterprise_id || !d.occupation_id) return res.status(400).json({ error: 'enterprise_id و occupation_id مطلوبان' });
@@ -472,7 +472,7 @@ router.post('/api/enterprise-occupation-links', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.put('/api/enterprise-occupation-links/:id', async (req, res) => {
+router.put('/api/enterprise-occupation-links/:id', requirePermission('write:entities'), async (req, res) => {
   try {
     const d = req.body;
     const allowedCols = ['enterprise_id','occupation_id','enterprise_name','cr_number','occupation_code','occupation_name_ar','isco_code','department','allocated_headcount','yemeni_headcount','expatriate_headcount','salary_scale','contract_types','yemenization_policy','link_status','compliance_score','labor_law_compliant','salary_compliant','osh_compliant','medical_checks_done','yemenization_compliant'];
@@ -487,7 +487,7 @@ router.put('/api/enterprise-occupation-links/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.delete('/api/enterprise-occupation-links/:id', async (req, res) => {
+router.delete('/api/enterprise-occupation-links/:id', requirePermission('write:entities'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE enterprise_occupation_links SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -522,7 +522,7 @@ router.get('/api/entity-relationships', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.post('/api/entity-relationships', async (req, res) => {
+router.post('/api/entity-relationships', requirePermission('write:entities'), async (req, res) => {
   try {
     const d = req.body;
     if (!d.source_entity_id || !d.target_entity_id || !d.relationship_type) {
@@ -539,7 +539,7 @@ router.post('/api/entity-relationships', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.put('/api/entity-relationships/:id', async (req, res) => {
+router.put('/api/entity-relationships/:id', requirePermission('write:entities'), async (req, res) => {
   try {
     const d = req.body;
     const allowedCols = ['source_entity_id','target_entity_id','relationship_type','relationship_level','start_date','end_date','status','metadata'];
@@ -554,7 +554,7 @@ router.put('/api/entity-relationships/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.delete('/api/entity-relationships/:id', async (req, res) => {
+router.delete('/api/entity-relationships/:id', requirePermission('write:entities'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE entity_relationships SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });

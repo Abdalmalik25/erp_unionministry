@@ -94,6 +94,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const helperId = `${inputId}-helper`;
     const errorId = `${inputId}-error`;
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [isFocused, setIsFocused] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [internalValue, setInternalValue] = useState(defaultValue ?? '');

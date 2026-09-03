@@ -14,7 +14,7 @@
  * - Optimistic UI
  */
 
-import { lazy, Suspense, useState, useMemo, useCallback, useEffect } from 'react';
+import { lazy, Suspense, useState, useMemo, useCallback } from 'react';
 
 // Lazy load heavy components
 const AdvancedSearchEngine = lazy(() =>
@@ -75,8 +75,7 @@ export function UniversalDataView<T extends Record<string, unknown>>({
   enableAdvancedSearch = true,
   enableAnalytics = true,
   pageSize = 25,
-  emptyState,
-}: UniversalDataViewProps<T>) {
+  emptyState }: UniversalDataViewProps<T>) {
   // State
   const [viewMode, setViewMode] = useState<ViewMode>(defaultView);
   const [searchQuery, setSearchQuery] = useState('');
@@ -399,8 +398,7 @@ function TableView<T extends Record<string, unknown>>({
   data,
   sortConfig,
   onSort,
-  onRowClick,
-}: {
+  onRowClick }: {
   fields: DataViewField[];
   data: T[];
   sortConfig: { field: string; direction: 'asc' | 'desc' } | null;
@@ -457,8 +455,7 @@ function TableView<T extends Record<string, unknown>>({
 function CardsView<T extends Record<string, unknown>>({
   fields,
   data,
-  onRowClick,
-}: {
+  onRowClick }: {
   fields: DataViewField[];
   data: T[];
   onRowClick?: (row: T) => void;
@@ -505,8 +502,7 @@ function CardsView<T extends Record<string, unknown>>({
 function EmptyState({
   emptyState,
   hasFilters,
-  onClearFilters,
-}: {
+  onClearFilters }: {
   emptyState?: UniversalDataViewProps<Record<string, unknown>>['emptyState'];
   hasFilters: boolean;
   onClearFilters: () => void;

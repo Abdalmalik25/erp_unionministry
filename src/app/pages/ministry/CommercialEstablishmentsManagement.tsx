@@ -2,7 +2,7 @@
  * Commercial Establishments Management - منظومة إدارة وسجلات المنشآت التجارية (360° Dossier)
  * المنظومة الوطنية لإدارة قطاع العمل | وزارة الشؤون الاجتماعية والعمل - قطاع العمل
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Building2, Plus, Search, Download, Edit, RefreshCw, FileCheck, Users, Eye, Phone, MapPin, ShieldCheck, Scale, TrendingDown, Award, ChevronRight, ChevronLeft, Printer, X, CheckCircle2, Briefcase } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Button } from '../../components/ui/Button';
@@ -11,9 +11,9 @@ import { toast } from 'sonner';
 import { logAudit } from '../../utils/security';
 import { exportReportToExcel } from '../../components/enterprise/PrintExportManager';
 import { useGovernorates } from '../../hooks/useReferenceData';
-import {} from '../../branding';
 import { fetchEntityRiskAssessment, EntityRiskAssessment } from '../../utils/aiRiskEngine';
 import { BrainCircuit, Sparkles } from 'lucide-react';
+import { useServerList } from '../../hooks/useServerList';
 interface CommercialEstablishment {
     id: string;
     establishment_id: string;
@@ -91,14 +91,18 @@ const STATUS_LABELS: Record<string, {
 };
 const PAGE_SIZE = 15;
 export function CommercialEstablishmentsManagement() {
-    const [establishments, setEstablishments] = useState<CommercialEstablishment[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [filterSector, setFilterSector] = useState('');
-    const [filterStatus, setFilterStatus] = useState('');
-    const [filterGovernorate] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
-    const [totalCount, setTotalCount] = useState(0);
+    // منهجية مؤسسية موحدة — بحث خادمي مع صلاحيات وتدقيق وسرعة (debounce 300ms)
+    const { data: establishments, total: totalCount, page: currentPage, totalPages, loading, error, search: searchTerm, setSearch: setSearchTerm, filters, setFilter, setPage: setCurrentPage, refresh: fetchData, hasPermission } = useServerList<CommercialEstablishment>({
+      endpoint: '/api/commercial',
+      pageSize: PAGE_SIZE,
+      requiredPermission: 'commercial:view',
+      auditResource: 'commercial_establishments',
+    });
+    const filterSector = filters.sector || '';
+    const filterStatus = filters.status || '';
+    const filterGovernorate = filters.governorate || '';
+    const setFilterSector = (v: string) => setFilter('sector', v);
+    const setFilterStatus = (v: string) => setFilter('status', v);
     const { governorates } = useGovernorates();
     // 360 Dossier Modal
     const [dossierData, setDossierData] = useState<Dossier360 | null>(null);
@@ -123,39 +127,8 @@ export function CommercialEstablishmentsManagement() {
         employees_count: 1,
         status: 'active',
     });
-    const fetchData = useCallback(async () => {
-        setLoading(true);
-        try {
-            const params = new URLSearchParams();
-            params.set('page', String(currentPage));
-            params.set('limit', String(PAGE_SIZE));
-            if (searchTerm.trim())
-                params.set('search', searchTerm.trim());
-            if (filterSector)
-                params.set('sector', filterSector);
-            if (filterStatus)
-                params.set('status', filterStatus);
-            if (filterGovernorate)
-                params.set('governorate', filterGovernorate);
-            const r = await fetch(`/api/commercial?${params.toString()}`);
-            if (r.ok) {
-                const data = await r.json();
-                setEstablishments(data.data || []);
-                setTotalCount(data.total || (data.data || []).length);
-            }
-            logAudit({ action: 'view', resource: 'commercial_establishments' });
-        }
-        catch {
-            toast.error('خطأ في تحميل سجل المنشآت');
-        }
-        finally {
-            setLoading(false);
-        }
-    }, [currentPage, searchTerm, filterSector, filterStatus, filterGovernorate]);
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
-    const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+    // تم استبدال المنطق اليدوي السابق بـ useServerList — بحث خادمي موحد مع صلاحيات
+    // totalPages و fetchData يأتيان من الخطاف مباشرة
     // Open 360 Dossier
     const handleOpen360 = async (est: CommercialEstablishment) => {
         setActiveDossierTab('overview');
@@ -476,10 +449,10 @@ export function CommercialEstablishmentsManagement() {
             صفحة <strong className="text-foreground">{currentPage}</strong> من <strong className="text-foreground">{totalPages}</strong> (إجمالي <strong className="text-foreground">{totalCount}</strong> منشأة)
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1 || loading} className="p-1.5 rounded-lg border border-border bg-card hover:bg-muted disabled:opacity-40 transition-colors">
+            <button onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} disabled={currentPage <= 1 || loading} className="p-1.5 rounded-lg border border-border bg-card hover:bg-muted disabled:opacity-40 transition-colors">
               <ChevronRight size={16}/>
             </button>
-            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages || loading} className="p-1.5 rounded-lg border border-border bg-card hover:bg-muted disabled:opacity-40 transition-colors">
+            <button onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))} disabled={currentPage >= totalPages || loading} className="p-1.5 rounded-lg border border-border bg-card hover:bg-muted disabled:opacity-40 transition-colors">
               <ChevronLeft size={16}/>
             </button>
           </div>

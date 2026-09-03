@@ -1,4 +1,6 @@
 /**
+ * @deprecated Canonical: src/app/components/ui/* — this primitives mirror is kept for backward compatibility only.
+ * New code should import from @/app/components/ui/*
  * Card Primitive — Accessible, performant, RTL-aware container
  * WCAG 2.1 AA compliant
  */

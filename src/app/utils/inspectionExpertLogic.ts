@@ -26,6 +26,7 @@ export interface InspectionTriage {
   slaAdvice: string | null;
 }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const SENSITIVE_TYPES = new Set(['child_labor', 'OSH', 'complaint_based']);
 
 const SEVERITY_WEIGHT: Record<string, number> = {

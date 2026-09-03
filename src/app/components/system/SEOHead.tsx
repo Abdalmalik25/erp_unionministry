@@ -104,6 +104,10 @@ export function SEOHead(config: SEOConfig): null {
     : typeof window !== 'undefined'
       ? window.location.href
       : SITE_URL;
+  const keywordsKey = keywords.join(',');
+  const schemaKey = JSON.stringify(schema);
+  const hreflangAr = hreflang?.ar;
+  const hreflangEn = hreflang?.en;
 
   useEffect(() => {
     // Document title
@@ -175,10 +179,11 @@ export function SEOHead(config: SEOConfig): null {
         schemas.forEach((_, i) => removeScript(`ld-json-${i}`));
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     fullTitle,
     description,
-    keywords.join(','),
+    keywordsKey,
     fullCanonical,
     fullImage,
     type,
@@ -191,10 +196,10 @@ export function SEOHead(config: SEOConfig): null {
     ogImageWidth,
     ogImageHeight,
     twitterCard,
-    hreflang?.ar,
-    hreflang?.en,
+    hreflangAr,
+    hreflangEn,
     themeColor,
-    JSON.stringify(schema),
+    schemaKey,
   ]);
 
   return null;

@@ -5,7 +5,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Search, Eye, Trash2, Plus, RefreshCw, CheckCircle, X, Clock, AlertTriangle, Bell, Download, } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
-import {} from '../../components/ui/StatusBadge';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { useConfirm } from '../../components/ui/ConfirmDialog';
 import { PermissionGate } from '../../hooks/usePermissions';
@@ -32,7 +31,7 @@ interface ComplianceAlert {
 const SEVERITY_CONFIG: Record<string, {
     label: string;
     color: string;
-    icon: any;
+    icon: React.ComponentType<{ className?: string }>;
 }> = {
     info: { label: 'معلومات', color: 'bg-blue-100 text-blue-700', icon: Bell },
     warning: { label: 'تحذير', color: 'bg-yellow-100 text-yellow-700', icon: AlertTriangle },
@@ -71,9 +70,11 @@ export default function ComplianceAlertsManagement() {
                 const d = await r.json();
                 setAlerts(d.data || []);
             }
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'فشل تحميل تنبيهات الامتثال');
+        } finally {
+            setLoading(false);
         }
-        catch { /* empty */ }
-        setLoading(false);
     }, [severityFilter, resolvedFilter]);
     useEffect(() => { fetchAlerts(); }, [fetchAlerts]);
     const filtered = useMemo(() => {

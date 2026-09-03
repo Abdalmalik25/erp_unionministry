@@ -42,7 +42,7 @@ router.get('/api/v1/workflows/instances/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.post('/api/v1/workflows/instances/:id/transition', async (req, res) => {
+router.post('/api/v1/workflows/instances/:id/transition', requirePermission('write:workflows'), async (req, res) => {
   try {
     const { action, to_state, comment } = req.body;
     const inst = await pool.query('SELECT id, workflow_key, workflow_version, entity_type, entity_id, current_state, previous_state, assigned_to, assigned_office_id, started_at, completed_at, due_at, metadata, created_by, updated_at FROM workflow_instances WHERE id = $1', [req.params.id]);
@@ -87,7 +87,7 @@ router.get('/api/v1/cases', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.post('/api/v1/cases', async (req, res) => {
+router.post('/api/v1/cases', requirePermission('write:workflows'), async (req, res) => {
   try {
     const { case_type, subject, description, priority, jurisdiction_governorate, jurisdiction_directorate, office_id, parties, linked_entity_id, linked_entity_type } = req.body;
     if (!case_type || !subject) return res.status(400).json({ error: 'case_type و subject مطلوبان' });
@@ -119,7 +119,7 @@ router.get('/api/v1/cases/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.post('/api/v1/cases/:id/actions', async (req, res) => {
+router.post('/api/v1/cases/:id/actions', requirePermission('write:workflows'), async (req, res) => {
   try {
     const { action_type, description, due_date } = req.body;
     const r = await pool.query(
@@ -150,7 +150,7 @@ router.get('/api/v1/correspondence', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.post('/api/v1/correspondence', async (req, res) => {
+router.post('/api/v1/correspondence', requirePermission('write:workflows'), async (req, res) => {
   try {
     const { direction, subject, body, sender_entity_type, sender_entity_id, recipient_entity_type, recipient_entity_id, case_id } = req.body;
     if (!subject) return res.status(400).json({ error: 'الموضوع مطلوب' });

@@ -95,7 +95,7 @@ router.delete('/api/legal-references/:id', requirePermission('legal:delete'), as
 
 // ===================== LABOR DISPUTES =====================
 
-router.put('/api/legal_references/:id/restore', async (req, res) => {
+router.put('/api/legal_references/:id/restore', requirePermission('write:legal_references'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE legal_references SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -171,7 +171,7 @@ router.delete('/api/labor-disputes/:id', requirePermission('laborDisputes:delete
 
 // ===================== EXPATRIATE LICENSES =====================
 
-router.put('/api/labor_disputes/:id/restore', async (req, res) => {
+router.put('/api/labor_disputes/:id/restore', requirePermission('write:labor_disputes'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE labor_disputes SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -248,7 +248,7 @@ router.delete('/api/expatriate-licenses/:id', requirePermission('expatriate:dele
 
 // ===================== Evaluation Certificates =====================
 
-router.put('/api/expatriate_licenses/:id/restore', async (req, res) => {
+router.put('/api/expatriate_licenses/:id/restore', requirePermission('write:expatriate_licenses'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE expatriate_licenses SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -417,7 +417,7 @@ router.delete('/api/evaluation-certificates/:id', requirePermission('evaluation:
 
 // ===================== Licenses =====================
 
-router.put('/api/evaluation_certificates/:id/restore', async (req, res) => {
+router.put('/api/evaluation_certificates/:id/restore', requirePermission('write:evaluation_certificates'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE evaluation_certificates SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -521,7 +521,7 @@ router.delete('/api/licenses/:id', requirePermission('licenses:delete'), async (
   }
 });
 
-router.put('/api/licenses/:id/restore', async (req, res) => {
+router.put('/api/licenses/:id/restore', requirePermission('write:licenses'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE licenses SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });

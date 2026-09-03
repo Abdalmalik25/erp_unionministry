@@ -1,10 +1,11 @@
+import type { PaginationMeta } from '../types/api';
 /**
  * inspectionService.ts — Production-Grade Inspection Scheduling & Execution Service
  * Yemen National Labor Platform — Law 5/1995 & Law 23/1997
  * Integrates: Ministry ↔ Inspector Field App ↔ Employer OS ↔ Worker Passport
  */
 
-import { get, post, put, del, getFile, uploadFile, postFormData } from './api';
+import { get, post, put, getFile, uploadFile, postFormData } from './api';
 
 export type InspectionType = 
   | 'scheduled' | 'complaint_based' | 'follow_up' | 'random' | 'OSH' | 'wage_compliance' | 'child_labor';
@@ -180,7 +181,7 @@ export interface CreateInspectionRequest {
 export interface InspectionServiceResponse<T> {
   success: boolean;
   data: T;
-  meta?: any;
+  meta?: PaginationMeta;
 }
 
 // ============================================================
@@ -191,7 +192,7 @@ export const inspectionService = {
   /**
    * List inspections with advanced filtering
    */
-  async listInspections(filters: InspectionFilters = {}): Promise<InspectionServiceResponse<{ inspections: Inspection[]; meta: any }>> {
+  async listInspections(filters: InspectionFilters = {}): Promise<InspectionServiceResponse<{ inspections: Inspection[]; meta: PaginationMeta }>> {
     const params = new URLSearchParams();
     
     if (filters.type?.length) params.set('type', filters.type.join(','));
@@ -464,7 +465,6 @@ export const inspectionService = {
     sections: Array<{ title: string; items: string[] }>;
   }>> {
     return get<any>(`/inspections/checklist/${type}`);
-  },
-};
+  } };
 
 export default inspectionService;

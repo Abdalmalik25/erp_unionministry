@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { BarChart3, Download, FileText, FileSpreadsheet, Printer, RefreshCw, Shield, TrendingUp, Users, Building2, AlertTriangle, Scale, Briefcase, ClipboardCheck, Award, Globe, Calculator, } from 'lucide-react';
+import { BarChart3, Download, FileText, FileSpreadsheet, Printer, RefreshCw, Shield, TrendingUp, Users, Building2, AlertTriangle, Scale, Briefcase, ClipboardCheck, Award, Globe, Calculator, Lock } from 'lucide-react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { toast } from 'sonner';
@@ -8,6 +8,8 @@ import { exportReportToExcel, exportReportToPDF } from '../../components/enterpr
 import type { ReportColumn } from '../../components/enterprise/PrintExportManager';
 import { DomainAnalyticalPanel } from '../../components/reports/DomainAnalyticalPanel';
 import { translateStatus } from '../../components/ui/designSystem';
+import { usePermissions } from '../../hooks/usePermissions';
+import { PermissionGate } from '../../hooks/usePermissions';
 const COLORS = ['#1E3A8A', '#2563EB', '#3B82F6', '#D97706', '#0D9488', '#7C3AED', '#DC2626', '#059669'];
 const MAP: Record<string, string> = {
     commercial: 'سجل المنشآت والشركات التجارية',
@@ -51,12 +53,15 @@ const REPORT_ENDPOINTS: Record<ReportType, string> = {
     documents: '/api/documents?limit=200',
 };
 export function ReportsManagement() {
+    const { can } = usePermissions();
+    const hasReportPermission = can('reports:view') || can('dashboard:view') || can('reports:generate');
     const [reportType, setReportType] = useState<ReportType>('commercial');
     const [dateFrom, setDateFrom] = useState('2026-01-01');
     const [dateTo, setDateTo] = useState('2026-12-31');
     const [govFilter, setGovFilter] = useState('all');
     const [loading, setLoading] = useState(false);
     const [reportData, setReportData] = useState<any[]>([]);
+    const [reportMeta, setReportMeta] = useState<{ total?: number; took?: number; correlationId?: string } | null>(null);
     const [entities, setEntities] = useState<any[]>([]);
     const [professions, setProfessions] = useState<any[]>([]);
     const timedFetch = (url: string, timeoutMs = 8000) => {

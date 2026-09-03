@@ -4,6 +4,7 @@
 import express from 'express';
 import crypto from 'crypto';
 import { pool } from '../middleware/shared.js';
+import { requirePermission } from '../middleware/rbac.js';
 import { validateUpload, saveUpload, readStoredFile } from '../middleware/upload.js';
 
 const router = express.Router();
@@ -16,7 +17,7 @@ const MIME_MAP = {
 };
 
 // رفع — جسم خام ثنائي (limit 10MB مطابق لحد validateUpload)
-router.post('/api/v1/uploads', express.raw({ type: '*/*', limit: '10mb' }), async (req,res)=>{
+router.post('/api/v1/uploads', requirePermission('write:documents'), express.raw({ type: '*/*', limit: '10mb' }), async (req,res)=>{
   if(!req.user) return res.status(401).json({ error:'غير مصرح', code:'UNAUTHORIZED' });
   if(!req.body || !req.body.length) return res.status(400).json({ error:'لا يوجد محتوى ملف', code:'EMPTY_FILE' });
   const originalName = String(req.headers['x-file-name']||'file.bin');
@@ -36,12 +37,16 @@ router.post('/api/v1/uploads', express.raw({ type: '*/*', limit: '10mb' }), asyn
   }
 });
 
-// تنزيل — مصادقة مطلوبة + بث فعلي من القرص
+// تنزيل — مصادقة مطلوبة + ملكية + بث فعلي من القرص
 router.get('/api/v1/uploads/:id', async (req,res)=>{
   if(!req.user) return res.status(401).json({ error:'غير مصرح', code:'UNAUTHORIZED' });
   const r = await pool.query('SELECT * FROM uploaded_files WHERE id=$1', [req.params.id]);
   if(!r.rows.length) return res.status(404).json({ error:'غير موجود', code:'NOT_FOUND' });
   const f = r.rows[0];
+  // فحص الملكية: المستخدم يملك الملف أو هو مدير
+  if (f.uploaded_by !== req.user.sub && !['super_admin', 'ministry_admin'].includes(req.user.role)) {
+    return res.status(403).json({ error:'ليس لديك صلاحية للوصول لهذا الملف', code:'FORBIDDEN' });
+  }
   const content = readStoredFile(f.safe_name);
   if(!content) return res.status(410).json({ error:'الملف لم يعد متوفراً', code:'FILE_GONE' });
   // تحقق سلامة عند التنزيل — الشهادة الرقمية للمحتوى

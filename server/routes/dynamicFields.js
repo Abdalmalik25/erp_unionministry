@@ -5,11 +5,9 @@ import { validateFieldDefinition, DEFINITION_REQUIRED_KEYS } from '../lib/dynami
 import { invalidateCache } from '../middleware/cache.js';
 
 const router = express.Router();
-const AUTH_ENABLED = process.env.ENABLE_AUTH === 'true';
 
-// Field-definition metadata mutations respect auth when enabled.
+// Fail-closed: require authenticated user, no auth bypass
 function requireDefManager(req, res, next) {
-  if (!AUTH_ENABLED) return next();
   if (!req.user) return res.status(401).json({ error: 'غير مصرح — يرجى تسجيل الدخول' });
   return next();
 }

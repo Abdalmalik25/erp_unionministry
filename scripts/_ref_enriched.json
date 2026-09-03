@@ -1,0 +1,2851 @@
+[
+ {
+  "code": "2221",
+  "name_ar": "أخصائي تمريض عناية مركزة وطوارئ",
+  "description_ar": "تقديم الرعاية التمريضية الحرجة للمرضى المنومين في العناية المركزة وأقسام الطوارئ وتشغيل أجهزة التنفس الاصطناعي والمراقبة.",
+  "scope": "عام وخاص ومؤسسي",
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "كمامة طبية واقية",
+   "قفازات معقمة ومريول طبي",
+   "واقي عينين عند سحب الإفرازات"
+  ],
+  "qualifications": [
+   "بكالوريوس تمريض / دبلوم عالي عناية مركزة",
+   "ترخيص مزاولة مهنة التمريض من المجلس الطبي الأعلى"
+  ],
+  "training_requirements": [
+   "100 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "مراقبة وتسجيل العلامات الحيوية المستمرة للمرضى والتبليغ الفوري عن التغيرات الحرجة.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "إعطاء الأدوية الوريدية الحساسة ومحاليل الإنعاش وفق توجيهات الطبيب المعالج بدقة.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "العناية بالقساطر الوريدية والمركزية وأنابيب التنفس وتطبيق معايير التعقيم الصارم.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "المشاركة الفعالة في فرق الإنعاش القلبي الرئوي (Code Blue).",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "الرعاية التمريضية الحرجة",
+    "تشغيل أجهزة التنفس الاصطناعي والمونيتور",
+    "قراءة وتفسير تخطيط القلب الأساسي ECG",
+    "إعطاء الأدوية الوريدية المعقدة"
+   ],
+   "soft_skills": [
+    "سرعة البديهة والتحكم في التوتر",
+    "الرحمة والاهتمام البالغ بالمريض",
+    "العمل التكاملي مع الفريق الطبي"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "220000.00",
+  "max_salary": "600000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "مشرف تمريض أقسام حرجة / مدير هيئة التمريض بالمستشفى",
+   "current": "أخصائي تمريض عناية مركزة ممارس",
+   "previous": "ممرض عام / ممرض أقسام رقود"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "المادة 113 و 118 من قانون العمل 5/1995"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 85% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "2412",
+  "name_ar": "أخصائي تمويل ومشاريع صغيرة وأصغر",
+  "description_ar": "دراسة الجدوى الميدانية لطلبات التمويل للمشاريع الصغيرة، تقييم الجدارة الائتمانية، ومتابعة السداد والتحصيل.",
+  "scope": "عام وخاص ومؤسسي",
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "بيئة عمل ميدانية آمنة"
+  ],
+  "qualifications": [
+   "بكالوريوس إدارة أعمال / علوم مالية ومصرفية",
+   "شهادة ترخيص أخصائي تمويل أصغر من شبكة التمويل الأصغر اليمنية"
+  ],
+  "training_requirements": [
+   "50 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "النزول الميداني لمعاينة أنشطة العملاء وتقييم التدفقات النقدية الفعلية.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "إعداد مذكرات الدراسة الائتمانية وتحديد قيمة التمويل والضمانات المناسبة.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "متابعة دورات السداد الشهري والتدخل المبكر لمعالجة أي تعثر مالي.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "تقديم الاستشارات المالية والتسويقية لأصحاب المشاريع لضمان نموها واستدامتها.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "التحليل المالي للمشاريع المصغرة",
+    "تقييم المخاطر الائتمانية",
+    "الأنظمة المالية للتمويل الأصغر",
+    "إجراءات التحصيل والضمانات"
+   ],
+   "soft_skills": [
+    "الإقناع والتفاوض الميداني",
+    "بناء العلاقات الاجتماعية",
+    "المرونة والصبر"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "200000.00",
+  "max_salary": "600000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "مشرف تمويل / مدير فرع مؤسسة تمويل أصغر",
+   "current": "أخصائي تمويل مشاريع معتمد",
+   "previous": "ضابط ائتمان ميداني مبتدئ"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "المادة 11 من قانون العمل 5/1995"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 95% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "2511",
+  "name_ar": "أخصائي ذكاء الأعمال وتحليل البيانات",
+  "description_ar": "استخراج وتجميع وتنظيف وتحليل البيانات التشغيلية والمالية وبناء لوحات المؤشرات التفاعلية لدعم اتخاذ القرار المؤسسي.",
+  "scope": null,
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "بيئة عمل مكتبية معتمدة هندسياً"
+  ],
+  "qualifications": [
+   "بكالوريوس نظم معلومات / إحصاء / علوم حاسوب",
+   "شهادة مهنية في تحليل البيانات المعتمدة"
+  ],
+  "training_requirements": [
+   "60 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "بناء مستودعات البيانات ونماذج ETL للربط بين مختلف أنظمة المنشأة.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "تصميم لوحات القيادة الاستراتيجية عبر Power BI / Tableau ومؤشرات الأداء KPI.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "كتابة استعلامات SQL متقدمة واستخراج الأنماط والاتجاهات الإحصائية.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "تقديم التوصيات والتقارير التنبؤية لمدراء القطاعات لرفع الكفاءة التشغيلية.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "SQL/PostgreSQL المتقدم",
+    "Power BI & Tableau",
+    "تحليل البيانات بـ Python/Pandas",
+    "النمذجة الرياضية والإحصائية"
+   ],
+   "soft_skills": [
+    "تحويل الأرقام إلى رؤى استراتيجية",
+    "مهارات العرض التقديمي للقيادة",
+    "الفضول التحليلي"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "300000.00",
+  "max_salary": "950000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "كبير علماء البيانات Data Scientist / مدير إدارة ذكاء الأعمال",
+   "current": "أخصائي ذكاء أعمال وتحليل بيانات BI Analyst",
+   "previous": "مدخل ومراجع بيانات Data Specialist"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "المادة 11 من قانون العمل 5/1995"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 90% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "8332",
+  "name_ar": "سائق نقل ثقيل وقاطرات دولية",
+  "description_ar": "قيادة الشاحنات الثقيلة والمقطورات لنقل البضائع والمحروقات والحاويات عبر الخطوط الطويلة بين المحافظات والمنافذ البرية.",
+  "scope": "عام وخاص ومؤسسي",
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "سترة عاكسة للضوء للطوارئ",
+   "حذاء عمل متين",
+   "عدة إسعافات أولية وطفاية حريق بودرة 6 كجم"
+  ],
+  "qualifications": [
+   "كفاءة مهنية وقراءة وكتابة معتمدة",
+   "رخصة قيادة نقل ثقيل سارية المفعول من الإدارة العامة للمرور"
+  ],
+  "training_requirements": [
+   "50 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "قيادة القاطرات بأمان والالتزام بالسرعات المحددة وقوانين المرور في الطرق الجبلية والصحراوية.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "فحص الإطارات وضغط الهواء والمكابح وزيوت المحرك وسوائل التبريد قبل التحرك.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "التأكد من سلامة تربيط وتثبيت الحمولات وتوزيع الوزن على محاور الشاحنة.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "حمل أوراق الشحن والبيانات الجمركية وتسليم البضائع للمستلمين وفق بوالص الشحن.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "القيادة الاحترافية للقاطرات المزدوجة",
+    "التعامل مع الطرق الوعرة والمنعطفات الحادة",
+    "الميكانيكا الأساسية للشاحنات واستبدال الإطارات الثقيلة",
+    "تأمين وتثبيت الحمولات الضخمة"
+   ],
+   "soft_skills": [
+    "التحمل والصبر في الرحلات الطويلة",
+    "اليقظة والانتباه لحركة السير",
+    "الأمانة على حمولة المنشأة"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "220000.00",
+  "max_salary": "550000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "مشرف حركة أسطول شاحنات Fleet Supervisor",
+   "current": "سائق نقل ثقيل وقاطرات معتمد",
+   "previous": "سائق نقل خفيف ومتوسط"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "المادة 71 و 113 من قانون العمل 5/1995 وقانون المرور اليمني"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 95% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "4211",
+  "name_ar": "صراف وضابط عمليات نقدية",
+  "description_ar": "استقبال العملاء، تنفيذ عمليات الإيداع والسحب والتحويلات النقدية، وفحص وكشف العملات المزيفة وفق المعايير المصرفية.",
+  "scope": "عام وخاص ومؤسسي",
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "كاميرات مراقبة وزجاج مصفح",
+   "أزرار إنذار طوارئ سرية"
+  ],
+  "qualifications": [
+   "دبلوم تجاري / بكالوريوس إدارة أو محاسبة",
+   "ضمانة مالية وتجارية معمدة وموثقة"
+  ],
+  "training_requirements": [
+   "45 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "استلام وصرف النقدية ومطابقة الرصيد الفعلي مع النظام الآلي في نهاية كل وردية.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "كشف العملات المزيفة باستخدام أجهزة الفحص بالأشعة فوق البنفسجية والمغناطيسية.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "تنفيذ الحوالات المالية الداخلية والخارجية والتحقق من الهويات الرسمية للمستفيدين.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "تغذية وجرد الخزينة الفرعية والالتزام بحدود السيولة النقدية المسموحة.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "فحص وكشف العملات المزيفة",
+    "سرعة ودقة العد والحساب",
+    "الأنظمة المصرفية الشاملة (Core Banking)",
+    "إجراءات العناية الواجبة KYC"
+   ],
+   "soft_skills": [
+    "الأمانة والنزاهة المطلقة",
+    "بشاشة الوجه وحسن التعامل مع العملاء",
+    "التركيز العالي تحت الضغط"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "180000.00",
+  "max_salary": "450000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "رئيس قسم الصندوق والخزينة / مدير فرع مساعد",
+   "current": "صراف رئيسي وضابط عمليات نقدية",
+   "previous": "صراف تحت التدريب / متدرب عمليات"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "قانون العمل رقم 5 لسنة 1995 (وظيفة مقصورة كلياً على اليمنيين)"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 100% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "2262",
+  "name_ar": "صيدلي سريري ورقابة دوائية",
+  "description_ar": "صرف الأدوية والوصفات الطبية، تدقيق الجرعات والتداخلات الدوائية، وإدارة سلاسل التبريد والتخزين الدوائي الآمن.",
+  "scope": "عام وخاص ومؤسسي",
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "مريول صيدلاني أبيض",
+   "قفازات طبية عند تركيب المحاليل",
+   "كمامة طبية"
+  ],
+  "qualifications": [
+   "بكالوريوس صيدلة / دكتور صيدلة PharmD",
+   "ترخيص مزاولة مهنة الصيدلة من المجلس الطبي الأعلى اليمني"
+  ],
+  "training_requirements": [
+   "90 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "مراجعة الوصفات الطبية بدقة والتحقق من سلامة الجرعات وعدم تعارضها مع أدوية أخرى.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "تقديم المشورة الدوائية للمرضى حول أوقات وطرق تناول العلاج والآثار الجانبية.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "مراقبة درجات حرارة ثلاجات الأدوية وحفظ سجلات اللقاحات والمخدرات الخاضعة للرقابة.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "الإبلاغ عن أي آثار عكسية أو أدوية منتهية الصلاحية وفق اللائحة الدوائية العليا.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "علم الأدوية وحركيتها Pharmacokinetics",
+    "برمجيات إدارة الصيدليات والرقابة الدوائية",
+    "إدارة سلسلة التبريد Cold Chain",
+    "معايير ممارسة الصيدلة الجيدة GPP"
+   ],
+   "soft_skills": [
+    "الدقة والحرص المتناهي",
+    "التواصل الطبي الواضح",
+    "إدارة الوقت والصيدلية"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "250000.00",
+  "max_salary": "750000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "مدير صيدلية / صيدلي سريري استشاري / مدير رقابة دوائية",
+   "current": "صيدلي قانوني معتمد",
+   "previous": "صيدلي تحت التدريب / مساعد صيدلي"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "قانون مزاولة مهنة الصيدلة والسموم وقانون العمل 5/1995"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 90% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "2263",
+  "name_ar": "ضابط سلامة وصحة مهنية معتمد (OSH Officer)",
+  "description_ar": "تخطيط وتطبيق برامج السلامة والصحة المهنية في المنشأة، تقييم المخاطر، التحقيق في الحوادث، وضمان الامتثال لقانون العمل.",
+  "scope": "عام وخاص ومؤسسي",
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "خوذة أمان معتمدة",
+   "سترة عاكسة مميزة OSH Inspector",
+   "حذاء سلامة عالي المتانة",
+   "جهاز قياس الضوضاء والإضاءة المحمول"
+  ],
+  "qualifications": [
+   "بكالوريوس هندسة / علوم بيئية / دبلوم عالي سلامة وصحة مهنية",
+   "شهادة مسؤول سلامة معتمد من وزارة الشؤون الاجتماعية والعمل أو شهادة NEBOSH IGC"
+  ],
+  "training_requirements": [
+   "100 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "إجراء التفتيش اليومي على بيئات العمل والتحقق من التزام العمال بارتداء معدات PPE.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "إعداد مصفوفة تقييم المخاطر (Risk Assessment) وخطط الطوارئ والإخلاء والحرائق.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "التحقيق في حوادث وإصابات العمل وتحديد الأسباب الجذرية ورفع تقارير السلامة.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "تقديم الدورات التدريبية التوعوية للعمال حول السلامة المهنية وإجراءات LOTO.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "تقييم المخاطر وفق معايير OSHA/NEBOSH",
+    "التحقيق في الحوادث وإصابات العمل",
+    "إجراءات الإخلاء ومكافحة الحرائق والدفاع المدني",
+    "تفتيش السلامة وتدقيق الامتثال لقانون العمل"
+   ],
+   "soft_skills": [
+    "الحزم والصرامة في حماية أرواح العمال",
+    "التواصل والتأثير الإيجابي",
+    "اليقظة وسرعة التصرف في الطوارئ"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "300000.00",
+  "max_salary": "950000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "مدير إدارة السلامة والصحة المهنية والبيئة HSE Director",
+   "current": "ضابط سلامة وصحة مهنية معتمد OSH Officer",
+   "previous": "مراقب سلامة ميداني OSH Inspector"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "المواد 113 إلى 125 من قانون العمل رقم 5 لسنة 1995 (وظيفة إلزامية يمنية 100%)"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 100% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "2250",
+  "name_ar": "طبيب بيطري وصحة حيوانية",
+  "description_ar": "تشخيص وعلاج أمراض الثروة الحيوانية والدواجن، وتطبيق برامج التحصين والرقابة الصحية على المسالخ ومزارع الإنتاج.",
+  "scope": "عام وخاص ومؤسسي",
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "قفازات بيطرية طويلة ومعقمة",
+   "بدلة واقية وأحذية حقلية معقمة",
+   "كمامات ونظارات واقية في المسالخ"
+  ],
+  "qualifications": [
+   "بكالوريوس طب وجراحة بيطرية (DVM)",
+   "ترخيص مزاولة مهنة الطب البيطري من وزارة الزراعة ونقابة الأطباء البيطريين"
+  ],
+  "training_requirements": [
+   "80 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "إجراء الكشف السريري وإعطاء اللقاحات الوقائية للمواشي والدواجن.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "الإشراف البيطري على المسالخ وفحص اللحوم للتأكد من خلوها من الأمراض المشتركة.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "تشخيص الأوبئة الحيوانية والتبليغ الفوري عن حالات الحمى القلاعية أو الطاعون.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "إرشاد مزارع الدواجن والماشية حول الأمن الحيوي (Biosecurity) والتغذية السليمة.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "التشخيص البيطري السريري والجراحي",
+    "برامج التحصين والأمن الحيوي للمزارع",
+    "فحص اللحوم والمسالخ والرقابة الوبائية",
+    "الأمراض المشتركة بين الإنسان والحيوان Zoonoses"
+   ],
+   "soft_skills": [
+    "الشجاعة والصبر في التعامل مع الحيوانات",
+    "سرعة التدخل لمنع انتشار الأوبئة",
+    "التواصل الإرشادي"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "250000.00",
+  "max_salary": "750000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "مدير صحة حيوانية / مدير مجمع مزارع دواجن ومواشي كبرى",
+   "current": "طبيب بيطري ممارس معتمد",
+   "previous": "طبيب بيطري متدرب / فني صحة حيوانية"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "قانون الحجر البيطري وقانون العمل 5/1995"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 90% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "2211",
+  "name_ar": "طبيب عام وجراحة عامة",
+  "description_ar": "تشخيص وعلاج الأمراض السريرية، تقديم الإسعافات الطارئة، وإجراء الفحوصات الطبية ووصف العلاجات الدوائية وإحالة الحالات التخصصية.",
+  "scope": "عام وخاص ومؤسسي",
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "كمامات N95 الطبية",
+   "قفازات لاتكس معقمة",
+   "جاون واقٍ ومريول طبي معقم",
+   "واقي وجه شفاف (Face Shield)"
+  ],
+  "qualifications": [
+   "بكالوريوس طب عام وجراحة (MBBS / MD)",
+   "ترخيص مزاولة مهنة الطب من المجلس الطبي الأعلى اليمني"
+  ],
+  "training_requirements": [
+   "150 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "إجراء الكشف السريري الشامل وتوثيق التاريخ المرضي في السجل الطبي.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "طلب وتفسير الفحوصات المخبرية وصور الأشعة التشخيصية.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "وصف البروتوكولات العلاجية المعتمدة ومتابعة استجابة المرضى للأدوية.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "التعامل مع حالات الطوارئ والإنعاش القلبي الرئوي وتطبيق مكافحة العدوى.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "التشخيص السريري الشامل",
+    "الإنعاش القلبي المتقدم ACLS/BLS",
+    "بروتوكولات مكافحة العدوى والتعقيم",
+    "كتابة الوصفات الدوائية المعيارية"
+   ],
+   "soft_skills": [
+    "التعاطف والإنسانية العالية",
+    "التواصل الهادئ مع المرضى وذويهم",
+    "القدرة على العمل لساعات مناوبة طويلة"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "400000.00",
+  "max_salary": "1500000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "طبيب أخصائي (بعد البورد / الماجستير) / رئيس قسم سريري",
+   "current": "طبيب عام ممارس معتمد",
+   "previous": "طبيب امتياز / مقيم عام"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "قانون المنشآت الطبية والصحية وقانون المجلس الطبي الأعلى وقانون العمل 5/1995"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 80% — مفتوحة بكوتة مرخصة",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "7127",
+  "name_ar": "فني تبريد وتكييف صناعي وغرف تبريد",
+  "description_ar": "تركيب وصيانة وحدات التكييف المركزي الكبرى (Chillers) وغرف التبريد والتجميد للمصانع ومخازن الأغذية والأدوية.",
+  "scope": null,
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "قفازات معزولة ضد الصقيع والغازات",
+   "كمامات تنفس واقية من غاز الأمونيا والفريون",
+   "نظارات حماية الوجه",
+   "أحذية أمان معزولة"
+  ],
+  "qualifications": [
+   "دبلوم تبريد وتكييف / معهد تقني",
+   "شهادة ترخيص فني تبريد وتكييف معتمد"
+  ],
+  "training_requirements": [
+   "60 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "تفريغ وشحن غازات التبريد (Freon/Ammonia) وفحص التسريبات بأجهزة الكشف الإلكترونية.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "صيانة وتنظيف الضواغط والمكثفات والمبخرات (Compressors & Condensers).",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "ضبط ثرموستات ولوحات التحكم الرقمية لدرجات التجميد حتى -25 درجة مئوية.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "لحام مواسير النحاس بالفضة والنيتروجين واختبار الضغط بالنيتروجين الجاف.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "لحام مواسير النحاس بالأكسجين والفضة",
+    "شحن ومعايرة دورات غاز التبريد",
+    "برمجة حساسات ولوحات الحرارة الرقمية",
+    "صيانة ضواغط التبريد الصناعية Semi-Hermetic"
+   ],
+   "soft_skills": [
+    "تحمل بيئات العمل المتباينة بين الحر الشديد والبرودة القارسة",
+    "الدقة في فحص التسريبات"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "220000.00",
+  "max_salary": "600000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "مشرف أنظمة تبريد وتكييف مركزي / مقاول غرف تبريد",
+   "current": "فني تبريد وتكييف صناعي معتمد",
+   "previous": "مساعد فني تكييف منزلي"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "المادة 113 من قانون العمل 5/1995"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 90% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "7421",
+  "name_ar": "فني تركيب وصيانة منظومات الطاقة الشمسية",
+  "description_ar": "تركيب وضبط وبرمجة الألواح الكهروضوئية ومنظومات العواكس (Inverters) وبنوك البطاريات لمنشآت القطاع التجاري والصناعي والمزارع.",
+  "scope": "عام وخاص ومؤسسي",
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "حزام أمان كامل للجسم ضد السقوط",
+   "خوذة عازلة للكهرباء",
+   "قفازات عازلة حتى 1000 فولت",
+   "حذاء أمان عازل"
+  ],
+  "qualifications": [
+   "دبلوم كهرباء / طاقة متجددة",
+   "شهادة ترخيص مزاولة تركيبات طاقة شمسية معتمدة"
+  ],
+  "training_requirements": [
+   "60 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "تثبيت الهياكل المعدنية وحساب زوايا الميل المثلى للألواح الشمسية.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "تمديد كابلات التيار المستمر (DC) والتيار المتردد (AC) وتركيب قواطع الحماية والتأريض.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "برمجة محولات الطاقة الذكية وأنظمة الهجين (Hybrid/Off-Grid).",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "فحص كفاءة البطاريات (ليثيوم / جل) وقياس الفولتية والمقاومة الداخلية.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "برمجة العواكس الهجينة",
+    "حسابات الأحمال الكهروضوئية",
+    "فحص أنظمة التأريض والصواعق",
+    "التوصيل الآمن للتيار المستمر العالي"
+   ],
+   "soft_skills": [
+    "العمل في الأماكن المرتفعة",
+    "السرعة والتركيز العالي",
+    "خدمة وتوجيه العملاء"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "200000.00",
+  "max_salary": "550000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "كبير فنيي طاقة متجددة / مقاول مشاريع شمسية",
+   "current": "فني طاقة شمسية وتخزين طاقة",
+   "previous": "مساعد كهربائي عام"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "المادة 71 و 115 من قانون العمل 5/1995"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 90% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "3522",
+  "name_ar": "فني شبكات ألياف ضوئية واتصالات",
+  "description_ar": "تمديد ولحام وتوصيل وفحص كابلات الألياف الضوئية الهوائية والأرضية وأبراج الاتصالات ومحطات البث.",
+  "scope": null,
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "نظارات حماية من شظايا الزجاج والألياف",
+   "خوذة حماية ميدانية",
+   "قفازات مقاومة للقطع",
+   "حذاء سلامة مقاوم للماء"
+  ],
+  "qualifications": [
+   "دبلوم اتصالات / شبكات ضوئية",
+   "شهادة فني ألياف ضوئية معتمد من وزارة الاتصالات"
+  ],
+  "training_requirements": [
+   "60 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "لحام شعيرات الفايبر باستخدام أجهزة اللحام بالقوس الحراري (Fusion Splicer).",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "فحص جودة الإشارة وتحديد نقاط القطع باستخدام جهاز OTDR.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "تركيب كبائن التوزيع الرئيسية والفرعية (ODF/FAT) وتوصيل خدمات الإنترنت عريض النطاق.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "صيانة مسارات الكابلات ومعالجة انقطاعات الخدمة الطارئة على مدار الساعة.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "لحام الألياف الضوئية الدقيق",
+    "تشغيل وفحص جهاز OTDR",
+    "قراءة الخرائط الهندسية للمسارات",
+    "تسليك الكبائن والعلب الخارجية"
+   ],
+   "soft_skills": [
+    "الدقة والتركيز الميكروسكوبي",
+    "الاستجابة لطوارئ الانقطاعات",
+    "العمل الميداني في مختلف الظروف"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "220000.00",
+  "max_salary": "550000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "مشرف شبكات نفاذ ضوئي / مهندس مسارات ميدانية",
+   "current": "فني ألياف ضوئية ولحام متخصص",
+   "previous": "مساعد فني تمديدات كابلات"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "المادة 113 من قانون العمل 5/1995"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 90% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "3211",
+  "name_ar": "فني صيانة أجهزة طبية حيوية",
+  "description_ar": "تركيب ومعايرة وصيانة وإصلاح الأجهزة والمعدات الطبية وأجهزة الأشعة وغرف العمليات ومراقبة المرضى في المستشفيات.",
+  "scope": "عام وخاص ومؤسسي",
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "أدوات فحص كهربائي معزولة",
+   "حذاء أمان عازل",
+   "قفازات حماية إلكترونية"
+  ],
+  "qualifications": [
+   "دبلوم أجهزة طبية / بكالوريوس هندسة طبية حيوية",
+   "شهادة كفاءة مهنية صادرة عن التعليم الفني أو نقابة المهندسين"
+  ],
+  "training_requirements": [
+   "80 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "إجراء المعايرة الدورية واختبارات الأمان الكهربائي للأجهزة الطبية الحيوية.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "صيانة وإصلاح أجهزة التنفس الاصطناعي وأجهزة الصدمات الكهربائية والمونيتورات.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "متابعة أجهزة التعقيم المركزية (Autoclave) وأجهزة الغسيل الكلوي والأشعة.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "توثيق سجلات الصيانة الوقائية وقطع الغيار وكتالوجات الشركات المصنعة.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "الإلكترونيات الطبية الحيوية",
+    "أجهزة المعايرة واختبار الأمان الكهربائي",
+    "قراءة المخططات الإلكترونية والهيدروليكية",
+    "تشخيص أعطال الحساسات الطبية"
+   ],
+   "soft_skills": [
+    "التحليل المنطقي للأعطال",
+    "سرعة الاستجابة لبلاغات غرف العمليات",
+    "التوثيق الفني الدقيق"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "260000.00",
+  "max_salary": "700000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "مهندس أجهزة طبية استشاري / مدير الهندسة الطبية بالمستشفى",
+   "current": "فني صيانة أجهزة طبية حيوية ممارس",
+   "previous": "مساعد فني صيانة إلكترونيات"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "المادة 113 من قانون العمل 5/1995"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 85% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "7233",
+  "name_ar": "فني صيانة ميكانيكية وخطوط إنتاج",
+  "description_ar": "صيانة وتشغيل وإصلاح ماكينات التعبئة والتغليف وسيور النقل ومحركات خطوط الإنتاج الآلية في المصانع.",
+  "scope": "عام وخاص ومؤسسي",
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "خوذة أمان صناعية",
+   "أحذية سلامة بمقدمة حديدية",
+   "نظارات حماية من الزيوت والشرر",
+   "سدادات أذن للضوضاء"
+  ],
+  "qualifications": [
+   "دبلوم ميكانيكا صناعية / إنتاج",
+   "شهادة كفاءة مهنية معتمدة"
+  ],
+  "training_requirements": [
+   "60 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "تنفيذ جداول الصيانة الوقائية والتشحيم والتزييت لماكينات المصنع.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "تبديل التروس والسيور والمضخات ومكابس الهواء (Pneumatics) التالفة.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "سرعة معالجة الأعطال الطارئة أثناء الوردية لتقليل فترات توقف الإنتاج.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "ضبط حساسات ومحاذاة سيور التعبئة والتغليف الآلي.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "صيانة الأنظمة الهوائية Pneumatics",
+    "صيانة السيور ومحركات السرعة المتغيرة",
+    "استبدال المحامل والتروس",
+    "قراءة المخططات الميكانيكية الصناعية"
+   ],
+   "soft_skills": [
+    "سرعة التدخل الميداني",
+    "العمل بروح الفريق في الورديات",
+    "الالتزام بإجراءات السلامة"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "220000.00",
+  "max_salary": "550000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "مشرف صيانة ميكانيكية عامة بالمصنع / رئيس وردية صيانة",
+   "current": "فني صيانة ميكانيكية خطوط إنتاج",
+   "previous": "مساعد ميكانيكي خط إنتاج"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "المادة 113 من قانون العمل 5/1995"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 85% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "7411",
+  "name_ar": "فني كهرباء مباني وتمديدات صناعية",
+  "description_ar": "تركيب وتسليك وتوصيل لوحات التوزيع الكهربائية والقواطع ومنظومات الإنارة والمحركات في المباني والمصانع.",
+  "scope": "عام وخاص ومؤسسي",
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "قفازات عازلة للجهد المنخفض والمتوسط",
+   "أحذية أمان عازلة كهربائياً بنعل مطاطي خاص",
+   "نظارات حماية من القوس الكهربائي (Arc Flash)",
+   "خوذة أمان عازلة"
+  ],
+  "qualifications": [
+   "دبلوم كهرباء تمديدات وقوى / تدريب مهني معتمد",
+   "شهادة ترخيص كهربائي مباني معتمد من التعليم الفني"
+  ],
+  "training_requirements": [
+   "60 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "توزيع الأحمال الكهربائية على الفازات الثلاث وتوصيل لوحات القواطع الرئيسية (MDB/SMDB).",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "سحب الأسلاك والكابلات في المواسير المعزولة طبقاً للمخططات الهندسية.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "فحص العزل ومقاومة التأريض وتوصيل مولدات الكهرباء الاحتياطية وأنظمة ATS.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "صيانة المفاتيح والقواطع الآلية واكتشاف أعطال الالتماس والقصر الكهربائي.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "قراءة المخططات الكهربائية Single Line Diagram",
+    "توصيل وتأمين لوحات التوزيع 380V/220V",
+    "فحص العزل بجهاز Megger",
+    "أنظمة التحويل الآلي ATS للمولدات"
+   ],
+   "soft_skills": [
+    "الحذر الشديد والانضباط",
+    "التركيز الذهني المستمر",
+    "الالتزام بإجراءات عزل الطاقة LOTO"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "200000.00",
+  "max_salary": "500000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "مشرف كهرباء عام / مقاول تمديدات كبرى",
+   "current": "فني كهرباء مباني وصناعي معتمد",
+   "previous": "مساعد كهربائي عام"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "المادة 113 و 115 من قانون العمل 5/1995"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 95% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "7212",
+  "name_ar": "فني لحام أنابيب وضغط عالي (6G Welder)",
+  "description_ar": "تنفيذ عمليات اللحام التخصصي لأنابيب النفط والغاز والغلايات وخزانات الضغط العالي باستخدام تقنيات TIG و MIG وقوس الصهر.",
+  "scope": "عام وخاص ومؤسسي",
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "قناع لحام إلكتروني ذكي التعتيم",
+   "مريول وقفازات جلدية واقية من الشرر والحرارة",
+   "أحذية سلامة للحدادة واللحام",
+   "كمامة تنفس من أدخنة اللحام المعدنية"
+  ],
+  "qualifications": [
+   "شهادة دبلوم مهني لحام تخصصي / كفاءة مهنية",
+   "شهادة تأهيل واختبار لحام معتمدة عالمياً (ASME 6G Welder Certificate)"
+  ],
+  "training_requirements": [
+   "120 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "تجهيز وحف حواف الأنابيب وضبط زوايا التجميع والدرز طبقاً للمواصفات.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "تنفيذ طبقات اللحام المتعددة (Root, Hot Pass, Fill & Cap) في وضعيات 6G الصعبة.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "فحص جودة اللحام بالأشعة السينية (X-Ray) واختبار الموجات فوق الصوتية ومنع الفجوات.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "التحكم في درجات حرارة التسخين القبلي والبعدي لمعالجة الإجهادات الحرارية للمعدن.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "لحام 6G TIG/SMAW المعتمد",
+    "قراءة مواصفات اللحام WPS",
+    "تطبيق معايير ASME و API",
+    "فحوصات اللحام غير الإتلافية NDT"
+   ],
+   "soft_skills": [
+    "ثبات اليد والتحكم العضلي الدقيق",
+    "الصبر والتركيز الطويل",
+    "تحمل درجات الحرارة المرتفعة"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "300000.00",
+  "max_salary": "950000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "مفتش جودة لحام معتمد CWI / مشرف ورش تصنيع وهياكل",
+   "current": "فني لحام أنابيب وضغط عالي 6G معتمد",
+   "previous": "فني لحام حدادة اعتيادي"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "المادة 71 و 113 من قانون العمل 5/1995 (تخفيض ساعات العمل ساعة واحدة لمخاطر المهنة)"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 80% — مفتوحة بكوتة مرخصة",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "3212",
+  "name_ar": "فني مختبرات وتحاليل طبية",
+  "description_ar": "سحب العينات وإجراء التحاليل المخبرية للدم وسوائل الجسم باستخدام الأجهزة الأوتوماتيكية وتدقيق نتائج الفحص المجهري.",
+  "scope": "عام وخاص ومؤسسي",
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "مريول مختبر مقاوم للسوائل",
+   "قفازات طبية مانعة للعدوى",
+   "نظارات حماية وكبائن السلامة الحيوية (BioSafety Cabinet)"
+  ],
+  "qualifications": [
+   "دبلوم فني مختبرات طبية / بكالوريوس مختبرات",
+   "ترخيص مزاولة مهنة فني مختبر من المجلس الطبي الأعلى"
+  ],
+  "training_requirements": [
+   "75 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "سحب عينات الدم الوريدي وتجهيز العينات وفق اشتراطات السلامة الحيوية.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "تشغيل ومعايرة أجهزة فحص الدم والكيماء الحيوية والهرمونات الآلية.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "إجراء الفحوصات الميكروسكوبية للطفيليات والبكتيريا وزراعة العينات.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "تطبيق برنامج ضبط الجودة الداخلي (Quality Control) وحفظ السجلات المخبرية.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "فحوصات أمراض الدم CBC",
+    "الكيمياء السريرية والهرمونات",
+    "التحليل المجهري وزراعة البكتيريا",
+    "السلامة البيولوجية والتعامل مع النفايات الطبية"
+   ],
+   "soft_skills": [
+    "الدقة والحرص في مطابقة العينات",
+    "الأمانة في كتابة النتائج",
+    "الهدوء والتعامل اللطيف مع المرضى"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "200000.00",
+  "max_salary": "500000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "كبير فنيي مختبر / مدير جودة المختبرات الطبية",
+   "current": "فني مختبرات وتحاليل طبية معتمد",
+   "previous": "مساعد فني سحب عينات"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "قانون المنشآت الطبية والصحية وقانون العمل 5/1995"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 90% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "3115",
+  "name_ar": "فني ميكانيكا توربينات ومضخات صناعية",
+  "description_ar": "تركيب وصيانة وعمرة التوربينات الغازية والبخارية والمضخات الهيدروليكية الكبرى في محطات الطاقة والمصانع والمنشآت البتروكيماوية.",
+  "scope": "عام وخاص ومؤسسي",
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "نظارات حماية من الشظايا",
+   "سدادات أذن واقية من الضجيج العالي",
+   "قفازات ميكانيكية مدعمة",
+   "حذاء سلامة بمقدمة فولاذية"
+  ],
+  "qualifications": [
+   "دبلوم فني ميكانيكا / معهد تقني معتمد",
+   "شهادة كفاءة مهنية صادرة عن وزارة التعليم الفني"
+  ],
+  "training_requirements": [
+   "80 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "إجراء الفحص الاهتزازي والمحاذاة الليزرية لأعمدة التوربينات والمضخات.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "استبدال المحامل الميكانيكية (Bearings) وموانع التسرب الميكانيكية (Mechanical Seals).",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "تفكيك وتنظيف وإعادة تجميع الصمامات الهيدروليكية ومحركات الديزل الثقيلة.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "تسجيل قراءات الضغط ودرجات الحرارة وتحليل أسباب الأعطال الميكانيكية.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "المحاذاة الليزرية Laser Alignment",
+    "تحليل الاهتزازات Vibration Analysis",
+    "اللحام التخصصي والخراطة",
+    "صيانة الأنظمة الهيدروليكية"
+   ],
+   "soft_skills": [
+    "الدقة وقوة الملاحظة",
+    "تحمل العمل البدني الشاق",
+    "الالتزام الصارم بتعليمات LOTO"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "250000.00",
+  "max_salary": "650000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "مشرف صيانة ميكانيكية عامة / رئيس ورشة",
+   "current": "فني ميكانيكا توربينات ومضخات (ممارس أول)",
+   "previous": "مساعد فني ميكانيكا عامة"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "المادة 113 من قانون العمل 5/1995"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 85% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "2411",
+  "name_ar": "محاسب عام وقانوني معتمد",
+  "description_ar": "إدارة وتوثيق القيود المحاسبية، إعداد القوائم المالية والحسابات الختامية، ومراجعة الضرائب والامتثال للمعايير المحاسبية الدولية (IFRS).",
+  "scope": "عام وخاص ومؤسسي",
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "بيئة عمل مكتبية آمنة"
+  ],
+  "qualifications": [
+   "بكالوريوس محاسبة / مالية ومصرفية",
+   "ترخيص مزاولة مهنة محاسب قانوني / عضوية جمعية المحاسبين"
+  ],
+  "training_requirements": [
+   "70 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "تسجيل وترحيل العمليات المالية في دفتر الأستاذ العام ومطابقة موازين المراجعة.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "إعداد الميزانية العمومية، قائمة الدخل، وقائمة التدفقات النقدية الدورية.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "حساب الإقرارات الضريبية والمستحقات الزكوية والتأمينية ومطابقتها مع القوانين.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "التدقيق الداخلي على أوامر الصرف والمقبوضات والمطابقات البنكية الشهرية.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "معايير المحاسبة الدولية IFRS",
+    "إعداد القوائم المالية والتحليل المالي",
+    "الأنظمة المحاسبية ERP (الأونكس/SAP)",
+    "قوانين الضرائب والزكاة اليمنية"
+   ],
+   "soft_skills": [
+    "النزاهة والأمانة المالية المطلقة",
+    "الدقة المتناهية في الأرقام",
+    "التنظيم والتوثيق المالي"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "250000.00",
+  "max_salary": "900000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "رئيس حسابات Chief Accountant / مدير مالي CFO",
+   "current": "محاسب عام / محاسب قانوني معتمد",
+   "previous": "محاسب مساعد / محاسب مدفوعات"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "قانون مهنة تدقيق الحسابات اليمني وقانون العمل 5/1995 (مهنة مقصورة على اليمنيين)"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 95% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "1212",
+  "name_ar": "مدير الموارد البشرية والشؤون الإدارية",
+  "description_ar": "تخطيط القوى العاملة، إدارة عمليات الاستقطاب والتعيين، تطبيق سياسات التوطين واليمننة، ومتابعة الأجور وعقود العمل.",
+  "scope": "عام وخاص ومؤسسي",
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "بيئة عمل مكتبية آمنة ومريحة"
+  ],
+  "qualifications": [
+   "بكالوريوس إدارة أعمال / موارد بشرية / إدارة عامة",
+   "شهادة احترافية في الموارد البشرية (SHRM-CP / CIPD / HRBP)"
+  ],
+  "training_requirements": [
+   "80 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "إعداد الهياكل التنظيمية والتوصيفات الوظيفية وسلالم الأجور ولوائح العمل الداخلية.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "تطبيق خطط اليمننة ونسب التوطين المعتمدة من وزارة الشؤون الاجتماعية والعمل.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "إدارة تقييم الأداء السنوي وتحديد الاحتياجات التدريبية وخطط التعاقب الوظيفي.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "معالجة شكاوى وتظلمات الموظفين وفض النزاعات العمالية الودية داخل المنشأة.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "قانون العمل اليمني واللوائح التنظيمية",
+    "أنظمة الموارد البشرية HRMS/ERP",
+    "تخطيط القوى العاملة وسلالم الرواتب",
+    "إدارة تقييم الأداء KPI"
+   ],
+   "soft_skills": [
+    "القيادة الإنسانية والحكمة الإدارية",
+    "التفاوض وحل النزاعات",
+    "النزاهة والعدالة في القرارات"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "400000.00",
+  "max_salary": "1300000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "نائب المدير العام للشؤون المؤسسية / رئيس قطاع الموارد البشرية CHRO",
+   "current": "مدير الموارد البشرية والشؤون الإدارية HR Manager",
+   "previous": "أخصائي توظيف وموارد بشرية Senior HR Specialist"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "المادة 11 من قانون العمل 5/1995 واللائحة التنظيمية لليمننة (وظيفة مقصورة على اليمنيين)"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 100% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "1211",
+  "name_ar": "مدير امتثال ومكافحة غسل الأموال",
+  "description_ar": "مراقبة التزام المنشأة المصرفية والمالية بالقوانين والتعليمات الرقابية للبنك المركزي ومكافحة غسل الأموال وتمويل الإرهاب.",
+  "scope": "عام وخاص ومؤسسي",
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "بيئة عمل مكتبية آمنة"
+  ],
+  "qualifications": [
+   "بكالوريوس قانون / مالية ومصرفية / اقتصاد",
+   "شهادة اختصاصي مكافحة غسل أموال معتمد (CAMS) وموافقة البنك المركزي"
+  ],
+  "training_requirements": [
+   "100 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "تطبيق متطلبات التحقق من العميل (KYC) والعناية الواجبة المشددة (EDD).",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "فحص العمليات المشبوهة ورفع تقارير الإبلاغ الرسمية لوحدة جمع المعلومات المالية.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "مراجعة قوائم الحظر والعقوبات الدولية والمحلية وتحديث أنظمة الفلترة.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "تدريب كوادر البنك على سياسات الامتثال وأخلاقيات العمل المصرفي.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "قوانين مكافحة غسل الأموال اليمنية والدولية",
+    "شهادة CAMS المعتمدة",
+    "أنظمة مراقبة الحوالات والتحويلات",
+    "إدارة المخاطر التشغيلية"
+   ],
+   "soft_skills": [
+    "الشجاعة والاستقلالية المهنية",
+    "الحس الأمني والتحقيقي",
+    "التواصل المؤسسي الرفيع"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "500000.00",
+  "max_salary": "1600000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "مدير عام الرقابة والامتثال / عضو لجنة الحوكمة",
+   "current": "مدير إدارة الامتثال ومكافحة غسل الأموال",
+   "previous": "ضابط امتثال أول Senior Compliance Officer"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "قانون مكافحة غسل الأموال وتمويل الإرهاب اليمني رقم 1 لسنة 2010 (وظيفة سيادية يمنية 100%)"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 100% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "1324",
+  "name_ar": "مدير خدمات لوجستية وسلاسل إمداد",
+  "description_ar": "تخطيط وإدارة حركة الشحن والتخليص الجمركي والنقل والتخزين والتوزيع للبضائع والسلع الاستراتيجية بكفاءة وتكلفة مثلى.",
+  "scope": "عام وخاص ومؤسسي",
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "معدات السلامة عند زيارة الموانئ والمستودعات"
+  ],
+  "qualifications": [
+   "بكالوريوس إدارة أعمال / لوجستيات / تجارة دولية",
+   "شهادة تخصصية في سلاسل الإمداد (CSCP / CLTD / FIATA)"
+  ],
+  "training_requirements": [
+   "80 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "التنسيق مع خطوط الملاحة البحرية وشركات الشحن ومكاتب التخليص الجمركي بالموانئ.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "إدارة أسطول النقل والشاحنات وجدولة مسارات التوزيع بين المحافظات.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "مراقبة مستويات المخزون في المستودعات المركزية وتطبيق نظام First-In First-Out.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "التفاوض على عقود النقل والتأمين على البضائع وإدارة مطالبات التلف والتعويضات.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "إدارة سلاسل الإمداد والتوريد SCM",
+    "أنظمة إدارة المستودعات WMS وأسطول النقل TMS",
+    "إجراءات الجمارك والموانئ اليمنية",
+    "حسابات تكاليف الشحن واللوجستيات"
+   ],
+   "soft_skills": [
+    "التفاوض الاستراتيجي",
+    "إدارة الأزمات وسرعة إيجاد المسارات البديلة",
+    "القيادة وإدارة الفرق اللوجستية"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "450000.00",
+  "max_salary": "1400000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "مدير عام العمليات التشغيلية واللوجستية COO",
+   "current": "مدير خدمات لوجستية وسلاسل إمداد ممارس",
+   "previous": "أخصائي شحن وتخليص جمركي / مشرف مستودعات"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "المادة 11 من قانون العمل 5/1995"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 90% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "3112",
+  "name_ar": "مراقب جودة ومساح أراضي عام",
+  "description_ar": "إجراء الرفع والتوقيع المساحي للمباني والطرق باستخدام أجهزة Total Station و GPS، ومراقبة جودة الخامات والتنفيذ بالموقع.",
+  "scope": "عام وخاص ومؤسسي",
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "خوذة أمان برتقالية/بيضاء",
+   "سترة عاكسة عالية الوضوح",
+   "حذاء سلامة مقاوم للانزلاق",
+   "قبعة واقية من الشمس الحارقة"
+  ],
+  "qualifications": [
+   "دبلوم مساحة وتشييد / معهد فني",
+   "شهادة مساح أراضي معتمد من هيئة المساحة والتخطيط العمراني"
+  ],
+  "training_requirements": [
+   "60 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "تثبيت نقاط الإحداثيات المرجعية (BM) وتوقيع محاور القواعد والأعمدة والمباني.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "قياس المناسيب وضبط ميول الطرق وشبكات الصرف الصحي والمياه.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "إجراء اختبارات جودة الركام والرمل ومطابقة خلطات الأسمنت.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "إعداد المخططات المساحية As-Built والتقارير اليومية لفرق العمل.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "تشغيل أجهزة Total Station و GPS Geodetic",
+    "برمجيات Civil 3D و GIS",
+    "حساب كميات الحفر والردم",
+    "فحص واستلام حديد التسليح"
+   ],
+   "soft_skills": [
+    "الدقة المليمترية",
+    "الصبر والعمل في الأجواء الحارة والمفتوحة",
+    "الأمانة في القياس والرفع"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "220000.00",
+  "max_salary": "550000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "رئيس فريق مساحة / مهندس مساحة وإحداثيات عام",
+   "current": "مساح أراضي وضابط جودة ممارس",
+   "previous": "مساعد مساح / حامل عاكس وميزان"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "المادة 113 من قانون العمل 5/1995"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 90% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "8343",
+  "name_ar": "مشغل رافعات وأوناش موانئ ومستودعات",
+  "description_ar": "تشغيل الرافعات الجسرية والبرجية والرافعات الشوكية الثقيلة لتفريغ وشحن الحاويات والبضائع في الموانئ والمستودعات.",
+  "scope": null,
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "خوذة أمان مجهزة بحزام ذقن",
+   "سترة عاكسة عالية الوضوح",
+   "حذاء سلامة مقاوم للزيوت والانزلاق",
+   "سدادات أذن"
+  ],
+  "qualifications": [
+   "شهادة ثانوية / كفاءة مهنية معتمدة",
+   "رخصة قيادة معدات ثقيلة وشهادة مشغل رافعات معتمد من مؤسسة الموانئ"
+  ],
+  "training_requirements": [
+   "90 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "تشغيل رافعات الحاويات (STS / RTG) ومناولة الحاويات بدقة وأمان.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "فحص كابلات الرفع الهيدروليكية والمكابح وأنظمة الإنذار قبل كل وردية عمل.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "التنسيق اللاسلكي الدقيق مع موجهي الإشارات الأرضية (Rigger / Signalman).",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "تطبيق جداول أوزان الأحمال والمسافات الآمنة لتفادي حوادث الانقلاب.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "تشغيل الرافعات الثقيلة وأوناش الموانئ",
+    "قراءة مخططات وجداول الأحمال Load Charts",
+    "التوجيه اللاسلكي والإشارات القياسية",
+    "الفحص اليومي لسلامة أجهزة الرفع"
+   ],
+   "soft_skills": [
+    "التركيز الحاد وتقدير المسافات والأعماق",
+    "الهدوء والسيطرة العضلية الدقيقة",
+    "الالتزام التام بتعليمات السلامة المينائية"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "250000.00",
+  "max_salary": "650000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "كبير مشغلي رافعات / مدرب ومشرف عمليات مناولة وتفريغ",
+   "current": "مشغل رافعات وأوناش موانئ معتمد",
+   "previous": "مساعد مشغل / سائق رافعة شوكية صغيرة"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "المادة 113 من قانون العمل 5/1995 ولائحة السلامة بمؤسسة الموانئ"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 95% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "2512",
+  "name_ar": "مهندس برمجيات ونظم معلوماتية",
+  "description_ar": "تحليل وتصميم وبناء وتطوير التطبيقات البرمجية والأنظمة المؤسسية وتأمين واجهات البرمجة وقواعد البيانات للقطاعين الحكومي والخاص.",
+  "scope": null,
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "شاشات مريحة للعينين مع فلتر ضوء أزرق",
+   "كرسي مريح معتمد لدعم العمود الفقري"
+  ],
+  "qualifications": [
+   "بكالوريوس علوم حاسوب / هندسة برمجيات",
+   "شهادة تخرج معتمدة وعضوية نقابة المبرمجين/المهندسين"
+  ],
+  "training_requirements": [
+   "80 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "كتابة وتطوير الشيفرات البرمجية النظيفة والآمنة باستخدام أحدث أطر العمل.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "تصميم وبناء قواعد البيانات العلائقية ومحركات الربط السحابية API.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "تطبيق اختبارات الجودة والأمان المؤتمتة ومنع ثغرات OWASP.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "إدارة النشر المستمر (CI/CD) ومراقبة أداء الخوادم وسرعة الاستجابة.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "TypeScript/Node.js/Python",
+    "تصميم قواعد البيانات PostgreSQL",
+    "معمارية النظم الموزعة Microservices",
+    "الأمان السيبراني للبرمجيات"
+   ],
+   "soft_skills": [
+    "التفكير التحليلي العميق",
+    "حل المشكلات المعقدة",
+    "التعلم الذاتي المستمر",
+    "التوثيق الفني الممتاز"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "350000.00",
+  "max_salary": "1200000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "كبير مهندسي البرمجيات / قائد تقني Tech Lead / مدير تقنية CTO",
+   "current": "مهندس برمجيات ونظم معتمد Software Engineer",
+   "previous": "مبرمج مبتدئ Junior Developer"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "قانون العمل رقم 5 لسنة 1995 واللائحة التنظيمية لتوطين وظائف التقنية"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 90% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "2146",
+  "name_ar": "مهندس حفر وإنتاج نفط وغاز",
+  "description_ar": "تخطيط وتصميم والإشراف الهندسي على عمليات حفر آبار النفط والغاز، وإدارة منظومات استخراج وتكرير ومعالجة الهيدروكربونات وفق أعلى معايير السلامة العالمية.",
+  "scope": "عام وخاص ومؤسسي",
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "خوذة أمان H2S معتمدة",
+   "جهاز كاشف غازات شخصي رباعي",
+   "حذاء أمان مقاوم للزيوت والكهرباء",
+   "بدلة عمل مقاومة للهب (FRC)"
+  ],
+  "qualifications": [
+   "بكالوريوس هندسة نفط / غاز",
+   "شهادة الاعتماد الهندسي وترخيص ممارسة المهنة من نقابة المهندسين"
+  ],
+  "training_requirements": [
+   "120 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "تصميم برامج الحفر والإنتاج واختيار رؤوس الحفر وسوائل التثقيب المناسبة.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "مراقبة الضغوط الجوفية ومعدلات التدفق وتطبيق تدابير منع الانفجار (BOP).",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "الإشراف على سلامة خطوط الأنابيب ومحطات الفصل والتجميع ومعالجة الغاز المصاحب.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "إعداد خطط الصيانة الوقائية لمنصات الحفر ومضخات الرفع الاصطناعي.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "هندسة المكامن والإنتاج",
+    "محاكاة الحفر وبرمجيات Petrel",
+    "إدارة الضغوط والمخاطر الهيدروليكية",
+    "معايرة صمامات الأمان"
+   ],
+   "soft_skills": [
+    "القيادة في بيئات الطوارئ",
+    "اتخاذ القرار الحاسم",
+    "التواصل الفني عالي الدقة",
+    "إدارة فرق العمل متعددة الجنسيات"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "500000.00",
+  "max_salary": "1800000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "كبير مهندسي المكامن / مدير عمليات الحقل",
+   "current": "مهندس حفر وإنتاج نفط وغاز (ممارس معتمد)",
+   "previous": "مهندس موقع مبتدئ / متدرب حفر"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "قانون العمل 5/1995 واللائحة التنفيذية لسلامة المنشآت النفطية"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 75% — مفتوحة بكوتة مرخصة",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "2132",
+  "name_ar": "مهندس زراعي ووقاية نباتات",
+  "description_ar": "تخطيط المحاصيل الزراعية وإدارة شبكات الري الحديثة وتشخيص الآفات النباتية وتطبيق برامج المكافحة المتكاملة (IPM).",
+  "scope": "عام وخاص ومؤسسي",
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "كمامات تنفس كربونية واقية من رذاذ المبيدات",
+   "قفازات وبدلات واقية عند رش ومناولة الكيماويات",
+   "أحذية حقلية عازلة"
+  ],
+  "qualifications": [
+   "بكالوريوس علوم زراعية / وقاية نباتات / بساتين",
+   "ترخيص ممارسة مهنة مهندس زراعي من نقابة المهن الزراعية ووزارة الزراعة"
+  ],
+  "training_requirements": [
+   "60 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "فحص المزارع وتشخيص الأمراض الفطرية والحشرية وتحديد المبيدات الآمنة بيئياً.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "تصميم شبكات الري بالتنقيط وحساب المقننات المائية للأشجار والمحاصيل.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "تطبيق برامج التسميد العضوي والكيميائي وتحليل خصوبة التربة والمياه.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "إرشاد المزارعين حول مواسم الحصاد والتخزين الآمن للمنتجات الزراعية.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "تشخيص الآفات والمكافحة المتكاملة IPM",
+    "تصميم شبكات الري الحديثة",
+    "تغذية النبات والتسميد العلمي",
+    "إدارة البيوت المحمية والمزارع الذكية"
+   ],
+   "soft_skills": [
+    "التواصل الإرشادي الممتاز مع المزارعين",
+    "حب العمل الميداني والبيئة الطبيعية",
+    "الأمانة في التوصيف الزراعي"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "240000.00",
+  "max_salary": "700000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "مدير مزارع ومشاريع إنتاج زراعي كبرى / استشاري زراعي معتمد",
+   "current": "مهندس زراعي ووقاية نباتات ممارس",
+   "previous": "مرشد زراعي ميداني"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "قانون تنظيم تداول المبيدات وقانون العمل 5/1995"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 95% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "2523",
+  "name_ar": "مهندس شبكات وأمن سيبراني",
+  "description_ar": "تأمين وإدارة البنية التحتية للشبكات المؤسسية وجدران الحماية، واكتشاف محاولات الاختراق والتصدي للهجمات السيبرانية.",
+  "scope": null,
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "أدوات تفريغ الشحنات الكهروستاتيكية (ESD)"
+  ],
+  "qualifications": [
+   "بكالوريوس هندسة شبكات / أمن معلومات",
+   "شهادات مهنية دولية (Security+ / CEH / CCNP)"
+  ],
+  "training_requirements": [
+   "90 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "تهيئة وتأمين الموجهات (Routers) والمبدلات (Switches) وجدران الحماية (Firewalls).",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "إجراء اختبارات الاختراق وتقييم الثغرات الأمنية الدورية للأنظمة.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "مراقبة سجلات الأحداث وتحليل التهديدات السيبرانية عبر أنظمة SIEM/SOC.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "إعداد وتحديث سياسات أمن المعلومات وخطة استمرارية الأعمال والتعافي من الكوارث.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "Cisco CCNA/CCNP Security",
+    "إدارة الجدران النارية Fortinet/Palo Alto",
+    "تحليل الحزم Wireshark",
+    "تشفير وحماية البيانات"
+   ],
+   "soft_skills": [
+    "اليقظة وسرعة الاستجابة",
+    "السرية والأمانة المهنية المطلقة",
+    "إدارة الأزمات التقنية"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "400000.00",
+  "max_salary": "1300000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "مدير أمن المعلومات CISO / استشاري أمن سيبراني",
+   "current": "مهندس شبكات وأمن سيبراني ممارس",
+   "previous": "فني دعم شبكات ومساعد أمن"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "المادة 11 من قانون العمل 5/1995 وسياسات الأمن القومي الرقمي"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 85% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "2141",
+  "name_ar": "مهندس ضبط وجودة صناعات غذائية",
+  "description_ar": "مراقبة وتطبيق معايير سلامة وجودة الأغذية وتطبيق برامج الهاسب (HACCP) والآيزو (ISO 22000) في خطوط إنتاج المصانع.",
+  "scope": "عام وخاص ومؤسسي",
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "معطف مخبري أبيض معقم",
+   "غطاء رأس وشبكة شعر كاملة",
+   "قفازات وأقنعة فموية نظيفة",
+   "أحذية بيضاء خاصة بصالات الأغذية"
+  ],
+  "qualifications": [
+   "بكالوريوس علوم وتكنولوجيا أغذية / هندسة كيميائية / زراعة",
+   "شهادة ممارس سلامة أغذية معتمد ومطابقة هيئة المواصفات والمقاييس"
+  ],
+  "training_requirements": [
+   "80 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "أخذ العينات وفحص المواد الخام والمنتج النهائي كيميائياً وبكتيريولوجياً.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "تطبيق نقاط التحكم الحرجة (CCPs) ومراقبة درجات حرارة البسترة والتعقيم والتعبئة.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "معايرة أجهزة القياس والفحص والتحقق من اشتراطات النظافة والتعقيم في الصالات.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "إدارة حالات عدم المطابقة وسحب المنتجات المعيبة وتحديث شهادات المطابقة القياسية.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "نظام سلامة الغذاء HACCP / ISO 22000",
+    "التحاليل الميكروبيولوجية للأغذية",
+    "المواصفات القياسية اليمنية والخليجية",
+    "إدارة نقاط التحكم الحرجة CCP"
+   ],
+   "soft_skills": [
+    "الحزم والصرامة في تطبيق معايير الجودة",
+    "الأمانة العلمية",
+    "التدريب والتوعية لعمال الإنتاج"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "280000.00",
+  "max_salary": "850000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "مدير إدارة الجودة والمطابقة QA/QC Manager / مدير مصنع أغذية",
+   "current": "مهندس ضبط وتوكيد جودة أغذية ممارس",
+   "previous": "مراقب جودة خط إنتاج QA Inspector"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "قانون المواصفات والمقاييس وضبط الجودة وقانون العمل 5/1995"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 85% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "2142",
+  "name_ar": "مهندس مدني ومدير مشاريع إنشائية",
+  "description_ar": "تخطيط وتصميم والإشراف الميداني على تنفيذ المشاريع الإنشائية والمباني والجسور والطرق وإدارة الجودة والكميات والسلامة بالموقع.",
+  "scope": "عام وخاص ومؤسسي",
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "خوذة أمان معتمدة (لون أبيض للمهندسين)",
+   "حذاء سلامة عالي المتانة",
+   "سترة عاكسة للضوء Hi-Vis",
+   "نظارات حماية شمسية/ميدانية"
+  ],
+  "qualifications": [
+   "بكالوريوس هندسة مدنية / إدارة تشييد",
+   "ترخيص ممارسة مهنة الهندسة من نقابة المهندسين اليمنيين"
+  ],
+  "training_requirements": [
+   "90 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "مراجعة المخططات الإنشائية والمعمارية وحساب الكميات وتدقيق جداول التسليح.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "الإشراف الميداني على أعمال صب الخرسانة واختبارات القوة والجهد والهبوط.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "متابعة مقاولي الباطن والجدول الزمني لتنفيذ المشروع والاعتمادات المالية.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "تطبيق معايير السلامة المهنية بالموقع وحماية العمال من مخاطر الانهيارات والسقوط.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "حساب الكميات والتسعير الإنشائي",
+    "برمجيات AutoCAD/Revit/Primavera",
+    "فحوصات الخرسانة والتربة",
+    "إدارة عقود فيديك FIDIC"
+   ],
+   "soft_skills": [
+    "القيادة الميدانية القوية",
+    "التفاوض وإدارة الخلافات التعاقدية",
+    "الحزم في معايير الجودة"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "350000.00",
+  "max_salary": "1300000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "مدير تنفيذي للمشاريع الإنشائية / استشاري هندسي معتمد",
+   "current": "مهندس مدني ومدير مشروع ممارس",
+   "previous": "مهندس موقع إشرافي مبتدئ"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "قانون البناء رقم 19 لسنة 2002 وقانون العمل 5/1995"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 85% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ },
+ {
+  "code": "2161",
+  "name_ar": "مهندس معماري وتخطيط حضري",
+  "description_ar": "إعداد التصاميم المعمارية والمخططات التنفيذية للمباني والمجمعات مع مراعاة الطابع المعماري اليمني الأصيل وكفاءة الطاقة.",
+  "scope": "عام وخاص ومؤسسي",
+  "activity_category": null,
+  "syndicate": null,
+  "indoor_site": null,
+  "outdoor_site": null,
+  "climate_condition": null,
+  "shift_pattern": null,
+  "work_hours_per_day": null,
+  "max_service_years": null,
+  "hazard_level": "منخفضة",
+  "possible_hazards": null,
+  "potential_injuries": null,
+  "occupational_diseases": null,
+  "prevention_methods": null,
+  "protective_equipment": [
+   "خوذة وسترة أمان عند الزيارات الميدانية"
+  ],
+  "qualifications": [
+   "بكالوريوس هندسة معمارية",
+   "ترخيص ممارسة مهنة مهندس معماري من نقابة المهندسين"
+  ],
+  "training_requirements": [
+   "70 ساعة تدريب معتمد"
+  ],
+  "tasks": [
+   {
+    "id": 1,
+    "task": "رسم وتطوير المخططات المعمارية ثنائية وثلاثية الأبعاد والتفاصيل الإنشائية.",
+    "is_critical": true
+   },
+   {
+    "id": 2,
+    "task": "تنسيق المساحات واستغلال التهوية والإضاءة الطبيعية ومراعاة كود البناء اليمني.",
+    "is_critical": true
+   },
+   {
+    "id": 3,
+    "task": "إعداد المناظير ثلاثية الأبعاد وتقديم العروض للجهات المالكة والمشرفة.",
+    "is_critical": true
+   },
+   {
+    "id": 4,
+    "task": "مطابقة التصاميم مع اشتراطات السلامة والهروب من الحريق المعتمدة من الدفاع المدني.",
+    "is_critical": true
+   }
+  ],
+  "competencies": {
+   "hard_skills": [
+    "AutoCAD/Revit/3ds Max/SketchUp",
+    "كود البناء اليمني والهوية المعمارية",
+    "التصميم المستدام وكفاءة الطاقة",
+    "إعداد المخططات التنفيذية Shop Drawings"
+   ],
+   "soft_skills": [
+    "الحس الفني والإبداعي الراقي",
+    "القدرة على فهم متطلبات العميل",
+    "التواصل المعماري المقنع"
+   ]
+  },
+  "skill_score": 0,
+  "responsibility_score": 0,
+  "autonomy_score": 0,
+  "complexity_score": 0,
+  "hazard_score": 0,
+  "total_score": "0.00",
+  "grade": null,
+  "min_salary": "300000.00",
+  "max_salary": "1100000.00",
+  "allowances": null,
+  "career_path": {
+   "next": "كبير معماريين / مدير قسم التصميم والاستشارات الهندسية",
+   "current": "مهندس معماري معتمد Project Architect",
+   "previous": "معماري تصميمي مبتدئ Junior Architect"
+  },
+  "legal_references": [
+   {
+    "law": "قانون العمل رقم 5 لسنة 1995",
+    "reference": "المادة 11 من قانون العمل 5/1995 وقانون التراث المعماري"
+   }
+  ],
+  "yemenization_policy": "نسبة اليمننة المقررة: 90% — مهنة مقصورة على الكوادر الوطنية",
+  "institutional_standards": [],
+  "keywords": null,
+  "alternative_titles": null,
+  "related_occupations": null
+ }
+]

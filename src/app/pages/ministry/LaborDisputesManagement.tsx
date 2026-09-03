@@ -7,7 +7,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { usePermissions } from '../../hooks/usePermissions';
 import { disputeService, type LaborDispute, type DisputeFilters, type DisputeStatus, type DisputeCategory } from '../../services/disputeService';
-import { crossPortalService } from '../../services/crossPortalService';
+
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
@@ -34,8 +34,7 @@ const initialFilters: Filters = {
   governorate: '',
   search: '',
   dateFrom: '',
-  dateTo: '',
-};
+  dateTo: '' };
 
 export function LaborDisputesManagement() {
   const { can } = usePermissions();
@@ -48,6 +47,7 @@ export function LaborDisputesManagement() {
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
   const [showFilters, setShowFilters] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [statistics, setStatistics] = useState<any>(null);
@@ -70,16 +70,14 @@ export function LaborDisputesManagement() {
         dateFrom: filters.dateFrom || undefined,
         dateTo: filters.dateTo || undefined,
         page: pagination.page,
-        limit: pagination.limit,
-      });
+        limit: pagination.limit });
       
       setDisputes(response.data.disputes || []);
       if (response.meta) {
         setPagination(prev => ({
           ...prev,
           total: response.meta?.total || 0,
-          totalPages: response.meta?.totalPages || 0,
-        }));
+          totalPages: response.meta?.totalPages || 0 }));
       }
     } catch (error) {
       console.error('Failed to load disputes:', error);
@@ -130,6 +128,7 @@ export function LaborDisputesManagement() {
   };
 
   // Assign dispute
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleAssign = async (disputeId: string, assignedTo: string) => {
     try {
       await disputeService.assignDispute(disputeId, assignedTo);
@@ -146,8 +145,7 @@ export function LaborDisputesManagement() {
     try {
       const blob = await disputeService.exportDisputes({
         ...filters,
-        priority: filters.priority.length ? filters.priority as any : undefined,
-      }, format);
+        priority: filters.priority.length ? filters.priority as any : undefined }, format);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -175,8 +173,7 @@ export function LaborDisputesManagement() {
       OSH_violation: t('disputes.category.osh_violation'),
       union_rights: t('disputes.category.union_rights'),
       training_dispute: t('disputes.category.training_dispute'),
-      other: t('disputes.category.other'),
-    };
+      other: t('disputes.category.other') };
     return labels[category] || category;
   };
 

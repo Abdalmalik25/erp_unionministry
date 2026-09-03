@@ -39,7 +39,7 @@ export async function getIPGeolocation(ip) {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 3000);
-    const res = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,countryCode,region,regionName,city,lat,lon,timezone,isp,org,as`, {
+    const res = await fetch(`https://ip-api.com/json/${ip}?fields=status,country,countryCode,region,regionName,city,lat,lon,timezone,isp,org,as`, {
       signal: controller.signal,
     });
     clearTimeout(timeout);
@@ -110,8 +110,7 @@ export function locationTracker(options = {}) {
         mobile: req.headers['sec-ch-ua-mobile'] === '?1',
       };
 
-      res.setHeader('X-Geo-Country', geo.country);
-      if (geo.city) res.setHeader('X-Geo-City', encodeURIComponent(geo.city));
+      // Geo data kept server-side only — NOT exposed in response headers
 
       next();
     } catch (e) {

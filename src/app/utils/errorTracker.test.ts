@@ -1,7 +1,7 @@
 /**
  * errorTracker.test.ts — اختبارات شاملة لملتقط الأخطاء
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { errorTracker } from './errorTracker';
 import { ApiError } from '../services/api';
 

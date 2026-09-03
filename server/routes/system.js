@@ -13,8 +13,10 @@ const router = express.Router();
 // ===================== Enhanced System Diagnostics & Health =====================
 router.get('/api/health', async (_req, res) => {
   const startTime = Date.now();
+  const { getNeonStatus } = await import('../middleware/shared.js');
+  const neonStatus = getNeonStatus();
   try {
-    const r = await pool.query('SELECT NOW() as time, version() as pg_version');
+    const r = await pool.query('SELECT NOW() as time');
     const latency = Date.now() - startTime;
     res.json({
       status: 'healthy',
@@ -22,8 +24,12 @@ router.get('/api/health', async (_req, res) => {
       version: APP_VERSION,
       database: {
         status: 'connected',
+        backend: neonStatus.fallback ? 'local_sqlite' : 'neon_postgres',
         latency_ms: latency,
-        pg_version: r.rows[0].pg_version,
+      },
+      offline_first: {
+        active: neonStatus.fallback,
+        neon_online: neonStatus.online,
       },
       uptime_seconds: Math.round(process.uptime()),
       memory: {
@@ -40,7 +46,39 @@ router.get('/api/health', async (_req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (err) {
-    res.status(500).json({ status: 'unhealthy', error: 'Database connection failed', details: err.message });
+    // Neon unreachable — report healthy if local fallback is active
+    if (neonStatus.fallback) {
+      const latency = Date.now() - startTime;
+      res.json({
+        status: 'healthy',
+        service: 'المنظومة الوطنية لإدارة قطاع العمل',
+        version: APP_VERSION,
+        database: {
+          status: 'local_cache',
+          backend: 'local_sqlite',
+          latency_ms: latency,
+        },
+        offline_first: {
+          active: true,
+          neon_online: false,
+        },
+        uptime_seconds: Math.round(process.uptime()),
+        memory: {
+          rss_mb: Math.round(process.memoryUsage().rss / 1024 / 1024),
+          heap_used_mb: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+        },
+        security_posture: {
+          cors: 'enforced',
+          hsts: 'enabled',
+          csp: 'active',
+          rate_limit: 'active',
+          audit_trail: 'active',
+        },
+        timestamp: new Date().toISOString(),
+      });
+    } else {
+      res.status(500).json({ status: 'unhealthy', error: 'Database connection failed', details: err.message });
+    }
   }
 });
 
@@ -278,12 +316,10 @@ router.get('/api/auth/me', async (req, res) => {
 });
 
 // ===================== Sector Users (RBAC & Enterprise Governance) =====================
-const AUTH_ENABLED = process.env.ENABLE_AUTH === 'true';
 
 function requireAdmin(req, res, next) {
-  if (!AUTH_ENABLED) return next();
   if (!req.user) return res.status(401).json({ error: 'غير مصرح — يرجى تسجيل الدخول' });
-  if (req.user.role !== 'ministry_admin') return res.status(403).json({ error: 'صلاحية مدير النظام فقط' });
+  if (!['super_admin', 'ministry_admin'].includes(req.user.role)) return res.status(403).json({ error: 'صلاحية مدير النظام فقط' });
   next();
 }
 
@@ -349,6 +385,13 @@ router.post('/api/sector-users', requireAdmin, async (req, res) => {
     const { name, email, role, userType, password, organizationId, is_active } = req.body;
     if (!name || !email || !role || !userType || !password) return res.status(400).json({ error: 'الحقول الأساسية مطلوبة' });
     if (!VALID_ROLES.includes(role)) return res.status(400).json({ error: 'الدور غير صالح' });
+    // فحص قوة كلمة المرور — الحد الأدنى 8 أحرف مع رقم وحرف كبير
+    if (typeof password !== 'string' || password.length < 8) {
+      return res.status(400).json({ error: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' });
+    }
+    if (!/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+      return res.status(400).json({ error: 'كلمة المرور يجب أن تحتوي على حرف كبير ورقم واحد على الأقل' });
+    }
     const exists = await pool.query('SELECT id FROM sector_users WHERE email = $1 AND deleted_at IS NULL', [String(email).toLowerCase().trim()]);
     if (exists.rows.length) return res.status(409).json({ error: 'البريد الإلكتروني مستخدم مسبقاً' });
     const { salt, hash } = hashPassword(password);
@@ -444,7 +487,7 @@ router.delete('/api/sector-users/:id', requireAdmin, async (req, res) => {
 });
 
 // ===================== Notifications =====================
-router.get('/api/notifications', async (req, res) => {
+router.get('/api/notifications', requirePermission('read:entities'), async (req, res) => {
   try {
     const { limit, page, offset, includeDeleted } = paginate(req);
     const { recipient_id, is_read } = req.query;
@@ -467,7 +510,7 @@ router.get('/api/notifications', async (req, res) => {
   }
 });
 
-router.post('/api/notifications', async (req, res) => {
+router.post('/api/notifications', requirePermission('write:entities'), async (req, res) => {
   try {
     const d = req.body;
     if (!d.recipient_id) return res.status(400).json({ error: 'recipient_id مطلوب' });
@@ -489,7 +532,7 @@ router.post('/api/notifications', async (req, res) => {
   }
 });
 
-router.put('/api/notifications/:id', async (req, res) => {
+router.put('/api/notifications/:id', requirePermission('write:entities'), async (req, res) => {
   try {
     const fields = [];
     const values = [];
@@ -517,7 +560,7 @@ router.put('/api/notifications/:id', async (req, res) => {
   }
 });
 
-router.delete('/api/notifications/:id', async (req, res) => {
+router.delete('/api/notifications/:id', requirePermission('write:entities'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE notifications SET deleted_at = NOW(), deleted_by = NULL WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -529,7 +572,7 @@ router.delete('/api/notifications/:id', async (req, res) => {
 
 // ===================== Audit Log API =====================
 
-router.put('/api/notifications/:id/restore', async (req, res) => {
+router.put('/api/notifications/:id/restore', requirePermission('write:entities'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE notifications SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -539,7 +582,7 @@ router.put('/api/notifications/:id/restore', async (req, res) => {
   }
 });
 
-router.get('/api/audit-log', async (req, res) => {
+router.get('/api/audit-log', requirePermission('read:entities'), async (req, res) => {
   try {
     const { limit, page, offset, includeDeleted } = paginate(req);
     const { action, resource_type, user_id } = req.query;
@@ -561,7 +604,7 @@ router.get('/api/audit-log', async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
 });
 
-router.post('/api/audit-log', async (req, res) => {
+router.post('/api/audit-log', requirePermission('write:entities'), async (req, res) => {
   try {
     const { action, resource, resource_id, details, user_id, email } = req.body;
     await auditLog(action || 'action', resource || 'system', user_id || null, {
@@ -572,11 +615,11 @@ router.post('/api/audit-log', async (req, res) => {
     });
     res.json({ success: true });
   } catch (err) {
-    res.status(200).json({ success: true, warning: err.message });
+    res.status(200).json({ success: true, warning: 'Audit write failed' });
   }
 });
 
-router.post('/api/audit-logs', async (req, res) => {
+router.post('/api/audit-logs', requirePermission('write:entities'), async (req, res) => {
   try {
     const { action, resource, resource_id, details, user_id, email } = req.body;
     await auditLog(action || 'action', resource || 'system', user_id || null, {
@@ -587,7 +630,7 @@ router.post('/api/audit-logs', async (req, res) => {
     });
     res.json({ success: true });
   } catch (err) {
-    res.status(200).json({ success: true, warning: err.message });
+    res.status(200).json({ success: true, warning: 'Audit write failed' });
   }
 });
 

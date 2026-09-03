@@ -107,7 +107,7 @@ export class CircuitBreaker {
     this.successes++;
     this.lastSuccess = Date.now();
     if (this.state === 'HALF_OPEN') {
-      console.info(`[CircuitBreaker] ${this.name}: recovery succeeded → CLOSED`);
+      console.warn(`[CircuitBreaker] ${this.name}: recovery succeeded → CLOSED`);
       this.reset();
     }
   }
@@ -134,7 +134,7 @@ export class CircuitBreaker {
   private _toHalfOpen(): void {
     this.state = 'HALF_OPEN';
     this.halfOpenTimer = null;
-    console.info(`[CircuitBreaker] ${this.name}: attempting recovery → HALF_OPEN`);
+    console.warn(`[CircuitBreaker] ${this.name}: attempting recovery → HALF_OPEN`);
   }
 }
 

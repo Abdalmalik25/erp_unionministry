@@ -3,7 +3,8 @@
  *
  * @deprecated This component is NOT virtualized despite its name.
  * Use `src/components/ui/VirtualizedTable` for actual virtual scrolling.
- * This wrapper is kept for backward compatibility with existing imports.
+ * This wrapper is kept for backward compatibility with existing // Canonical mirror: src/app/components/ui/VirtualizedTable.tsx — keep in sync or re-export
+imports.
  * Migrate to the proper VirtualizedTable from ui/ for large datasets.
  */
 import { useState, useMemo, useCallback } from "react";

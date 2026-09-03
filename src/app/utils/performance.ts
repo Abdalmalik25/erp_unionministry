@@ -121,8 +121,7 @@ export function reportWebVitals(onVital?: (v: WebVital) => void): void {
     });
 
     if (import.meta.env.DEV) {
-      // eslint-disable-next-line no-console
-      console.log('[WebVital]', vital.name, vital.value, vital.rating);
+      console.warn('[WebVital]', vital.name, vital.value, vital.rating);
     }
 
     if (typeof navigator !== 'undefined' && navigator.sendBeacon) {

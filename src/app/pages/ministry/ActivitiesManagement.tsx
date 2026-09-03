@@ -154,8 +154,9 @@ export default function ActivitiesManagement() {
                 entity_name: e.entity_name || e.nameAr || e.name,
             }));
             setEntities(list);
+        } catch {
+            console.warn('[Activities] failed to fetch entities — non-critical');
         }
-        catch { /* silent */ }
     }, []);
     useEffect(() => {
         fetchActivities();

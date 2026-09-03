@@ -130,14 +130,18 @@ export default function EvaluationCertificatesManagement() {
     try {
       const r = await fetch('/api/professions?last_level=true&limit=500');
       if (r.ok) { const d = await r.json(); setProfessions(d.data || d.professions || []); }
-    } catch { /* non-fatal */ }
+    } catch {
+            console.warn('[EvaluationCertificates] failed to load professions — non-fatal');
+        }
   }, []);
 
   const loadFieldDefs = useCallback(async () => {
     try {
       const r = await fetch('/api/custom-field-definitions?entity_type=evaluation_certificates&active=true');
       if (r.ok) { const d = await r.json(); setFieldDefs(d.data || []); }
-    } catch { /* non-fatal */ }
+    } catch {
+            console.warn('[EvaluationCertificates] failed to load field definitions — non-fatal');
+        }
   }, []);
 
   useEffect(() => { loadProfessions(); loadFieldDefs(); }, [loadProfessions, loadFieldDefs]);

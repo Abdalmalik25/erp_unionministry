@@ -2,6 +2,7 @@
 // End-to-End: يجمع كل بيانات العامل من جداول متعددة في استجابة موحدة
 import { pool } from '../middleware/shared.js';
 import { cacheMiddleware } from '../middleware/cache.js';
+import { requirePermission } from '../middleware/rbac.js';
 import express from 'express';
 
 const router = express.Router();
@@ -148,7 +149,7 @@ router.get('/api/worker-portal/:personId/passport', withCache, async (req, res) 
 // ============================================================================
 // 2) طلب خدمة من البوابة (نقل خدمة / إنهاء عقد / شهادة خبرة / فحص طبي)
 // ============================================================================
-router.post('/api/worker-portal/service-request', async (req, res) => {
+router.post('/api/worker-portal/service-request', requirePermission('write:service_requests'), async (req, res) => {
   try {
     const {
       person_id, service_code, payload, documents
@@ -201,7 +202,7 @@ router.get('/api/worker-portal/:personId/requests', withCache, async (req, res) 
 // ============================================================================
 // 4) تقديم شكوى / بلاغ / إصابة
 // ============================================================================
-router.post('/api/worker-portal/report', async (req, res) => {
+router.post('/api/worker-portal/report', requirePermission('write:violations'), async (req, res) => {
   try {
     const { person_id, case_type, subject, description, linked_entity_id, linked_entity_type, documents } = req.body || {};
     if (!person_id || !case_type || !subject) {
@@ -249,7 +250,7 @@ router.post('/api/worker-portal/report', async (req, res) => {
 // ============================================================================
 // 5) رفع وثيقة
 // ============================================================================
-router.post('/api/worker-portal/document/upload', async (req, res) => {
+router.post('/api/worker-portal/document/upload', requirePermission('write:documents'), async (req, res) => {
   try {
     const { person_id, document_name, file_url, file_hash, file_size, mime_type, document_type, classification = 'private' } = req.body || {};
     if (!person_id || !document_name || !file_url) {

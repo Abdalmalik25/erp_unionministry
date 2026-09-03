@@ -8,18 +8,18 @@ import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/Button';
 import {
-  Activity, AlertTriangle, ArrowUpRight, Bell, BookOpen, Building2,
+  Activity, AlertTriangle, ArrowUpRight, Bell, Building2,
   CheckCircle2, ChevronLeft, Clock, FileText, Home, Loader2,
-  RefreshCw, Server, Shield, TrendingDown, TrendingUp, User,
-  Users, XCircle, Zap, BarChart3, PieChart as PieChartIcon,
-  LineChart, Calendar, Filter, Download, Eye, AlertOctagon
+  RefreshCw, Server, Shield, TrendingDown, TrendingUp,
+  XCircle, Zap, BarChart3, PieChart as PieChartIcon,
+  LineChart, Filter, Download, Eye, AlertOctagon
 } from 'lucide-react';
 import {
   getMinistryDashboard, getSystemHealth, getSmartNotifications,
   markNotificationRead, getQuickActionsForRole, formatChartData,
   getRelativeTime
 } from '../services/smartDashboardService';
-import type { DashboardSummary, SystemHealth, SmartNotification, AIInsight } from '../services/smartDashboardService';
+import type { DashboardSummary, SystemHealth, SmartNotification } from '../services/smartDashboardService';
 import { useAuth } from '../contexts/AuthContext';
 
 // Simple inline chart components (no external chart library needed)
@@ -51,8 +51,7 @@ function GaugeChart({ value, label, color = 'emerald' }: { value: number; label:
     emerald: '#10b981',
     amber: '#f59e0b',
     red: '#ef4444',
-    blue: '#3b82f6',
-  };
+    blue: '#3b82f6' };
   const strokeColor = colorMap[color] || colorMap.emerald;
   const circumference = 2 * Math.PI * 45;
   const dashOffset = circumference - (percentage / 100) * circumference;

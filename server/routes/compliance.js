@@ -102,7 +102,7 @@ router.delete('/api/violations/:id', requirePermission('violations:delete'), asy
   }
 });
 
-router.put('/api/violations/:id/restore', async (req, res) => {
+router.put('/api/violations/:id/restore', requirePermission('write:compliance'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE violations SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -215,7 +215,7 @@ router.delete('/api/inspections/:id', requirePermission('inspections:delete'), a
   }
 });
 
-router.put('/api/inspections/:id/restore', async (req, res) => {
+router.put('/api/inspections/:id/restore', requirePermission('write:compliance'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE inspections SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -287,7 +287,7 @@ router.delete('/api/risk-assessments/:id', requirePermission('risk:delete'), asy
 });
 
 
-router.put('/api/risk-assessments/:id/restore', async (req, res) => {
+router.put('/api/risk-assessments/:id/restore', requirePermission('write:compliance'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE risk_assessments SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -361,7 +361,7 @@ router.delete('/api/compliance-matrices/:id', requirePermission('compliance:dele
 });
 
 
-router.put('/api/compliance-matrices/:id/restore', async (req, res) => {
+router.put('/api/compliance-matrices/:id/restore', requirePermission('write:compliance'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE compliance_matrices SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -432,7 +432,7 @@ router.delete('/api/maturity-assessments/:id', requirePermission('compliance:del
 });
 
 
-router.put('/api/maturity-assessments/:id/restore', async (req, res) => {
+router.put('/api/maturity-assessments/:id/restore', requirePermission('write:compliance'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE maturity_assessments SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -575,7 +575,7 @@ router.delete('/api/compliance-alerts/:id', requirePermission('compliance:delete
 });
 
 
-router.put('/api/compliance_alerts/:id/restore', async (req, res) => {
+router.put('/api/compliance_alerts/:id/restore', requirePermission('write:compliance'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE compliance_alerts SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -587,7 +587,7 @@ router.put('/api/compliance_alerts/:id/restore', async (req, res) => {
 });
 
 // ===================== Risk Engine =====================
-router.post('/api/risk-engine/calculate/:entityId', async (req, res) => {
+router.post('/api/risk-engine/calculate/:entityId', requirePermission('write:compliance'), async (req, res) => {
   try {
     const { entityId } = req.params;
     const [violations, inspections, complianceAlerts, entity] = await Promise.all([
@@ -654,7 +654,7 @@ router.post('/api/risk-engine/calculate/:entityId', async (req, res) => {
   }
 });
 
-router.post('/api/risk-engine/batch-calculate', async (_req, res) => {
+router.post('/api/risk-engine/batch-calculate', requirePermission('write:compliance'), async (_req, res) => {
   try {
     const entities = await pool.query(`SELECT entity_id FROM organizational_entities WHERE deleted_at IS NULL AND status = 'active'`);
     const results = [];
@@ -710,7 +710,7 @@ const INSPECTION_WORKFLOW = {
   cancelled: ['scheduled'],
 };
 
-router.put('/api/inspections/:id/workflow', async (req, res) => {
+router.put('/api/inspections/:id/workflow', requirePermission('write:compliance'), async (req, res) => {
   try {
     const { status, notes } = req.body;
     if (!status) return res.status(400).json({ error: 'الحالة المطلوبة مطلوبة' });
@@ -741,7 +741,7 @@ const VIOLATION_WORKFLOW = {
   closed: [],
 };
 
-router.put('/api/violations/:id/workflow', async (req, res) => {
+router.put('/api/violations/:id/workflow', requirePermission('write:compliance'), async (req, res) => {
   try {
     const { status, notes } = req.body;
     if (!status) return res.status(400).json({ error: 'الحالة المطلوبة مطلوبة' });

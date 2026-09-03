@@ -71,6 +71,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
     }
   }, [isDisabled, onClick]);
   
+  const { onKeyDown } = props;
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLButtonElement>) => {
     // Enter and Space are handled natively for buttons
     if (e.key === 'Enter' || e.key === ' ') {
@@ -79,8 +80,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
         e.currentTarget.click();
       }
     }
-    props.onKeyDown?.(e);
-  }, [isDisabled, props.onKeyDown]);
+    onKeyDown?.(e);
+  }, [isDisabled, onKeyDown]);
   
   return (
     <button

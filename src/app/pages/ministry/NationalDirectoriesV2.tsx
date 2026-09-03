@@ -23,7 +23,7 @@ import {
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Modal } from '../../components/ui/Modal';
 import { toast } from 'sonner';
-import { exportReportToExcel } from '../../components/enterprise/PrintExportManager';
+
 import {
   DirectoryEntry,
   DirectoryType,
@@ -49,8 +49,7 @@ import {
   getOccupationsTree,
   getActivitiesTree,
   exportDirectory,
-  importDirectory,
-} from '../../services/nationalDirectoriesService';
+  importDirectory } from '../../services/nationalDirectoriesService';
 
 // ==================== الأنواع المحلية ====================
 
@@ -83,57 +82,49 @@ const DIRECTORY_TABS: DirectoryTab[] = [
     label: 'المهن',
     icon: Briefcase,
     description: 'تصنيف المهن ISCO-08',
-    color: 'bg-blue-500',
-  },
+    color: 'bg-blue-500' },
   {
     type: 'activity',
     label: 'الأنشطة الاقتصادية',
     icon: Layers,
     description: 'التصنيف الصناعي ISIC-4',
-    color: 'bg-green-500',
-  },
+    color: 'bg-green-500' },
   {
     type: 'establishment',
     label: 'أحجام المنشآت',
     icon: Building2,
     description: 'تصنيف المنشآت حسب الحجم',
-    color: 'bg-purple-500',
-  },
+    color: 'bg-purple-500' },
   {
     type: 'legal_form',
     label: 'الأشكال القانونية',
     icon: Scale,
     description: 'الأنواع القانونية للمنشآت',
-    color: 'bg-orange-500',
-  },
+    color: 'bg-orange-500' },
   {
     type: 'ownership',
     label: 'أنواع التملك',
     icon: Landmark,
     description: 'الملكية الحكومية والخاصة',
-    color: 'bg-teal-500',
-  },
+    color: 'bg-teal-500' },
   {
     type: 'governorate',
     label: 'المحافظات',
     icon: MapPin,
     description: 'التقسيم الإداري اليمني',
-    color: 'bg-red-500',
-  },
+    color: 'bg-red-500' },
   {
     type: 'contract_type',
     label: 'أنواع العقود',
     icon: FileText,
     description: 'عقود العمل اليمنية',
-    color: 'bg-indigo-500',
-  },
+    color: 'bg-indigo-500' },
   {
     type: 'economic_sector',
     label: 'القطاعات الاقتصادية',
     icon: Database,
     description: 'القطاعات حسب ISIC',
-    color: 'bg-pink-500',
-  },
+    color: 'bg-pink-500' },
 ];
 
 const PAGE_SIZE = 20;
@@ -159,8 +150,7 @@ export function NationalDirectoriesV2() {
     name_en: '',
     parent_code: '',
     level: 1,
-    sort_order: 0,
-  });
+    sort_order: 0 });
   const [saving, setSaving] = useState(false);
 
   // نافذة التفاصيل والربط
@@ -176,8 +166,7 @@ export function NationalDirectoriesV2() {
   const [versionForm, setVersionForm] = useState<VersionForm>({
     changes_summary: '',
     change_reasons: [],
-    effective_from: new Date().toISOString().split('T')[0],
-  });
+    effective_from: new Date().toISOString().split('T')[0] });
 
   // فحص الاستخدام
   const [usageCheck, setUsageCheck] = useState<UsageCheck | null>(null);
@@ -200,8 +189,7 @@ export function NationalDirectoriesV2() {
         page_size: PAGE_SIZE,
         sort_by: sortBy,
         sort_dir: sortDir,
-        include_relations: true,
-      });
+        include_relations: true });
       setEntries(result.data);
       setTotalCount(result.total);
     } catch (err) {
@@ -232,6 +220,7 @@ export function NationalDirectoriesV2() {
 
   // ==================== الإجراءات ====================
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleOpenCreate = () => {
     setEditingEntry(null);
     setFormData({
@@ -240,8 +229,7 @@ export function NationalDirectoriesV2() {
       name_en: '',
       parent_code: '',
       level: 1,
-      sort_order: entries.length,
-    });
+      sort_order: entries.length });
     setShowModal(true);
   };
 
@@ -253,8 +241,7 @@ export function NationalDirectoriesV2() {
       name_en: entry.name_en || '',
       parent_code: entry.parent_code || '',
       level: entry.level,
-      sort_order: entry.sort_order,
-    });
+      sort_order: entry.sort_order });
     setShowModal(true);
   };
 
@@ -272,8 +259,7 @@ export function NationalDirectoriesV2() {
           name_en: formData.name_en.trim() || undefined,
           parent_code: formData.parent_code.trim() || undefined,
           level: formData.level,
-          sort_order: formData.sort_order,
-        });
+          sort_order: formData.sort_order });
         toast.success('تم تحديث الدليل بنجاح');
       } else {
         await createDirectoryEntry(activeType, {
@@ -282,8 +268,7 @@ export function NationalDirectoriesV2() {
           name_en: formData.name_en.trim() || undefined,
           parent_code: formData.parent_code.trim() || undefined,
           level: formData.level,
-          sort_order: formData.sort_order,
-        });
+          sort_order: formData.sort_order });
         toast.success('تم إنشاء الدليل بنجاح');
       }
       setShowModal(false);
@@ -353,8 +338,7 @@ export function NationalDirectoriesV2() {
     if (!selectedEntry) return;
     try {
       const result = await propagateDirectoryChange(activeType, selectedEntry.code, {
-        cascade_update: true,
-      });
+        cascade_update: true });
       toast.success(
         `تم نشر التغييرات على ${result.affected_count} سجل`
       );
@@ -388,8 +372,7 @@ export function NationalDirectoriesV2() {
       await createDirectoryVersion(activeType, {
         changes_summary: versionForm.changes_summary,
         change_reasons: versionForm.change_reasons,
-        effective_from: versionForm.effective_from,
-      });
+        effective_from: versionForm.effective_from });
       toast.success('تم إنشاء الإصدار بنجاح');
       handleViewVersions();
     } catch (err) {
@@ -409,6 +392,7 @@ export function NationalDirectoriesV2() {
 
   // ==================== التصدير/الاستيراد ====================
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleExport = async () => {
     try {
       const blob = await exportDirectory(activeType, { format: 'json', includeInactive: showInactive });
@@ -424,6 +408,7 @@ export function NationalDirectoriesV2() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleImport = async (file: File) => {
     try {
       const result = await importDirectory(activeType, file, { dryRun: true, onConflict: 'skip' });

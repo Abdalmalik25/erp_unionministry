@@ -3,7 +3,7 @@
  * Note: Full fetch-level tests require MSW (Mock Service Worker).
  * These unit tests focus on the pure-logic utilities.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { ApiError, invalidateApiCache } from '../services/api';
 
 describe('ApiError', () => {

@@ -71,8 +71,7 @@ export function installGlobalErrorGuards(): void {
     window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
       if (isBenignMediaError(event.reason)) {
         event.preventDefault(); // يمنع "Uncaught (in promise) ..." في الكونسول
-        // console عمداً: يُحذف في الإنتاج عبر esbuild.drop — للتصحيح فقط
-        console.info('[Guards] Benign media rejection (non-fatal):', String(event.reason));
+        console.warn('[Guards] Benign media rejection (non-fatal):', String(event.reason));
       }
     });
 
@@ -87,7 +86,7 @@ export function installGlobalErrorGuards(): void {
         const err = media.error;
         if (isBenignMediaError(err) || err) {
           event.preventDefault();
-          console.info('[Guards] Media element error (non-fatal):', media.currentSrc || media.src);
+          console.warn('[Guards] Media element error (non-fatal):', media.currentSrc || media.src);
         }
       },
       true,

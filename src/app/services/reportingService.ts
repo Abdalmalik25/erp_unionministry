@@ -1,3 +1,4 @@
+import type { PaginationMeta } from '../types/api';
 /**
  * reportingService.ts — Institutional-Grade Reporting Engine
  * Yemen National Labor Platform
@@ -11,7 +12,7 @@
  * - Cross-portal data consolidation
  */
 
-import { get, post, put, del, getFile, postFormData } from './api';
+import { get, post, put, del, getFile } from './api';
 
 export type ReportFormat = 'pdf' | 'xlsx' | 'csv' | 'json' | 'html';
 export type ReportStatus = 'draft' | 'pending' | 'generating' | 'ready' | 'failed' | 'expired';
@@ -105,7 +106,7 @@ export interface ReportSchedule {
 export interface ServiceResponse<T> {
   success: boolean;
   data: T;
-  meta?: any;
+  meta?: PaginationMeta;
 }
 
 // ============================================================
@@ -123,7 +124,7 @@ export const reportingService = {
     ownerType?: string;
     search?: string;
     isPublic?: boolean;
-  }): Promise<ServiceResponse<{ reports: ReportDefinition[]; meta: any }>> {
+  }): Promise<ServiceResponse<{ reports: ReportDefinition[]; meta: PaginationMeta }>> {
     const params = new URLSearchParams();
     if (filters?.category) params.set('category', filters.category);
     if (filters?.ownerType) params.set('ownerType', filters.ownerType);
@@ -180,7 +181,7 @@ export const reportingService = {
     dateTo?: string;
     page?: number;
     limit?: number;
-  }): Promise<ServiceResponse<{ reports: GeneratedReport[]; meta: any }>> {
+  }): Promise<ServiceResponse<{ reports: GeneratedReport[]; meta: PaginationMeta }>> {
     const params = new URLSearchParams();
     if (filters?.definitionId) params.set('definitionId', filters.definitionId);
     if (filters?.status) params.set('status', filters.status);
@@ -329,6 +330,100 @@ export const reportingService = {
     return get<any>(`/reports/institutional/osh-incidents?${params.toString()}`);
   },
 
+  // ==================== OPTIMIZED MV-BACKED REPORTS (sub-100ms) ====================
+
+  /**
+   * National executive summary — single-pass function
+   */
+  async getExecutiveSummary(): Promise<ServiceResponse<any>> {
+    return get<any>(`/v2/reports/executive-summary`);
+  },
+
+  /**
+   * Sector analytics — pre-aggregated materialized view
+   */
+  async getSectorAnalytics(): Promise<ServiceResponse<any>> {
+    return get<any>(`/v2/reports/sector-analytics`);
+  },
+
+  /**
+   * Governorate intelligence — pre-aggregated materialized view
+   */
+  async getGovernorateIntelligence(): Promise<ServiceResponse<any>> {
+    return get<any>(`/v2/reports/governorate-intelligence`);
+  },
+
+  /**
+   * Cross-portal performance — pre-aggregated materialized view
+   * @param filters governorate/sector/risk_level/order/limit
+   */
+  async getCrossPortalPerformance(filters?: { governorate?: string; sector?: string; risk_level?: string; order?: 'compliance' | 'yemenization' | string; limit?: number }): Promise<ServiceResponse<any>> {
+    const q = new URLSearchParams();
+    if (filters?.governorate) q.set('governorate', filters.governorate);
+    if (filters?.sector) q.set('sector', filters.sector);
+    if (filters?.risk_level) q.set('risk_level', filters.risk_level);
+    if (filters?.order) q.set('order', filters.order);
+    if (filters?.limit) q.set('limit', String(filters.limit));
+    const qs = q.toString();
+    return get<any>(`/v2/reports/cross-portal-performance${qs ? `?${qs}` : ''}`);
+  },
+
+  /**
+   * Comparative sector report — pre-aggregated
+   */
+  async getComparativeSectors(): Promise<ServiceResponse<any>> {
+    return get<any>(`/v2/reports/comparative-sectors`);
+  },
+
+  /**
+   * Evaluation analytics — pre-aggregated materialized view
+   */
+  async getEvaluationAnalytics(): Promise<ServiceResponse<any>> {
+    return get<any>(`/v2/reports/evaluation-analytics`);
+  },
+
+  /**
+   * Dashboard analytics (sectors) — materialized view via /api/dashboard/analytics
+   */
+  async getDashboardSectorAnalytics(): Promise<ServiceResponse<any>> {
+    return get<any>(`/dashboard/analytics/sectors`);
+  },
+
+  /**
+   * Dashboard analytics (governorates) — materialized view
+   */
+  async getDashboardGovernorateAnalytics(): Promise<ServiceResponse<any>> {
+    return get<any>(`/dashboard/analytics/governorates`);
+  },
+
+  /**
+   * Dashboard analytics (cross-portal) — materialized view with filters
+   */
+  async getDashboardCrossPortal(filters?: { governorate?: string; sector?: string; risk_level?: string; order?: string; limit?: number }): Promise<ServiceResponse<any>> {
+    const q = new URLSearchParams();
+    if (filters?.governorate) q.set('governorate', filters.governorate);
+    if (filters?.sector) q.set('sector', filters.sector);
+    if (filters?.risk_level) q.set('risk_level', filters.risk_level);
+    if (filters?.order) q.set('order', filters.order);
+    if (filters?.limit) q.set('limit', String(filters.limit));
+    const qs = q.toString();
+    return get<any>(`/dashboard/analytics/cross-portal${qs ? `?${qs}` : ''}`);
+  },
+
+  /**
+   * Dashboard analytics (evaluations) — materialized view
+   */
+  async getDashboardEvaluationAnalytics(): Promise<ServiceResponse<any>> {
+    return get<any>(`/dashboard/analytics/evaluations`);
+  },
+
+  /**
+   * Entity drilldown — single-pass 360° dossier
+   */
+  async getEntityDrilldown(entityId: string): Promise<ServiceResponse<any>> {
+    return get<any>(`/v2/reports/entity-drilldown/${entityId}`);
+  },
+
   // ==================== SCHEDULED REPORTS ====================
 
   /**
@@ -394,7 +489,6 @@ export const reportingService = {
     aggregations?: Record<string, any>;
   }>> {
     return post<any>('/reports/builder/preview', config);
-  },
-};
+  } };
 
 export default reportingService;

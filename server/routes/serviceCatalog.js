@@ -2,6 +2,7 @@
 import express from 'express';
 import { pool, paginate } from '../middleware/shared.js';
 import { validate } from '../middleware/validation.js';
+import { requirePermission } from '../middleware/rbac.js';
 import crypto from 'crypto';
 import { invalidateCache } from '../middleware/cache.js';
 
@@ -33,7 +34,7 @@ router.get('/api/v1/services/catalog/:code', async (req,res)=>{
 });
 
 // Create — no code deploy needed (ministry_admin only)
-router.post('/api/v1/services/catalog', async (req,res)=>{
+router.post('/api/v1/services/catalog', requirePermission('write:services'), async (req,res)=>{
   if(!req.user || !['super_admin','ministry_admin'].includes(req.user.role)) return res.status(403).json({ error:'صلاحية وزارة فقط', code:'FORBIDDEN' });
   const { service_code, title_ar, category, stakeholder, sla_days, workflow_key, requires_documents, eligibility_rule, office_type, fees, is_digital } = req.body;
   if(!service_code || !title_ar || !category) return res.status(400).json({ error:'service_code/title_ar/category مطلوبة', code:'VALIDATION_ERROR' });
@@ -52,7 +53,7 @@ router.post('/api/v1/services/catalog', async (req,res)=>{
 });
 
 // Toggle active — إيقاف/تفعيل دون كود (nuclear requirement)
-router.put('/api/v1/services/catalog/:code/toggle', async (req,res)=>{
+router.put('/api/v1/services/catalog/:code/toggle', requirePermission('write:services'), async (req,res)=>{
   if(!req.user || !['super_admin','ministry_admin'].includes(req.user.role)) return res.status(403).json({ error:'صلاحية وزارة فقط', code:'FORBIDDEN' });
   const r=await pool.query(`UPDATE service_catalog SET is_active = NOT is_active, updated_at=NOW() WHERE service_code=$1 RETURNING *`, [req.params.code]);
   if(!r.rows.length) return res.status(404).json({ error:'غير موجود', code:'NOT_FOUND' });
@@ -61,7 +62,7 @@ router.put('/api/v1/services/catalog/:code/toggle', async (req,res)=>{
 });
 
 // Update (no-code edit)
-router.put('/api/v1/services/catalog/:code', async (req,res)=>{
+router.put('/api/v1/services/catalog/:code', requirePermission('write:services'), async (req,res)=>{
   if(!req.user || !['super_admin','ministry_admin'].includes(req.user.role)) return res.status(403).json({ error:'صلاحية وزارة فقط', code:'FORBIDDEN' });
   const allowed=['title_ar','category','stakeholder','sla_days','workflow_key','requires_documents','eligibility_rule','office_type','fees','is_digital','is_active'];
   const sets=[]; const vals=[]; let i=1;
@@ -78,7 +79,7 @@ router.put('/api/v1/services/catalog/:code', async (req,res)=>{
 });
 
 // Instances — تقديم طلب خدمة (any stakeholder)
-router.post('/api/v1/services/instances', async (req,res)=>{
+router.post('/api/v1/services/instances', requirePermission('write:services'), async (req,res)=>{
   const { service_code, applicant_type, applicant_id, payload, documents } = req.body;
   if(!service_code) return res.status(400).json({ error:'service_code مطلوب', code:'VALIDATION_ERROR' });
   const svc=await pool.query(`SELECT id, service_code, title_ar, title_en, category, stakeholder, description_ar, sla_days, sla_policy_key, workflow_key, requires_documents, eligibility_rule, eligibility_rule_id, fees, office_type, is_active, is_digital, physical_verification_reason, version, created_by, created_at, updated_at, deleted_at FROM service_catalog WHERE service_code=$1 AND deleted_at IS NULL`, [service_code]);
@@ -116,7 +117,7 @@ router.get('/api/v1/services/instances', async (req,res)=>{
 });
 
 // Certificate issue (after approval)
-router.put('/api/v1/services/instances/:id/certificate', async (req,res)=>{
+router.put('/api/v1/services/instances/:id/certificate', requirePermission('write:services'), async (req,res)=>{
   if(!req.user || !['super_admin','ministry_admin','registry_officer'].includes(req.user.role)) return res.status(403).json({ error:'صلاحية وزارة فقط', code:'FORBIDDEN' });
   const hash=crypto.createHash('sha256').update(req.params.id+Date.now()).digest('hex');
   const url=`/certificates/${req.params.id}.pdf`;

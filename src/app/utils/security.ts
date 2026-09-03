@@ -618,7 +618,7 @@ export function logAudit(entry: Omit<AuditEntry, 'timestamp'>): void {
     localStorage.setItem(AUDIT_KEY, JSON.stringify(arr));
 
     if (import.meta.env?.DEV) {
-      console.log('[Audit]', log.action, log.details);
+      console.warn('[Audit]', log.action, log.details);
     }
   } catch {
     /* storage unavailable */

@@ -1,3 +1,4 @@
+import type { PaginationMeta } from '../types/api';
 /**
  * disputeService.ts — Production-Grade Labor Dispute Resolution Service
  * Yemen National Labor Platform — Law 25/1991 & Amendments
@@ -221,7 +222,7 @@ export const disputeService = {
    * List disputes with advanced filtering
    * Production: Full pagination, sorting, and filtering
    */
-  async listDisputes(filters: DisputeFilters = {}): Promise<DisputeServiceResponse<{ disputes: LaborDispute[]; meta: any }>> {
+  async listDisputes(filters: DisputeFilters = {}): Promise<DisputeServiceResponse<{ disputes: LaborDispute[]; meta: PaginationMeta }>> {
     const params = new URLSearchParams();
     
     if (filters.status?.length) params.set('status', filters.status.join(','));

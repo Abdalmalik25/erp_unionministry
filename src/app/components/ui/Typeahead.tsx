@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { cn } from './utils';
 import { Search, X, Loader2, ChevronDown } from 'lucide-react';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -67,13 +67,13 @@ export function Typeahead({
   'aria-describedby': ariaDescribedBy,
   id = `typeahead-${Math.random().toString(36).slice(2, 9)}`,
   name,
-  autoComplete = 'off',
-}: TypeaheadProps) {
+  autoComplete = 'off' }: TypeaheadProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [options, setOptions] = useState<TypeaheadOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [focusedIndex, setFocusedIndex] = useState(-1);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activeQuery, setActiveQuery] = useState('');
 
   const inputRef = useRef<HTMLInputElement>(null);

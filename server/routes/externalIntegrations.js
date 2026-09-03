@@ -1,6 +1,7 @@
 // externalIntegrations.js — محول ذكي: live → fallback → mock (كفاءة واعتمادية)
 import express from 'express';
 import { pool } from '../middleware/shared.js';
+import { requirePermission } from '../middleware/rbac.js';
 import crypto from 'crypto';
 import { invalidateCache } from '../middleware/cache.js';
 const router=express.Router();
@@ -11,7 +12,7 @@ router.get('/api/v1/integrations', async (_req,res)=>{
   res.json({ data: r.rows });
 });
 // Toggle mode/status — بدون كود
-router.put('/api/v1/integrations/:code/mode', async (req,res)=>{
+router.put('/api/v1/integrations/:code/mode', requirePermission('write:integrations'), async (req,res)=>{
   if(!req.user || !['super_admin','ministry_admin'].includes(req.user.role)) return res.status(403).json({ error:'صلاحية وزارة', code:'FORBIDDEN' });
   const { mode, status } = req.body;
   const r=await pool.query(`UPDATE external_integrations SET mode=COALESCE($1,mode), status=COALESCE($2,status), updated_at=NOW() WHERE code=$3 RETURNING *`, [mode||null, status||null, req.params.code]);
@@ -21,7 +22,7 @@ router.put('/api/v1/integrations/:code/mode', async (req,res)=>{
 });
 
 // Verify — ذكي: يحاول live، يسقط لـ mock/cache/queue
-router.post('/api/v1/integrations/:code/verify', async (req,res)=>{
+router.post('/api/v1/integrations/:code/verify', requirePermission('write:integrations'), async (req,res)=>{
   const { code } = req.params;
   const payload = req.body;
   const start=Date.now();

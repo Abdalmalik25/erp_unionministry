@@ -12,6 +12,10 @@ import {
 } from "lucide-react";
 import { BrandLogo } from "../../components/ui/BrandLogo";
 import { BRAND } from "../../branding";
+import { SkipToContent } from "../../components/a11y/SkipToContent";
+import { A11yAnnouncer } from "../../components/a11y/A11yAnnouncer";
+import { OfflineIndicator } from "../../components/OfflineIndicator";
+import { useOnlineStatus } from "../../hooks/useOnlineStatus";
 
 // ===== Navigation Configuration =====
 const NAV = [
@@ -29,6 +33,7 @@ function GlassHeader() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { pathname } = useLocation();
+  const isOnline = useOnlineStatus(false);
   
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -43,6 +48,11 @@ function GlassHeader() {
   
   return (
     <>
+      <SkipToContent />
+      {/* Offline banner — smart failure resilience */}
+      {!isOnline && (
+        <div className="bg-amber-500 text-white text-xs text-center py-1.5" role="status" aria-live="polite">أنت غير متصل — المحتوى التعريفي متاح، والدخول يتطلب اتصالاً</div>
+      )}
       {/* Top Info Bar */}
       <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white text-[11px]">
         <div className="max-w-7xl mx-auto px-4 py-2 flex flex-col sm:flex-row items-center justify-between gap-2">
@@ -158,11 +168,13 @@ function GlassHeader() {
                 <span className="hidden sm:inline">دخول</span>
               </Link>
               
-              {/* Mobile Menu Toggle */}
+              {/* Mobile Menu Toggle — 44px touch target */}
               <button
                 onClick={() => setOpen(!open)}
-                className="lg:hidden p-2 rounded-xl bg-slate-100 hover:bg-slate-200 transition-colors"
+                className="lg:hidden w-11 h-11 inline-flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 aria-label={open ? "إغلاق القائمة" : "فتح القائمة"}
+                aria-expanded={open}
+                aria-controls="public-mobile-nav"
               >
                 {open ? <X size={20} /> : <Menu size={20} />}
               </button>
@@ -170,12 +182,14 @@ function GlassHeader() {
           </div>
         </div>
         
-        {/* Mobile Menu */}
-        <div className={`
+        {/* Mobile Menu — focus trap via aria, keyboard nav */}
+        <div
+          id="public-mobile-nav"
+          className={`
           lg:hidden overflow-hidden transition-all duration-300
           ${open ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}
         `}>
-          <div className="px-4 py-4 bg-white border-t border-slate-100 space-y-1">
+          <div className="px-4 py-4 bg-white border-t border-slate-100 space-y-1" role="navigation" aria-label="التنقل الجوال">
             {NAV.map(n => {
               const NavIcon = n.icon;
               const isActive = n.to === "/" ? pathname === "/" : pathname.startsWith(n.to);
@@ -332,16 +346,17 @@ function PremiumFooter() {
 // ===== Main Layout Component =====
 export function PublicLayout({ children }: { children: React.ReactNode }): React.ReactElement {
   const { pathname } = useLocation();
-  
-  // Scroll to top on navigation
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
   }, [pathname]);
-  
+
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="min-h-screen flex flex-col bg-slate-50" dir="rtl">
+      <A11yAnnouncer />
       <GlassHeader />
-      <main className="flex-1">
+      <OfflineIndicator />
+      <main id="main-content" className="flex-1" tabIndex={-1}>
         {children}
       </main>
       <PremiumFooter />

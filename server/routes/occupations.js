@@ -1,5 +1,6 @@
 import express from 'express';
 import { pool, paginate, countQuery, softDelete, softDeleteFilter } from '../middleware/shared.js';
+import { requirePermission } from '../middleware/rbac.js';
 
 const router = express.Router();
 
@@ -64,7 +65,7 @@ router.get('/api/professions', async (req, res) => {
   }
 });
 
-router.post('/api/professions', async (req, res) => {
+router.post('/api/professions', requirePermission('write:professions'), async (req, res) => {
   try {
     const d = req.body;
     const cols = [
@@ -89,7 +90,7 @@ router.post('/api/professions', async (req, res) => {
   }
 });
 
-router.put('/api/professions/:id', async (req, res) => {
+router.put('/api/professions/:id', requirePermission('write:professions'), async (req, res) => {
   try {
     const fields = [];
     const values = [];
@@ -123,7 +124,7 @@ router.put('/api/professions/:id', async (req, res) => {
   }
 });
 
-router.delete('/api/professions/:id', async (req, res) => {
+router.delete('/api/professions/:id', requirePermission('write:professions'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE professions SET deleted_at = NOW(), deleted_by = NULL WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -133,7 +134,7 @@ router.delete('/api/professions/:id', async (req, res) => {
   }
 });
 
-router.put('/api/professions/:id/restore', async (req, res) => {
+router.put('/api/professions/:id/restore', requirePermission('write:professions'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE professions SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });
@@ -197,7 +198,7 @@ router.get('/api/professions/:id/360-dossier', async (req, res) => {
 });
 
 // ===================== Multi-Establishment Batch Allocation =====================
-router.post('/api/professions/:id/batch-allocate', async (req, res) => {
+router.post('/api/professions/:id/batch-allocate', requirePermission('write:professions'), async (req, res) => {
   try {
     const { id } = req.params;
     const { establishment_ids, allocation_details } = req.body;
@@ -285,7 +286,7 @@ router.get('/api/isic4', async (req, res) => {
   }
 });
 
-router.post('/api/isic4', async (req, res) => {
+router.post('/api/isic4', requirePermission('write:professions'), async (req, res) => {
   try {
     const d = req.body;
     const cols = [
@@ -308,7 +309,7 @@ router.post('/api/isic4', async (req, res) => {
   }
 });
 
-router.put('/api/isic4/:id', async (req, res) => {
+router.put('/api/isic4/:id', requirePermission('write:professions'), async (req, res) => {
   try {
     const fields = [];
     const values = [];
@@ -337,7 +338,7 @@ router.put('/api/isic4/:id', async (req, res) => {
   }
 });
 
-router.delete('/api/isic4/:id', async (req, res) => {
+router.delete('/api/isic4/:id', requirePermission('write:professions'), async (req, res) => {
   try {
     const r = await pool.query('UPDATE isic4_classifications SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id', [req.params.id]);
     if (r.rowCount === 0) return res.status(404).json({ error: 'غير موجود' });

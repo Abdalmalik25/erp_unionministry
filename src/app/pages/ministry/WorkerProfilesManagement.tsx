@@ -64,9 +64,11 @@ export default function WorkerProfilesManagement() {
                 const d = await r.json();
                 setProfiles(d.profiles || d.data || []);
             }
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'فشل تحميل ملفات العاملين');
+        } finally {
+            setLoading(false);
         }
-        catch { /* empty */ }
-        setLoading(false);
     }, [statusFilter]);
     useEffect(() => { fetchProfiles(); }, [fetchProfiles]);
     const filtered = useMemo(() => {

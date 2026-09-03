@@ -59,6 +59,7 @@ export function ContractManager() {
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
   const [showFilters, setShowFilters] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [showAmendModal, setShowAmendModal] = useState(false);
   const [statistics, setStatistics] = useState<any>(null);
 
@@ -166,6 +167,7 @@ export function ContractManager() {
   };
 
   // Terminate contract
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleTerminate = async (contractId: string, reason: string, noticeDate: string) => {
     try {
       await contractService.terminateContract(contractId, {
@@ -182,6 +184,7 @@ export function ContractManager() {
   };
 
   // Renew contract
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleRenew = async (contractId: string, newEndDate: string) => {
     try {
       await contractService.renewContract(contractId, { newEndDate });

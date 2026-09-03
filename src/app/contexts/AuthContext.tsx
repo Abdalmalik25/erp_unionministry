@@ -138,9 +138,10 @@ export function AuthProvider({ children }: {
     // عملية الدخول (Sign In)
     // ============================================================
 
-    const signIn = useCallback(async (rawEmail: string, rawPassword: string, _fallbackUserType: 'ministry' | 'organization' = 'ministry') => {
+    const signIn = useCallback(async (rawEmail: string, rawPassword: string, fallbackUserType: 'ministry' | 'organization' = 'ministry') => {
         const email = sanitizeInput(String(rawEmail).toLowerCase().trim());
         const password = String(rawPassword).trim();
+        void fallbackUserType;
 
         if (!email || !password) {
             throw new Error('الرجاء إدخال البريد الإلكتروني الرسمي وكلمة المرور');

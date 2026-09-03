@@ -12,7 +12,11 @@ export default function IntelligenceCenter(){
   const [data,setData]=useState<any>(null);
   const [match,setMatch]=useState<any>(null);
   useEffect(()=>{
-    fetch('/api/v1/intelligence/overview').then(r=>r.json()).then(j=> setData(j.data||j)).catch(()=>{});
+    // محاولة لوحة الذكاء المحسّنة (stored function) أولاً، ثم الرجوع إلى النظرة الشاملة الكلاسيكية
+    fetch('/api/v2/intelligence/dashboard', { headers: { 'Content-Type': 'application/json' } })
+      .then(r=> r.ok ? r.json() : Promise.reject(r.status))
+      .then(j=> { const d = j.data || j; setData({ workers: d.entities?.total ?? d.workers, establishments: d.entities?.active ?? d.establishments, open_cases: d.violations?.open ?? d.open_cases, forecast: d.forecast }); })
+      .catch(()=> fetch('/api/v1/intelligence/overview').then(r=>r.json()).then(j=> setData(j.data||j)).catch(()=>{}));
   },[]);
   const runMatch=async()=>{
     const r=await fetch('/api/v1/intelligence/match', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ skills:['كهرباء'], governorate:'صنعاء' })});

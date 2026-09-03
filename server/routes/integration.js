@@ -8,41 +8,67 @@ const router = express.Router();
 // ========== Unified Search (cross-entity) — with correlationId & audit ==========
 router.get('/api/v1/search', async (req, res) => {
   const q = (req.query.q || '').toString().trim();
-  const scope = (req.query.scope || 'all').toString(); // all|establishments|workers|unions|cases
+  const scope = (req.query.scope || 'all').toString(); // all|establishments|workers|unions|cases|professions
   if (!q || q.length < 2) return res.json({ query: q, results: [], hint: 'أدخل حرفين على الأقل' });
-  const like = `%${q}%`;
-  const results = [];
   const start = Date.now();
+  const limit = Math.min(50, parseInt(req.query.limit || '5', 10));
   try {
-    if (scope==='all' || scope==='establishments') {
-      const r = await pool.query(`SELECT 'establishment' as type, id::text as id, name_ar as title, governorate as subtitle, status FROM commercial_establishments WHERE name_ar ILIKE $1 OR unified_code ILIKE $1 OR commercial_register_number ILIKE $1 LIMIT 5`, [like]);
-      r.rows.forEach(x=> results.push(x));
-    }
-    if (scope==='all' || scope==='workers') {
-      const r = await pool.query(`SELECT 'worker' as type, id::text as id, full_name as title, profession as subtitle, status FROM members WHERE full_name ILIKE $1 OR national_id ILIKE $1 LIMIT 5`, [like]);
-      r.rows.forEach(x=> results.push(x));
-    }
-    if (scope==='all' || scope==='unions') {
-      const r = await pool.query(`SELECT 'union' as type, entity_id::text as id, name_ar as title, governorate as subtitle, status FROM organizational_entities WHERE name_ar ILIKE $1 LIMIT 5`, [like]);
-      r.rows.forEach(x=> results.push(x));
-    }
-    if (scope==='all' || scope==='cases') {
-      const r = await pool.query(`SELECT 'case' as type, id::text as id, case_number as title, subject as subtitle, status FROM cases WHERE case_number ILIKE $1 OR subject ILIKE $1 LIMIT 5`, [like]);
-      r.rows.forEach(x=> results.push(x));
-    }
-    // also legal
-    const rl = await pool.query(`SELECT 'legal' as type, id::text as id, title_ar as title, law_number as subtitle, status FROM legal_sources WHERE title_ar ILIKE $1 LIMIT 3`, [like]);
-    rl.rows.forEach(x=> results.push(x));
+    // Use enhanced Arabic search function with normalization + relevance ranking
+    const r = await pool.query(
+      `SELECT * FROM fn_enhanced_arabic_search($1, $2, $3, $4)`,
+      [q, scope, limit, 0]
+    );
+    // Record search analytics
+    pool.query(
+      `INSERT INTO search_analytics (query_text, normalized_query, scope, result_count) VALUES ($1, $1, $2, $3) ON CONFLICT DO NOTHING`,
+      [q, scope, r.rows.length]
+    ).catch(() => {});
+
+    const results = r.rows.map(x => ({
+      type: x.result_type,
+      id: x.result_id.toString(),
+      title: x.result_title,
+      subtitle: x.result_subtitle,
+      status: x.result_status,
+      relevance: Math.round((x.relevance || 0.5) * 100),
+      ...(x.extra_data || {}),
+    }));
 
     res.json({
       query: q,
       scope,
       count: results.length,
       results,
-      took_ms: Date.now()-start,
+      took_ms: Date.now() - start,
       correlationId: req.audit?.correlationId || req.headers['x-correlation-id'] || null,
+      optimized: true,
     });
-  } catch (e) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
+  } catch (e) {
+    // Fallback to original multi-query approach if function not yet deployed
+    try {
+      const like = `%${q}%`;
+      const results = [];
+      if (scope==='all' || scope==='establishments') {
+        const r = await pool.query(`SELECT 'establishment' as type, id::text as id, name_ar as title, governorate as subtitle, status FROM commercial_establishments WHERE name_ar ILIKE $1 OR unified_code ILIKE $1 OR commercial_register_number ILIKE $1 LIMIT 5`, [like]);
+        r.rows.forEach(x=> results.push(x));
+      }
+      if (scope==='all' || scope==='workers') {
+        const r = await pool.query(`SELECT 'worker' as type, id::text as id, full_name as title, profession as subtitle, status FROM members WHERE full_name ILIKE $1 OR national_id ILIKE $1 LIMIT 5`, [like]);
+        r.rows.forEach(x=> results.push(x));
+      }
+      if (scope==='all' || scope==='unions') {
+        const r = await pool.query(`SELECT 'union' as type, entity_id::text as id, name_ar as title, governorate as subtitle, status FROM organizational_entities WHERE name_ar ILIKE $1 LIMIT 5`, [like]);
+        r.rows.forEach(x=> results.push(x));
+      }
+      if (scope==='all' || scope==='cases') {
+        const r = await pool.query(`SELECT 'case' as type, id::text as id, case_number as title, subject as subtitle, status FROM cases WHERE case_number ILIKE $1 OR subject ILIKE $1 LIMIT 5`, [like]);
+        r.rows.forEach(x=> results.push(x));
+      }
+      const rl = await pool.query(`SELECT 'legal' as type, id::text as id, title_ar as title, law_number as subtitle, status FROM legal_sources WHERE title_ar ILIKE $1 LIMIT 3`, [like]);
+      rl.rows.forEach(x=> results.push(x));
+      res.json({ query: q, scope, count: results.length, results, took_ms: Date.now()-start, correlationId: req.audit?.correlationId || req.headers['x-correlation-id'] || null, optimized: false });
+    } catch (e2) { res.status(500).json({ error: 'خطأ في الخادم', code: 'INTERNAL_ERROR' }); }
+  }
 });
 
 // ========== Integration Gateway — API registry + versioning ==========

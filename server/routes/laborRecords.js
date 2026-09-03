@@ -5,6 +5,7 @@
 import { pool, paginate, countQuery, softDeleteFilter, auditLog } from '../middleware/shared.js';
 import express from 'express';
 import { invalidateCache } from '../middleware/cache.js';
+import { requirePermission } from '../middleware/rbac.js';
 
 const router = express.Router();
 
@@ -201,7 +202,7 @@ function registerRecord(resource, def) {
   });
 
   // POST create — تحقق + ربط/إنشاء الشخص + توليد الأرقام التسلسلية تلقائياً
-  router.post(`/api/${resource}`, async (req, res) => {
+  router.post(`/api/${resource}`, requirePermission('write:members'), async (req, res) => {
     try {
       const d = { ...req.body };
       for (const reqField of def.required) {
@@ -242,7 +243,7 @@ function registerRecord(resource, def) {
   });
 
   // PUT update
-  router.put(`/api/${resource}/:id`, async (req, res) => {
+  router.put(`/api/${resource}/:id`, requirePermission('write:members'), async (req, res) => {
     try {
       const d = { ...req.body };
       delete d[def.personFk]; // ربط الشخص لا يتغير بعد الإنشاء
@@ -275,7 +276,7 @@ function registerRecord(resource, def) {
   });
 
   // DELETE soft
-  router.delete(`/api/${resource}/:id`, async (req, res) => {
+  router.delete(`/api/${resource}/:id`, requirePermission('write:members'), async (req, res) => {
     try {
       const r = await pool.query(
         `UPDATE ${table} SET deleted_at = NOW(), deleted_by = $2 WHERE id = $1 AND deleted_at IS NULL RETURNING id`,
@@ -292,7 +293,7 @@ function registerRecord(resource, def) {
   });
 
   // restore
-  router.put(`/api/${resource}/:id/restore`, async (req, res) => {
+  router.put(`/api/${resource}/:id/restore`, requirePermission('write:members'), async (req, res) => {
     try {
       const r = await pool.query(
         `UPDATE ${table} SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 RETURNING id`,

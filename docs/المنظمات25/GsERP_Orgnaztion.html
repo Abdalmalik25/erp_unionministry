@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة النقابات المهنية - وزارة الشؤون الاجتماعية والعمل</title>
+    <style>
+        :root {
+            --primary: #1a237e;
+            --secondary: #283593;
+            --accent: #303f9f;
+            --light: #f5f5f5;
+            --dark: #121212;
+            --success: #2e7d32;
+            --warning: #f57c00;
+            --error: #d32f2f;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            border-radius: 10px 10px 0 0;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+        
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 12px;
+            text-align: center;
+        }
+        
+        nav {
+            background: var(--secondary);
+            padding: 15px;
+            border-radius: 0 0 10px 10px;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .nav-tab {
+            background: var(--accent);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .nav-tab.active {
+            background: white;
+            color: var(--primary);
+        }
+        
+        .nav-tab:hover {
+            background: var(--light);
+            color: var(--dark);
+        }
+        
+        .content-section {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            margin-top: 10px;
+        }
+        
+        .content-section.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--secondary);
+        }
+        
+        .required::after {
+            content: " *";
+            color: var(--error);
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--accent);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(48, 63, 159, 0.2);
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--secondary);
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #1b5e20;
+        }
+        
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background: #e65100;
+        }
+        
+        .btn-danger {
+            background: var(--error);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #b71c1c;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .data-table th, .data-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+        
+        .data-table th {
+            background: var(--light);
+            font-weight: 600;
+        }
+        
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .search-box {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: var(--light);
+            border-radius: 5px;
+        }
+        
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .dashboard-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .dashboard-card h3 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .dashboard-card .number {
+            font-size: 2em;
+            font-weight: bold;
+            color: var(--success);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        .login-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        
+        .login-content {
+            background: white;
+            margin: 100px auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+        }
+        
+        .user-info {
+            background: var(--light);
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .status-pending {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        
+        .status-approved {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+        
+        .status-rejected {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .export-import-section {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        
+        .export-import-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .nav-tabs {
+                flex-direction: column;
+            }
+            
+            .form-row {
+                flex-direction: column;
+            }
+            
+            .export-import-buttons {
+                flex-direction: column;
+            }
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- نافذة تسجيل الدخول -->
+    <div id="loginModal" class="login-modal">
+        <div class="login-content">
+            <h2>تسجيل الدخول</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">البريد الإلكتروني</label>
+                    <input type="email" id="loginEmail" value="admin@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">كلمة المرور</label>
+                    <input type="password" id="loginPassword" value="123456" required>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="login()">تسجيل الدخول</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <div class="logo-container">
+                <div class="logo">وزارة الشؤون الاجتماعية والعمل</div>
+                <div>
+                    <h1>نظام إدارة النقابات المهنية</h1>
+                    <div class="subtitle">منصة متكاملة لإدارة وتسجيل النقابات المهنية</div>
+                    <div id="userInfo" class="user-info" style="display: none;">
+                        <span id="userName"></span> | <span id="userRole"></span> | 
+                        <button class="btn btn-danger" onclick="logout()" style="padding: 2px 8px; font-size: 12px;">تسجيل الخروج</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <nav>
+            <div class="nav-tabs">
+                <div class="nav-tab active" onclick="showSection('dashboard')">لوحة التحكم</div>
+                <div class="nav-tab" onclick="showSection('register')">تسجيل نقابة جديدة</div>
+                <div class="nav-tab" onclick="showSection('organizations')">قائمة النقابات</div>
+                <div class="nav-tab" onclick="showSection('founders')">إدارة المؤسسين</div>
+                <div class="nav-tab" onclick="showSection('members')">إدارة الأعضاء</div>
+                <div class="nav-tab" onclick="showSection('branches')">إدارة الفروع</div>
+                <div class="nav-tab" onclick="showSection('documents')">إدارة المستندات</div>
+                <div class="nav-tab" onclick="showSection('users')">إدارة المستخدمين</div>
+                <div class="nav-tab" onclick="showSection('exportImport')">التصدير والاستيراد</div>
+            </div>
+        </nav>
+        
+        <!-- لوحة التحكم -->
+        <section id="dashboard" class="content-section active">
+            <h2>لوحة التحكم الرئيسية</h2>
+            <div class="dashboard-cards">
+                <div class="dashboard-card">
+                    <h3>إجمالي النقابات</h3>
+                    <div class="number" id="totalOrgs">0</div>
+                </div>
+                <div class="dashboard-card">
+                    <h3>النقابات قيد المراجعة</h3>
+                    <div class="number" id="pendingOrgs">0</div>
+                </div>
+                <div class="dashboard-card">
+                    <h3>النقابات المعتمدة</h3>
+                    <div class="number" id="approvedOrgs">0</div>
+                </div>
+                <div class="dashboard-card">
+                    <h3>إجمالي الأعضاء</h3>
+                    <div class="number" id="totalMembers">0</div>
+                </div>
+            </div>
+            
+            <h3>آخر النقابات المسجلة</h3>
+            <div id="recentOrgs" class="loading">
+                <div class="spinner"></div>
+                <p>جاري تحميل البيانات...</p>
+            </div>
+        </section>
+        
+        <!-- تسجيل نقابة جديدة -->
+        <section id="register" class="content-section">
+            <h2>تسجيل نقابة جديدة</h2>
+            <form id="organizationForm">
+                <div class="form-group">
+                    <label for="unionName" class="required">اسم النقابة باللغة العربية</label>
+                    <input type="text" id="unionName" name="unionName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="unionNameEn">اسم النقابة باللغة الإنجليزية</label>
+                    <input type="text" id="unionNameEn" name="unionNameEn">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="unionType" class="required">نوع النقابة</label>
+                        <select id="unionType" name="unionType" required>
+                            <option value="">اختر نوع النقابة</option>
+                            <option value="مهنية">نقابة مهنية</option>
+                            <option value="حرفية">نقابة حرفية</option>
+                            <option value="تخصصية">نقابة تخصصية</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="professionalField" class="required">المجال المهني الرئيسي</label>
+                        <input type="text" id="professionalField" name="professionalField" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="headquarters" class="required">المقر الرئيسي</label>
+                    <textarea id="headquarters" name="headquarters" rows="3" required></textarea>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="phone">رقم الهاتف</label>
+                        <input type="tel" id="phone" name="phone">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email">البريد الإلكتروني</label>
+                        <input type="email" id="email" name="email">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="website">الموقع الإلكتروني</label>
+                    <input type="url" id="website" name="website">
+                </div>
+                
+                <h3>معلومات القيادة</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="president">الرئيس</label>
+                        <input type="text" id="president" name="president">
+                    </div>
+                    <div class="form-group">
+                        <label for="vicePresident">نائب الرئيس</label>
+                        <input type="text" id="vicePresident" name="vicePresident">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="secretary">الأمين العام</label>
+                        <input type="text" id="secretary" name="secretary">
+                    </div>
+                    <div class="form-group">
+                        <label for="treasurer">أمين الصندوق</label>
+                        <input type="text" id="treasurer" name="treasurer">
+                    </div>
+                </div>
+                
+                <button type="button" class="btn btn-primary" onclick="submitOrganization()">تسجيل النقابة</button>
+            </form>
+        </section>
+        
+        <!-- قائمة النقابات -->
+        <section id="organizations" class="content-section">
+            <h2>قائمة النقابات</h2>
+            <div class="search-box">
+                <input type="text" id="searchOrgs" placeholder="🔍 بحث في النقابات..." onkeyup="searchOrganizations()">
+            </div>
+            <div id="organizationsList" class="loading">
+                <div class="spinner"></div>
+                <p>جاري تحميل البيانات...</p>
+            </div>
+        </section>
+        
+        <!-- إدارة المؤسسين -->
+        <section id="founders" class="content-section">
+            <h2>إدارة المؤسسين</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="founderOrgId">رقم تسجيل النقابة</label>
+                    <input type="text" id="founderOrgId" placeholder="أدخل رقم التسجيل">
+                </div>
+                <div class="form-group">
+                    <button class="btn btn-primary" onclick="loadFounders()">تحميل المؤسسين</button>
+                </div>
+            </div>
+            
+            <h3>إضافة مؤسس جديد</h3>
+            <form id="founderForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="founderName">اسم المؤسس</label>
+                        <input type="text" id="founderName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="founderPosition">الوظيفة</label>
+                        <input type="text" id="founderPosition">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="founderEmail">البريد الإلكتروني</label>
+                        <input type="email" id="founderEmail">
+                    </div>
+                    <div class="form-group">
+                        <label for="founderPhone">الهاتف</label>
+                        <input type="tel" id="founderPhone">
+                    </div>
+                </div>
+                <button type="button" class="btn btn-success" onclick="addFounder()">إضافة مؤسس</button>
+            </form>
+            
+            <div id="foundersList" class="loading">
+                <p>اختر نقابة لعرض المؤسسين</p>
+            </div>
+        </section>
+        
+        <!-- إدارة الأعضاء -->
+        <section id="members" class="content-section">
+            <h2>إدارة الأعضاء</h2>
+            <p>هذا القسم قيد التطوير وسيتم إضافته قريباً.</p>
+        </section>
+        
+        <!-- إدارة الفروع -->
+        <section id="branches" class="content-section">
+            <h2>إدارة الفروع</h2>
+            <p>هذا القسم قيد التطوير وسيتم إضافته قريباً.</p>
+        </section>
+        
+        <!-- إدارة المستندات -->
+        <section id="documents" class="content-section">
+            <h2>إدارة المستندات</h2>
+            <p>هذا القسم قيد التطوير وسيتم إضافته قريباً.</p>
+        </section>
+        
+        <!-- إدارة المستخدمين -->
+        <section id="users" class="content-section">
+            <h2>إدارة المستخدمين</h2>
+            <h3>تسجيل مستخدم جديد</h3>
+            <form id="userForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="userNameInput">الاسم</label>
+                        <input type="text" id="userNameInput" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="userEmail">البريد الإلكتروني</label>
+                        <input type="email" id="userEmail" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="userRoleSelect">نوع الصلاحية</label>
+                        <select id="userRoleSelect" required>
+                            <option value="user">مستخدم عادي</option>
+                            <option value="admin">مدير نظام</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="userPassword">كلمة المرور (اختياري)</label>
+                        <input type="password" id="userPassword" placeholder="سيتم استخدام كلمة مرور افتراضية إذا تركت فارغة">
+                    </div>
+                </div>
+                <button type="button" class="btn btn-success" onclick="registerUser()">تسجيل مستخدم</button>
+            </form>
+        </section>
+        
+        <!-- التصدير والاستيراد -->
+        <section id="exportImport" class="content-section">
+            <h2>التصدير والاستيراد</h2>
+            
+            <div class="export-import-section">
+                <h3>تصدير البيانات</h3>
+                <p>يمكنك تصدير البيانات بصيغ مختلفة للنسخ الاحتياطي أو الاستخدام الخارجي</p>
+                <div class="export-import-buttons">
+                    <button class="btn btn-success" onclick="exportData('json')">تصدير JSON</button>
+                    <button class="btn btn-primary" onclick="exportData('xml')">تصدير XML</button>
+                    <button class="btn btn-warning" onclick="exportData('csv')">تصدير CSV</button>
+                    <button class="btn btn-danger" onclick="exportData('excel')">تصدير Excel</button>
+                </div>
+            </div>
+            
+            <div class="export-import-section">
+                <h3>استيراد البيانات</h3>
+                <p>يمكنك استيراد البيانات من ملفات خارجية (JSON أو XML)</p>
+                <div class="form-group">
+                    <label for="importFile">اختر ملف للاستيراد</label>
+                    <input type="file" id="importFile" accept=".json,.xml,.csv">
+                </div>
+                <div class="form-group">
+                    <label for="importType">نوع البيانات المستوردة</label>
+                    <select id="importType">
+                        <option value="organizations">النقابات</option>
+                        <option value="founders">المؤسسين</option>
+                        <option value="users">المستخدمين</option>
+                        <option value="all">جميع البيانات</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="importData()">استيراد البيانات</button>
+            </div>
+            
+            <div class="export-import-section">
+                <h3>النسخ الاحتياطي</h3>
+                <p>إنشاء واستعادة نسخة احتياطية كاملة من النظام</p>
+                <div class="export-import-buttons">
+                    <button class="btn btn-success" onclick="backupData()">إنشاء نسخة احتياطية</button>
+                    <button class="btn btn-warning" onclick="restoreBackup()">استعادة نسخة احتياطية</button>
+                </div>
+            </div>
+        </section>
+        
+        <footer>
+            <p>جميع الحقوق محفوظة © شركة ديناميك لخدمات البرمجيات 2025</p>
+            <p>النظام المركزي لإدارة النقابات المهنية - Version 2.0</p>
+        </footer>
+    </div>
+
+    <script>
+        // استخدام IndexedDB كقاعدة بيانات محلية
+        const DB_NAME = 'ProfessionalUnionsDB';
+        const DB_VERSION = 1;
+        let db;
+        
+        let currentUser = null;
+        let organizationsData = [];
+        
+        // تهيئة قاعدة البيانات
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                
+                request.onerror = () => {
+                    console.error('فشل في فتح قاعدة البيانات');
+                    reject('فشل في فتح قاعدة البيانات');
+                };
+                
+                request.onsuccess = (event) => {
+                    db = event.target.result;
+                    console.log('تم فتح قاعدة البيانات بنجاح');
+                    resolve(db);
+                };
+                
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    
+                    // إنشاء مخزن للنقابات
+                    if (!db.objectStoreNames.contains('organizations')) {
+                        const orgStore = db.createObjectStore('organizations', { keyPath: 'id', autoIncrement: true });
+                        orgStore.createIndex('serialNumber', 'serialNumber', { unique: true });
+                        orgStore.createIndex('name', 'name', { unique: false });
+                        orgStore.createIndex('status', 'status', { unique: false });
+                    }
+                    
+                    // إنشاء مخزن للمؤسسين
+                    if (!db.objectStoreNames.contains('founders')) {
+                        const founderStore = db.createObjectStore('founders', { keyPath: 'id', autoIncrement: true });
+                        founderStore.createIndex('orgId', 'orgId', { unique: false });
+                        founderStore.createIndex('name', 'name', { unique: false });
+                    }
+                    
+                    // إنشاء مخزن للمستخدمين
+                    if (!db.objectStoreNames.contains('users')) {
+                        const userStore = db.createObjectStore('users', { keyPath: 'id', autoIncrement: true });
+                        userStore.createIndex('email', 'email', { unique: true });
+                        userStore.createIndex('role', 'role', { unique: false });
+                    }
+                    
+                    // إضافة مستخدم افتراضي
+                    userStore.transaction.oncomplete = () => {
+                        const userTransaction = db.transaction(['users'], 'readwrite');
+                        const userStore = userTransaction.objectStore('users');
+                        userStore.add({
+                            name: 'مدير النظام',
+                            email: 'admin@example.com',
+                            password: '123456',
+                            role: 'admin'
+                        });
+                    };
+                };
+            });
+        }
+        
+        // دالة مساعدة لإضافة بيانات
+        function addData(storeName, data) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([storeName], 'readwrite');
+                const store = transaction.objectStore(storeName);
+                const request = store.add(data);
+                
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+        
+        // دالة مساعدة للحصول على جميع البيانات
+        function getAllData(storeName) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([storeName], 'readonly');
+                const store = transaction.objectStore(storeName);
+                const request = store.getAll();
+                
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+        
+        // دالة مساعدة لتحديث البيانات
+        function updateData(storeName, id, data) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([storeName], 'readwrite');
+                const store = transaction.objectStore(storeName);
+                const request = store.put({ ...data, id });
+                
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+        
+        // دالة مساعدة لحذف البيانات
+        function deleteData(storeName, id) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([storeName], 'readwrite');
+                const store = transaction.objectStore(storeName);
+                const request = store.delete(id);
+                
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        }
+        
+        // تصدير البيانات بصيغ مختلفة
+        function exportData(format) {
+            if (!currentUser) {
+                alert('يجب تسجيل الدخول أولاً');
+                return;
+            }
+            
+            Promise.all([
+                getAllData('organizations'),
+                getAllData('founders'),
+                getAllData('users')
+            ]).then(([organizations, founders, users]) => {
+                const data = {
+                    organizations,
+                    founders,
+                    users,
+                    exportDate: new Date().toISOString(),
+                    exportedBy: currentUser.name
+                };
+                
+                let content, mimeType, fileName;
+                
+                switch (format) {
+                    case 'json':
+                        content = JSON.stringify(data, null, 2);
+                        mimeType = 'application/json';
+                        fileName = `unions_data_${new Date().toISOString().split('T')[0]}.json`;
+                        break;
+                        
+                    case 'xml':
+                        content = convertToXML(data);
+                        mimeType = 'application/xml';
+                        fileName = `unions_data_${new Date().toISOString().split('T')[0]}.xml`;
+                        break;
+                        
+                    case 'csv':
+                        content = convertToCSV(data.organizations);
+                        mimeType = 'text/csv';
+                        fileName = `unions_data_${new Date().toISOString().split('T')[0]}.csv`;
+                        break;
+                        
+                    case 'excel':
+                        // محاكاة تصدير Excel باستخدام CSV
+                        content = convertToCSV(data.organizations);
+                        mimeType = 'application/vnd.ms-excel';
+                        fileName = `unions_data_${new Date().toISOString().split('T')[0]}.xls`;
+                        break;
+                }
+                
+                downloadFile(content, mimeType, fileName);
+                alert(`تم تصدير البيانات بنجاح بصيغة ${format.toUpperCase()}`);
+            }).catch(error => {
+                console.error('خطأ في تصدير البيانات:', error);
+                alert('حدث خطأ أثناء تصدير البيانات');
+            });
+        }
+        
+        // تحويل البيانات إلى XML
+        function convertToXML(data) {
+            let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+            xml += '<ProfessionalUnionsData>\n';
+            xml += `  <ExportInfo>\n`;
+            xml += `    <ExportDate>${data.exportDate}</ExportDate>\n`;
+            xml += `    <ExportedBy>${data.exportedBy}</ExportedBy>\n`;
+            xml += `  </ExportInfo>\n`;
+            
+            // النقابات
+            xml += `  <Organizations>\n`;
+            data.organizations.forEach(org => {
+                xml += `    <Organization>\n`;
+                Object.keys(org).forEach(key => {
+                    if (key !== 'id') {
+                        xml += `      <${key}>${org[key]}</${key}>\n`;
+                    }
+                });
+                xml += `    </Organization>\n`;
+            });
+            xml += `  </Organizations>\n`;
+            
+            // المؤسسين
+            xml += `  <Founders>\n`;
+            data.founders.forEach(founder => {
+                xml += `    <Founder>\n`;
+                Object.keys(founder).forEach(key => {
+                    if (key !== 'id') {
+                        xml += `      <${key}>${founder[key]}</${key}>\n`;
+                    }
+                });
+                xml += `    </Founder>\n`;
+            });
+            xml += `  </Founders>\n`;
+            
+            xml += '</ProfessionalUnionsData>';
+            return xml;
+        }
+        
+        // تحويل البيانات إلى CSV
+        function convertToCSV(organizations) {
+            if (organizations.length === 0) return '';
+            
+            const headers = Object.keys(organizations[0]).filter(key => key !== 'id');
+            let csv = headers.join(',') + '\n';
+            
+            organizations.forEach(org => {
+                const row = headers.map(header => {
+                    let value = org[header] || '';
+                    // معالجة القيم التي تحتوي على فواصل أو أسطر جديدة
+                    if (typeof value === 'string' && (value.includes(',') || value.includes('\n') || value.includes('"'))) {
+                        value = `"${value.replace(/"/g, '""')}"`;
+                    }
+                    return value;
+                });
+                csv += row.join(',') + '\n';
+            });
+            
+            return csv;
+        }
+        
+        // تحميل ملف
+        function downloadFile(content, mimeType, fileName) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        // استيراد البيانات
+        function importData() {
+            const fileInput = document.getElementById('importFile');
+            const importType = document.getElementById('importType').value;
+            
+            if (!fileInput.files.length) {
+                alert('يرجى اختيار ملف للاستيراد');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const content = e.target.result;
+                    let data;
+                    
+                    if (file.name.endsWith('.xml')) {
+                        data = parseXML(content);
+                    } else {
+                        data = JSON.parse(content);
+                    }
+                    
+                    // استيراد البيانات حسب النوع المحدد
+                    importDataByType(data, importType).then(() => {
+                        alert('تم استيراد البيانات بنجاح');
+                        fileInput.value = ''; // مسح حقل الملف
+                        
+                        // إعادة تحميل البيانات إذا كان المستخدم في الأقسام ذات الصلة
+                        if (importType === 'organizations' || importType === 'all') {
+                            loadOrganizations();
+                            loadDashboardData();
+                        }
+                    }).catch(error => {
+                        console.error('خطأ في استيراد البيانات:', error);
+                        alert('حدث خطأ أثناء استيراد البيانات');
+                    });
+                    
+                } catch (error) {
+                    console.error('خطأ في معالجة الملف:', error);
+                    alert('الملف غير صالح أو تالف');
+                }
+            };
+            
+            reader.readAsText(file);
+        }
+        
+        // تحليل XML
+        function parseXML(xmlString) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlString, 'application/xml');
+            
+            // التحقق من وجود أخطاء في XML
+            if (xmlDoc.getElementsByTagName('parsererror').length > 0) {
+                throw new Error('XML غير صالح');
+            }
+            
+            const data = {
+                organizations: [],
+                founders: [],
+                users: []
+            };
+            
+            // تحليل النقابات
+            const orgElements = xmlDoc.getElementsByTagName('Organization');
+            for (let i = 0; i < orgElements.length; i++) {
+                const org = {};
+                const children = orgElements[i].children;
+                for (let j = 0; j < children.length; j++) {
+                    org[children[j].tagName] = children[j].textContent;
+                }
+                data.organizations.push(org);
+            }
+            
+            // تحليل المؤسسين
+            const founderElements = xmlDoc.getElementsByTagName('Founder');
+            for (let i = 0; i < founderElements.length; i++) {
+                const founder = {};
+                const children = founderElements[i].children;
+                for (let j = 0; j < children.length; j++) {
+                                    founder[children[j].tagName] = children[j].textContent;
+                }
+                data.founders.push(founder);
+            }
+            
+            return data;
+        }
+        
+        // استيراد البيانات حسب النوع
+        function importDataByType(data, importType) {
+            const promises = [];
+            
+            if (importType === 'organizations' || importType === 'all') {
+                if (data.organizations && data.organizations.length > 0) {
+                    data.organizations.forEach(org => {
+                        // إزالة الـ id لإنشاء سجلات جديدة
+                        delete org.id;
+                        promises.push(addData('organizations', org));
+                    });
+                }
+            }
+            
+            if (importType === 'founders' || importType === 'all') {
+                if (data.founders && data.founders.length > 0) {
+                    data.founders.forEach(founder => {
+                        delete founder.id;
+                        promises.push(addData('founders', founder));
+                    });
+                }
+            }
+            
+            if (importType === 'users' || importType === 'all') {
+                if (data.users && data.users.length > 0) {
+                    data.users.forEach(user => {
+                        delete user.id;
+                        // تجنب تكرار البريد الإلكتروني
+                        promises.push(addData('users', user));
+                    });
+                }
+            }
+            
+            return Promise.all(promises);
+        }
+        
+        // إنشاء نسخة احتياطية
+        function backupData() {
+            exportData('json');
+        }
+        
+        // استعادة نسخة احتياطية
+        function restoreBackup() {
+            document.getElementById('importType').value = 'all';
+            importData();
+        }
+        
+        // إظهار وإخفاء الأقسام
+        function showSection(sectionId) {
+            // إخفاء جميع الأقسام
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // إلغاء تنشيط جميع علامات التبويب
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // إظهار القسم المحدد
+            document.getElementById(sectionId).classList.add('active');
+            
+            // تنشيط علامة التبويب المحددة
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                if (tab.textContent.trim() === getTabName(sectionId)) {
+                    tab.classList.add('active');
+                }
+            });
+            
+            // تحميل البيانات الخاصة بالقسم إذا لزم الأمر
+            if (sectionId === 'dashboard') {
+                loadDashboardData();
+            } else if (sectionId === 'organizations') {
+                loadOrganizations();
+            }
+        }
+        
+        // الحصول على اسم علامة التبويب من معرف القسم
+        function getTabName(sectionId) {
+            const tabNames = {
+                'dashboard': 'لوحة التحكم',
+                'register': 'تسجيل نقابة جديدة',
+                'organizations': 'قائمة النقابات',
+                'founders': 'إدارة المؤسسين',
+                'members': 'إدارة الأعضاء',
+                'branches': 'إدارة الفروع',
+                'documents': 'إدارة المستندات',
+                'users': 'إدارة المستخدمين',
+                'exportImport': 'التصدير والاستيراد'
+            };
+            return tabNames[sectionId];
+        }
+        
+        // تسجيل الدخول
+        function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!email || !password) {
+                alert('يرجى إدخال البريد الإلكتروني وكلمة المرور');
+                return;
+            }
+            
+            // البحث عن المستخدم في قاعدة البيانات
+            const transaction = db.transaction(['users'], 'readonly');
+            const store = transaction.objectStore('users');
+            const index = store.index('email');
+            const request = index.get(email);
+            
+            request.onsuccess = () => {
+                const user = request.result;
+                
+                if (user && user.password === password) {
+                    currentUser = user;
+                    document.getElementById('loginModal').style.display = 'none';
+                    document.getElementById('userInfo').style.display = 'block';
+                    document.getElementById('userName').textContent = user.name;
+                    document.getElementById('userRole').textContent = user.role === 'admin' ? 'مدير نظام' : 'مستخدم عادي';
+                    
+                    // تحميل بيانات لوحة التحكم بعد تسجيل الدخول
+                    loadDashboardData();
+                } else {
+                    alert('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+                }
+            };
+            
+            request.onerror = () => {
+                alert('حدث خطأ أثناء تسجيل الدخول');
+            };
+        }
+        
+        // تسجيل الخروج
+        function logout() {
+            currentUser = null;
+            document.getElementById('userInfo').style.display = 'none';
+            document.getElementById('loginModal').style.display = 'block';
+            
+            // إعادة تعيين حقول تسجيل الدخول
+            document.getElementById('loginEmail').value = 'admin@example.com';
+            document.getElementById('loginPassword').value = '123456';
+        }
+        
+        // تحميل بيانات لوحة التحكم
+        function loadDashboardData() {
+            if (!currentUser) return;
+            
+            getAllData('organizations').then(organizations => {
+                organizationsData = organizations;
+                
+                // تحديث الإحصائيات
+                document.getElementById('totalOrgs').textContent = organizations.length;
+                document.getElementById('pendingOrgs').textContent = organizations.filter(org => org.status === 'pending').length;
+                document.getElementById('approvedOrgs').textContent = organizations.filter(org => org.status === 'approved').length;
+                
+                // تحديث قائمة النقابات الأخيرة
+                displayRecentOrganizations(organizations.slice(-5).reverse());
+                
+            }).catch(error => {
+                console.error('خطأ في تحميل بيانات النقابات:', error);
+            });
+            
+            // تحميل إجمالي الأعضاء (بيانات وهمية للتوضيح)
+            getAllData('founders').then(founders => {
+                document.getElementById('totalMembers').textContent = founders.length;
+            });
+        }
+        
+        // عرض النقابات الأخيرة
+        function displayRecentOrganizations(organizations) {
+            const container = document.getElementById('recentOrgs');
+            
+            if (organizations.length === 0) {
+                container.innerHTML = '<p>لا توجد نقابات مسجلة بعد</p>';
+                return;
+            }
+            
+            let html = '<table class="data-table"><thead><tr><th>رقم التسجيل</th><th>اسم النقابة</th><th>نوع النقابة</th><th>الحالة</th><th>تاريخ التسجيل</th></tr></thead><tbody>';
+            
+            organizations.forEach(org => {
+                const statusClass = `status-${org.status || 'pending'}`;
+                const statusText = org.status === 'approved' ? 'معتمدة' : 
+                                 org.status === 'rejected' ? 'مرفوضة' : 'قيد المراجعة';
+                
+                html += `
+                    <tr>
+                        <td>${org.serialNumber || 'غير محدد'}</td>
+                        <td>${org.name || 'غير محدد'}</td>
+                        <td>${org.unionType || 'غير محدد'}</td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        <td>${org.registrationDate || new Date().toLocaleDateString('ar-SA')}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+        
+        // تسجيل نقابة جديدة
+        function submitOrganization() {
+            if (!currentUser) {
+                alert('يجب تسجيل الدخول أولاً');
+                return;
+            }
+            
+            const form = document.getElementById('organizationForm');
+            const formData = new FormData(form);
+            
+            // إنشاء كائن النقابة
+            const organization = {
+                name: formData.get('unionName'),
+                nameEn: formData.get('unionNameEn'),
+                unionType: formData.get('unionType'),
+                professionalField: formData.get('professionalField'),
+                headquarters: formData.get('headquarters'),
+                phone: formData.get('phone'),
+                email: formData.get('email'),
+                website: formData.get('website'),
+                president: formData.get('president'),
+                vicePresident: formData.get('vicePresident'),
+                secretary: formData.get('secretary'),
+                treasurer: formData.get('treasurer'),
+                status: 'pending',
+                registrationDate: new Date().toISOString().split('T')[0],
+                serialNumber: generateSerialNumber()
+            };
+            
+            // إضافة النقابة إلى قاعدة البيانات
+            addData('organizations', organization).then(id => {
+                alert('تم تسجيل النقابة بنجاح وتم إرسالها للمراجعة');
+                form.reset();
+                
+                // تحديث لوحة التحكم
+                loadDashboardData();
+            }).catch(error => {
+                console.error('خطأ في تسجيل النقابة:', error);
+                alert('حدث خطأ أثناء تسجيل النقابة');
+            });
+        }
+        
+        // توليد رقم تسلسلي فريد
+        function generateSerialNumber() {
+            const timestamp = new Date().getTime().toString().slice(-6);
+            const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+            return `UN-${timestamp}-${random}`;
+        }
+        
+        // تحميل قائمة النقابات
+        function loadOrganizations() {
+            if (!currentUser) return;
+            
+            getAllData('organizations').then(organizations => {
+                displayOrganizations(organizations);
+            }).catch(error => {
+                console.error('خطأ في تحميل النقابات:', error);
+                document.getElementById('organizationsList').innerHTML = '<p>حدث خطأ أثناء تحميل البيانات</p>';
+            });
+        }
+        
+        // عرض قائمة النقابات
+        function displayOrganizations(organizations) {
+            const container = document.getElementById('organizationsList');
+            
+            if (organizations.length === 0) {
+                container.innerHTML = '<p>لا توجد نقابات مسجلة بعد</p>';
+                return;
+            }
+            
+            let html = '<table class="data-table"><thead><tr><th>رقم التسجيل</th><th>اسم النقابة</th><th>نوع النقابة</th><th>المجال المهني</th><th>الحالة</th><th>الإجراءات</th></tr></thead><tbody>';
+            
+            organizations.forEach(org => {
+                const statusClass = `status-${org.status || 'pending'}`;
+                const statusText = org.status === 'approved' ? 'معتمدة' : 
+                                 org.status === 'rejected' ? 'مرفوضة' : 'قيد المراجعة';
+                
+                html += `
+                    <tr>
+                        <td>${org.serialNumber || 'غير محدد'}</td>
+                        <td>${org.name || 'غير محدد'}</td>
+                        <td>${org.unionType || 'غير محدد'}</td>
+                        <td>${org.professionalField || 'غير محدد'}</td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        <td>
+                            <button class="btn btn-primary" onclick="viewOrganization(${org.id})">عرض</button>
+                            ${currentUser.role === 'admin' ? `
+                                <button class="btn btn-success" onclick="approveOrganization(${org.id})">موافقة</button>
+                                <button class="btn btn-danger" onclick="rejectOrganization(${org.id})">رفض</button>
+                            ` : ''}
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+        
+        // البحث في النقابات
+        function searchOrganizations() {
+            const searchTerm = document.getElementById('searchOrgs').value.toLowerCase();
+            
+            if (!searchTerm) {
+                loadOrganizations();
+                return;
+            }
+            
+            const filteredOrgs = organizationsData.filter(org => 
+                (org.name && org.name.toLowerCase().includes(searchTerm)) ||
+                (org.serialNumber && org.serialNumber.toLowerCase().includes(searchTerm)) ||
+                (org.unionType && org.unionType.toLowerCase().includes(searchTerm)) ||
+                (org.professionalField && org.professionalField.toLowerCase().includes(searchTerm))
+            );
+            
+            displayOrganizations(filteredOrgs);
+        }
+        
+        // عرض تفاصيل النقابة
+        function viewOrganization(id) {
+            const org = organizationsData.find(o => o.id === id);
+            if (org) {
+                alert(`تفاصيل النقابة:\nالاسم: ${org.name}\nرقم التسجيل: ${org.serialNumber}\nالنوع: ${org.unionType}\nالحالة: ${org.status}`);
+            }
+        }
+        
+        // الموافقة على النقابة
+        function approveOrganization(id) {
+            if (currentUser.role !== 'admin') {
+                alert('ليس لديك صلاحية لهذا الإجراء');
+                return;
+            }
+            
+            updateOrganizationStatus(id, 'approved');
+        }
+        
+        // رفض النقابة
+        function rejectOrganization(id) {
+            if (currentUser.role !== 'admin') {
+                alert('ليس لديك صلاحية لهذا الإجراء');
+                return;
+            }
+            
+            updateOrganizationStatus(id, 'rejected');
+        }
+        
+        // تحديث حالة النقابة
+        function updateOrganizationStatus(id, status) {
+            const org = organizationsData.find(o => o.id === id);
+            if (!org) return;
+            
+            updateData('organizations', id, { ...org, status }).then(() => {
+                alert(`تم ${status === 'approved' ? 'الموافقة على' : 'رفض'} النقابة بنجاح`);
+                loadOrganizations();
+                loadDashboardData();
+            }).catch(error => {
+                console.error('خطأ في تحديث حالة النقابة:', error);
+                alert('حدث خطأ أثناء تحديث حالة النقابة');
+            });
+        }
+        
+        // تحميل المؤسسين
+        function loadFounders() {
+            const orgId = document.getElementById('founderOrgId').value;
+            
+            if (!orgId) {
+                alert('يرجى إدخال رقم تسجيل النقابة');
+                return;
+            }
+            
+            // البحث عن النقابة برقم التسجيل
+            const org = organizationsData.find(o => o.serialNumber === orgId);
+            if (!org) {
+                alert('لم يتم العثور على نقابة بهذا الرقم');
+                return;
+            }
+            
+            const transaction = db.transaction(['founders'], 'readonly');
+            const store = transaction.objectStore('founders');
+            const index = store.index('orgId');
+            const request = index.getAll(orgId);
+            
+            request.onsuccess = () => {
+                const founders = request.result;
+                displayFounders(founders, orgId);
+            };
+            
+            request.onerror = () => {
+                alert('حدث خطأ أثناء تحميل المؤسسين');
+            };
+        }
+        
+        // عرض المؤسسين
+        function displayFounders(founders, orgId) {
+            const container = document.getElementById('foundersList');
+            
+            if (founders.length === 0) {
+                container.innerHTML = `<p>لا يوجد مؤسسين مسجلين للنقابة ${orgId}</p>`;
+                return;
+            }
+            
+            let html = `<h3>المؤسسين للنقابة ${orgId}</h3>`;
+            html += '<table class="data-table"><thead><tr><th>الاسم</th><th>الوظيفة</th><th>البريد الإلكتروني</th><th>الهاتف</th><th>الإجراءات</th></tr></thead><tbody>';
+            
+            founders.forEach(founder => {
+                html += `
+                    <tr>
+                        <td>${founder.name || 'غير محدد'}</td>
+                        <td>${founder.position || 'غير محدد'}</td>
+                        <td>${founder.email || 'غير محدد'}</td>
+                        <td>${founder.phone || 'غير محدد'}</td>
+                        <td>
+                            <button class="btn btn-danger" onclick="deleteFounder(${founder.id})">حذف</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+        
+        // إضافة مؤسس جديد
+        function addFounder() {
+            const orgId = document.getElementById('founderOrgId').value;
+            
+            if (!orgId) {
+                alert('يرجى إدخال رقم تسجيل النقابة أولاً');
+                return;
+            }
+            
+            const name = document.getElementById('founderName').value;
+            const position = document.getElementById('founderPosition').value;
+            const email = document.getElementById('founderEmail').value;
+            const phone = document.getElementById('founderPhone').value;
+            
+            if (!name) {
+                alert('يرجى إدخال اسم المؤسس');
+                return;
+            }
+            
+            const founder = {
+                orgId: orgId,
+                name: name,
+                position: position,
+                email: email,
+                phone: phone
+            };
+            
+            addData('founders', founder).then(() => {
+                alert('تم إضافة المؤسس بنجاح');
+                document.getElementById('founderForm').reset();
+                loadFounders(); // إعادة تحميل قائمة المؤسسين
+            }).catch(error => {
+                console.error('خطأ في إضافة المؤسس:', error);
+                alert('حدث خطأ أثناء إضافة المؤسس');
+            });
+        }
+        
+        // حذف مؤسس
+        function deleteFounder(id) {
+            if (!confirm('هل أنت متأكد من حذف هذا المؤسس؟')) {
+                return;
+            }
+            
+            deleteData('founders', id).then(() => {
+                alert('تم حذف المؤسس بنجاح');
+                loadFounders(); // إعادة تحميل قائمة المؤسسين
+            }).catch(error => {
+                console.error('خطأ في حذف المؤسس:', error);
+                alert('حدث خطأ أثناء حذف المؤسس');
+            });
+        }
+        
+        // تسجيل مستخدم جديد
+        function registerUser() {
+            if (!currentUser || currentUser.role !== 'admin') {
+                alert('ليس لديك صلاحية لتسجيل مستخدمين جديدين');
+                return;
+            }
+            
+            const name = document.getElementById('userNameInput').value;
+            const email = document.getElementById('userEmail').value;
+            const role = document.getElementById('userRoleSelect').value;
+            const password = document.getElementById('userPassword').value || '123456'; // كلمة مرور افتراضية
+            
+            if (!name || !email) {
+                alert('يرجى إدخال جميع الحقول المطلوبة');
+                return;
+            }
+            
+            const user = {
+                name: name,
+                email: email,
+                password: password,
+                role: role
+            };
+            
+            addData('users', user).then(() => {
+                alert('تم تسجيل المستخدم بنجاح');
+                document.getElementById('userForm').reset();
+            }).catch(error => {
+                console.error('خطأ في تسجيل المستخدم:', error);
+                if (error.name === 'ConstraintError') {
+                    alert('البريد الإلكتروني مسجل مسبقاً');
+                } else {
+                    alert('حدث خطأ أثناء تسجيل المستخدم');
+                }
+            });
+        }
+        
+        // تهيئة التطبيق عند تحميل الصفحة
+        window.onload = function() {
+            initDB().then(() => {
+                console.log('تم تهيئة التطبيق بنجاح');
+                // إظهار نافذة تسجيل الدخول تلقائياً
+                document.getElementById('loginModal').style.display = 'block';
+            }).catch(error => {
+                console.error('فشل في تهيئة التطبيق:', error);
+                alert('حدث خطأ في تهيئة التطبيق، يرجى تحديث الصفحة');
+            });
+        };
+    </script>
+</body>
+</html>

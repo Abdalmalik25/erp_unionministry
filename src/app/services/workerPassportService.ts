@@ -1,10 +1,11 @@
+import type { PaginationMeta } from '../types/api';
 /**
  * workerPassportService.ts — Production-Grade Worker Passport (Digital Career ID) Service
  * Yemen National Labor Platform
  * Worker Portal Foundation — career identity, qualifications, employment history
  */
 
-import { get, post, put, del, getFile, uploadFile, postFormData } from './api';
+import { get, post, put, getFile } from './api';
 
 export type WorkerEmploymentStatus = 'employed' | 'unemployed' | 'self_employed' | 'retired' | 'in_training' | 'suspended';
 
@@ -115,7 +116,7 @@ export interface WorkerDisputeHistory {
 export interface ServiceResponse<T> {
   success: boolean;
   data: T;
-  meta?: any;
+  meta?: PaginationMeta;
 }
 
 // ============================================================
@@ -220,7 +221,7 @@ export const workerPassportService = {
     experienceMin?: number;
     qualificationLevel?: string;
     availableOnly?: boolean;
-  }): Promise<ServiceResponse<{ workers: WorkerProfile[]; meta: any }>> {
+  }): Promise<ServiceResponse<{ workers: WorkerProfile[]; meta: PaginationMeta }>> {
     const params = new URLSearchParams();
     params.set('q', query);
     if (filters) params.set('filters', JSON.stringify(filters));
@@ -240,7 +241,6 @@ export const workerPassportService = {
     nextActions: Array<{ title: string; dueDate?: string; action: string }>;
   }>> {
     return get<any>('/worker-passport/me/dashboard');
-  },
-};
+  } };
 
 export default workerPassportService;

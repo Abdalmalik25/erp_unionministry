@@ -3,13 +3,14 @@
 import { pool } from '../middleware/shared.js';
 import express from 'express';
 import { invalidateCache } from '../middleware/cache.js';
+import { requirePermission } from '../middleware/rbac.js';
 
 const router = express.Router();
 
 // ==================== 1) Workflows CRUD ====================
 
 // إنشاء طلب تغيير جديد (مع تقييم أثر تلقائي + SLA)
-router.post('/api/national-directory-workflows', async (req, res) => {
+router.post('/api/national-directory-workflows', requirePermission('write:national_directories'), async (req, res) => {
   try {
     const {
       directory_type, record_code, change_type, change_payload,
@@ -122,7 +123,7 @@ router.get('/api/national-directory-workflows/:id', async (req, res) => {
 // ==================== 2) إجراءات الـ Workflow ====================
 
 // تقديم الطلب للمراجعة
-router.post('/api/national-directory-workflows/:id/submit', async (req, res) => {
+router.post('/api/national-directory-workflows/:id/submit', requirePermission('write:national_directories'), async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user?.id || null;
@@ -144,7 +145,7 @@ router.post('/api/national-directory-workflows/:id/submit', async (req, res) => 
 });
 
 // مراجعة الأثر المؤسسي
-router.post('/api/national-directory-workflows/:id/review-impact', async (req, res) => {
+router.post('/api/national-directory-workflows/:id/review-impact', requirePermission('write:national_directories'), async (req, res) => {
   try {
     const { id } = req.params;
     const { impact_notes, recommendations } = req.body || {};
@@ -171,7 +172,7 @@ router.post('/api/national-directory-workflows/:id/review-impact', async (req, r
 });
 
 // اعتماد / رفض الطلب
-router.post('/api/national-directory-workflows/:id/approve', async (req, res) => {
+router.post('/api/national-directory-workflows/:id/approve', requirePermission('write:national_directories'), async (req, res) => {
   try {
     const { id } = req.params;
     const { decision, notes, approval_level = 1 } = req.body || {};
@@ -220,7 +221,7 @@ router.post('/api/national-directory-workflows/:id/approve', async (req, res) =>
 });
 
 // نشر التغيير (تنفيذه فعلياً)
-router.post('/api/national-directory-workflows/:id/publish', async (req, res) => {
+router.post('/api/national-directory-workflows/:id/publish', requirePermission('write:national_directories'), async (req, res) => {
   try {
     const { id } = req.params;
     const client = await pool.connect();
@@ -282,7 +283,7 @@ router.post('/api/national-directory-workflows/:id/publish', async (req, res) =>
 });
 
 // التراجع عن طلب
-router.post('/api/national-directory-workflows/:id/rollback', async (req, res) => {
+router.post('/api/national-directory-workflows/:id/rollback', requirePermission('write:national_directories'), async (req, res) => {
   try {
     const { id } = req.params;
     const r = await pool.query(
@@ -385,7 +386,7 @@ router.get('/api/national-directory-workflows/sla-alerts', async (req, res) => {
 });
 
 // تأكيد استلام تنبيه
-router.post('/api/national-directory-workflows/sla-alerts/:id/acknowledge', async (req, res) => {
+router.post('/api/national-directory-workflows/sla-alerts/:id/acknowledge', requirePermission('write:national_directories'), async (req, res) => {
   try {
     const { id } = req.params;
     const r = await pool.query(

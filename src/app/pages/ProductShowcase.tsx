@@ -4,7 +4,7 @@
  * صفحة مستقلة تعرض جميع وظائف المنظومة بطريقة بصرية احترافية
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   Building2, Users, FileCheck, Shield, BarChart3, 
@@ -60,8 +60,7 @@ const modules: Module[] = [
       'Wages & allowances system',
       'Reports & statistics',
     ],
-    color: 'from-emerald-500 to-teal-600',
-  },
+    color: 'from-emerald-500 to-teal-600' },
   {
     id: 'worker',
     icon: UserCheck,
@@ -81,8 +80,7 @@ const modules: Module[] = [
       'Training & assessments',
       'Accidents & injuries',
     ],
-    color: 'from-amber-500 to-orange-600',
-  },
+    color: 'from-amber-500 to-orange-600' },
   {
     id: 'inspection',
     icon: ClipboardCheck,
@@ -102,8 +100,7 @@ const modules: Module[] = [
       'Scheduling & follow-up',
       'Oversight reports',
     ],
-    color: 'from-purple-500 to-violet-600',
-  },
+    color: 'from-purple-500 to-violet-600' },
   {
     id: 'contracts',
     icon: FileCheck,
@@ -123,8 +120,7 @@ const modules: Module[] = [
       'Renewal & termination',
       'Compliance & monitoring',
     ],
-    color: 'from-cyan-500 to-blue-600',
-  },
+    color: 'from-cyan-500 to-blue-600' },
   {
     id: 'analytics',
     icon: BarChart3,
@@ -144,8 +140,7 @@ const modules: Module[] = [
       'Performance indicators',
       'Periodic reports',
     ],
-    color: 'from-indigo-500 to-blue-600',
-  },
+    color: 'from-indigo-500 to-blue-600' },
   {
     id: 'services',
     icon: Globe,
@@ -165,8 +160,7 @@ const modules: Module[] = [
       'Permits & leaves',
       'Communication & engagement',
     ],
-    color: 'from-rose-500 to-pink-600',
-  },
+    color: 'from-rose-500 to-pink-600' },
 ];
 
 // ===== مكون البطاقة المضيئة =====
@@ -342,8 +336,7 @@ function AnimatedBarChart() {
               className="absolute inset-0 bg-gradient-to-t from-blue-500 to-cyan-400"
               style={{ 
                 height: `${100}%`,
-                animation: `growUp 1s ease-out ${i * 0.1}s forwards`,
-              }}
+                animation: `growUp 1s ease-out ${i * 0.1}s forwards` }}
             />
           </div>
           <div className="text-xs text-white/60">{['M', 'T', 'W', 'T', 'F', 'S', 'S'][i]}</div>
@@ -361,6 +354,7 @@ function AnimatedBarChart() {
 
 // ===== مكون الشرائح الرئيسية =====
 function HeroSection({ onExplore }: { onExplore: () => void }) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === 'ar';
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
@@ -369,8 +363,7 @@ function HeroSection({ onExplore }: { onExplore: () => void }) {
     const handleMouseMove = (e: MouseEvent) => {
       setMousePos({
         x: (e.clientX / window.innerWidth - 0.5) * 20,
-        y: (e.clientY / window.innerHeight - 0.5) * 20,
-      });
+        y: (e.clientY / window.innerHeight - 0.5) * 20 });
     };
     
     window.addEventListener('mousemove', handleMouseMove);
@@ -384,8 +377,7 @@ function HeroSection({ onExplore }: { onExplore: () => void }) {
         className="absolute inset-0 bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900"
         style={{
           transform: `translate(${mousePos.x}px, ${mousePos.y}px)`,
-          transition: 'transform 0.1s ease-out',
-        }}
+          transition: 'transform 0.1s ease-out' }}
       />
       
       {/* الجزيئات المتحركة */}
@@ -398,8 +390,7 @@ function HeroSection({ onExplore }: { onExplore: () => void }) {
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
               animationDelay: `${Math.random() * 2}s`,
-              animationDuration: `${2 + Math.random() * 2}s`,
-            }}
+              animationDuration: `${2 + Math.random() * 2}s` }}
           />
         ))}
       </div>
@@ -479,6 +470,7 @@ function HeroSection({ onExplore }: { onExplore: () => void }) {
 
 // ===== الصفحة الرئيسية =====
 export default function ProductShowcase() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === 'ar';
   const [activeModule, setActiveModule] = useState(0);

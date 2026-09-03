@@ -45,7 +45,7 @@ class ErrorBoundaryInternal extends Component<ErrorBoundaryProps, ErrorBoundaryS
 
     // Log to console in development
     if (import.meta.env.DEV) {
-      // eslint-disable-next-line no-console
+       
       console.error('[ErrorBoundary]', this.props.name || 'unnamed', error, errorInfo);
     }
 

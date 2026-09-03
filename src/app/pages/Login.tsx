@@ -4,18 +4,19 @@
  * World-Class Security Design with Micro-interactions
  */
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router';
 import {
   User, Lock, Eye, EyeOff, AlertCircle, Loader2, LogIn, CheckCircle2,
-  Landmark, Building2, Users, HardHat, ShieldCheck, Scale, ArrowRight,
-  Sparkles, Fingerprint, Smartphone, KeyRound, Shield, Zap, Globe
+  Landmark, Building2, Users, HardHat, ShieldCheck, ArrowRight,
+  Fingerprint, Smartphone, Shield, Zap, Globe, Timer, Info
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { AUDIENCES, getAudience, getLandingPath } from '../utils/portals';
+import { getLandingPath } from '../utils/portals';
 import type { Audience } from '../utils/portals';
 import { BRAND } from '../branding';
-import { BrandLogo } from '../components/ui/BrandLogo';
+import { checkRateLimit } from '../utils/security';
+import { isFeatureEnabled } from '../utils/featureFlags';
 
 // ===== Types =====
 interface OfficialIdentity {
@@ -50,9 +51,10 @@ function GlassCard({ children, className = '' }: { children: React.ReactNode; cl
   );
 }
 
-function PremiumInput({ 
-  icon: Icon, 
-  label, 
+type IconType = React.ComponentType<{ className?: string }>;
+function PremiumInput({
+  icon: Icon,
+  label,
   type = 'text',
   value,
   onChange,
@@ -65,7 +67,7 @@ function PremiumInput({
   autoComplete,
   description
 }: {
-  icon: any;
+  icon: IconType;
   label: string;
   type?: string;
   value: string;
@@ -216,18 +218,20 @@ function SecurityBadge() {
 }
 
 function FloatingParticles() {
+  const particles = useMemo(() => Array.from({ length: 20 }).map((_, i) => ({
+    id: i,
+    left: `${Math.random() * 100}%`,
+    top: `${Math.random() * 100}%`,
+    delay: `${Math.random() * 3}s`,
+    duration: `${3 + Math.random() * 4}s`,
+  })), []);
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {Array.from({ length: 20 }).map((_, i) => (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
+      {particles.map(p => (
         <div
-          key={i}
+          key={p.id}
           className="absolute w-2 h-2 bg-amber-400/20 rounded-full animate-pulse"
-          style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 3}s`,
-            animationDuration: `${3 + Math.random() * 4}s`,
-          }}
+          style={{ left: p.left, top: p.top, animationDelay: p.delay, animationDuration: p.duration }}
         />
       ))}
     </div>
@@ -237,6 +241,7 @@ function FloatingParticles() {
 // ===== Main Component =====
 export function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { signIn, user, loading: authLoading } = useAuth();
 
   const [identity, setIdentity] = useState<OfficialIdentity>(IDENTITY_FALLBACK);
@@ -244,46 +249,95 @@ export function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
+  const [rememberMe, setRememberMe] = useState(() => {
+    try { return localStorage.getItem('unionsphere_remember') !== 'false'; } catch { return true; }
+  });
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [authSuccess, setAuthSuccess] = useState(false);
-  const liveRegionRef = useRef<HTMLDivElement>(null);
+  const [lockoutUntil, setLockoutUntil] = useState<number | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ username?: string; password?: string }>({});
+  const biometricEnabled = isFeatureEnabled('biometric_verification');
 
   useEffect(() => {
     fetchIdentity().then(setIdentity);
-  }, []);
+    // preserve returnTo from ProtectedRoute redirect
+    const params = new URLSearchParams(location.search);
+    const ret = params.get('returnTo');
+    if (ret) sessionStorage.setItem('returnTo', ret);
+  }, [location.search]);
 
-  // Redirect if already logged in
+  // Redirect if already logged in — يحترم مسار العودة الأصلي
   useEffect(() => {
     if (user && !authLoading) {
+      const ret = sessionStorage.getItem('returnTo');
+      if (ret) { sessionStorage.removeItem('returnTo'); navigate(ret, { replace: true }); return; }
       navigate(getLandingPath(user), { replace: true });
     }
   }, [user, authLoading, navigate]);
 
+  // مراقبة حالة القفل الأمني (rate limit) — عدّاد تنازلي
+  useEffect(() => {
+    if (!lockoutUntil) return;
+    if (Date.now() >= lockoutUntil) { setLockoutUntil(null); return; }
+    const t = setInterval(() => {
+      if (Date.now() >= lockoutUntil!) { setLockoutUntil(null); clearInterval(t); }
+    }, 1000);
+    return () => clearInterval(t);
+  }, [lockoutUntil]);
+
+  const validateForm = (): boolean => {
+    const errs: typeof fieldErrors = {};
+    const u = username.trim();
+    if (!u) errs.username = 'اسم المستخدم مطلوب';
+    else if (u.includes('@') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(u)) errs.username = 'صيغة البريد غير صحيحة';
+    else if (!u.includes('@') && u.length < 3) errs.username = 'اسم المستخدم قصير جداً';
+    if (!password) errs.password = 'كلمة المرور مطلوبة';
+    else if (password.length < 6) errs.password = 'كلمة المرور قصيرة جداً (6 أحرف على الأقل)';
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!username.trim() || !password) {
-      setErrorMessage('يرجى إدخال اسم المستخدم وكلمة المرور');
+    if (loading) return; // منع الإرسال المزدوج
+
+    if (!validateForm()) {
+      setErrorMessage('يرجى تصحيح الحقول المشار إليها');
+      return;
+    }
+
+    // فحص القفل الأمني قبل الاتصال بالخادم
+    const rlKey = `login_${username.trim().toLowerCase()}`;
+    const rl = checkRateLimit(rlKey);
+    if (!rl.allowed) {
+      const secs = Math.ceil(rl.resetIn / 1000);
+      setLockoutUntil(Date.now() + rl.resetIn);
+      setErrorMessage(`تم تعليق المحاولات مؤقتاً لأسباب أمنية — حاول بعد ${secs} ثانية`);
       return;
     }
 
     setLoading(true);
     setErrorMessage('');
+    setFieldErrors({});
 
     try {
-      const userType = audience === 'employer' ? 'organization' : audience === 'union' ? 'organization' : 'ministry';
+      // تذكر اختيار “تذكرني” للجلسات القادمة (قرار العميل فقط — لا يؤثر على أمان JWT)
+      try { localStorage.setItem('unionsphere_remember', String(rememberMe)); } catch { /* storage unavailable */ }
+      const userType = audience === 'ministry' ? 'ministry' : 'organization';
       const userData = await signIn(username, password, userType);
-
       setAuthSuccess(true);
-
+      const ret = sessionStorage.getItem('returnTo');
       setTimeout(() => {
-        navigate(getLandingPath(userData), { replace: true });
-      }, 1000);
-      
-    } catch (err: any) {
-      setErrorMessage(err.message || 'حدث خطأ أثناء تسجيل الدخول');
+        if (ret) { sessionStorage.removeItem('returnTo'); navigate(ret, { replace: true }); }
+        else navigate(getLandingPath(userData as { role?: string; userType?: string }), { replace: true });
+      }, 600);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'حدث خطأ أثناء تسجيل الدخول';
+      setErrorMessage(msg);
+      // تحديث عدّاد القفل بعد الفشل
+      const after = checkRateLimit(`login_${username.trim().toLowerCase()}`);
+      if (!after.allowed) setLockoutUntil(Date.now() + after.resetIn);
     } finally {
       setLoading(false);
     }
@@ -381,31 +435,36 @@ export function Login() {
                   onSelect={setAudience} 
                 />
                 
-                 {/* Username */}
+                {/* Username */}
                 <PremiumInput
                   icon={User}
-                  label="اسم المستخدم"
+                  label={audience === 'worker' ? 'رقم الهوية / البريد' : audience === 'ministry' ? 'البريد الرسمي' : 'البريد المسجل'}
                   value={username}
-                  onChange={setUsername}
-                  placeholder="أدخل اسم المستخدم"
+                  onChange={v => { setUsername(v); if (fieldErrors.username) setFieldErrors(s => ({ ...s, username: undefined })); }}
+                  placeholder={audience === 'worker' ? 'مثال: 123456789 أو worker@labor.ye' : audience === 'ministry' ? 'name@yemen.gov.ye' : 'example@business.ye'}
                   autoComplete="username"
-                  disabled={loading}
-                  description="أدخل البريد الإلكتروني الرسمي أو اسم المستخدم"
+                  disabled={loading || !!lockoutUntil}
+                  error={fieldErrors.username}
+                  description={audience === 'worker' ? 'أدخل رقم هويتك أو بريدك المسجل' : 'أدخل البريد الرسمي المرتبط بمنشأتك'}
                 />
-                
+                {audience !== 'ministry' && !fieldErrors.username && (
+                  <p className="text-xs text-slate-500 flex items-center gap-1 -mt-3"><Info className="w-3.5 h-3.5" /> تلميح: {audience === 'worker' ? 'يمكن للعامل الدخول برقم الهوية الوطنية' : audience === 'employer' ? 'بريد المنشأة المسجل لدى الوزارة' : 'بريد النقابة المسجل'}</p>
+                )}
+
                 {/* Password */}
                 <PremiumInput
                   icon={Lock}
                   label="كلمة المرور"
                   type="password"
                   value={password}
-                  onChange={setPassword}
+                  onChange={v => { setPassword(v); if (fieldErrors.password) setFieldErrors(s => ({ ...s, password: undefined })); }}
                   placeholder="أدخل كلمة المرور"
                   showPasswordToggle
                   showPassword={showPassword}
                   onTogglePassword={() => setShowPassword(!showPassword)}
                   autoComplete="current-password"
-                  disabled={loading}
+                  disabled={loading || !!lockoutUntil}
+                  error={fieldErrors.password}
                   description="أدخل كلمة المرور الخاصة بحسابك"
                 />
                 
@@ -428,24 +487,32 @@ export function Login() {
                   </Link>
                 </div>
                 
+                {/* قفل أمني — عدّاد تنازلي */}
+                {lockoutUntil && (
+                  <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-center gap-3" role="status" aria-live="polite">
+                    <Timer className="w-5 h-5 text-amber-600 flex-shrink-0 animate-pulse" />
+                    <p className="text-sm text-amber-800">محاولات كثيرة — متاح مجدداً بعد {Math.ceil((lockoutUntil - Date.now())/1000)} ثانية</p>
+                  </div>
+                )}
                 {/* Error Message */}
                 {errorMessage && (
-                  <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex items-center gap-3" role="alert" aria-live="assertive">
-                    <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-                    <p className="text-sm text-red-700">{errorMessage}</p>
+                  <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3" role="alert" aria-live="assertive">
+                    <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1"><p className="text-sm text-red-700">{errorMessage}</p><p className="text-xs text-red-600/80 mt-1">إذا نسيت كلمة المرور استخدم “نسيت كلمة المرور؟” — لا تحاول تخمين كلمات متكررة</p></div>
                   </div>
                 )}
                 
-                {/* Submit Button */}
+                {/* Submit Button — يمنع الإرسال المزدوج + يحترم القفل الأمني */}
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || !!lockoutUntil}
+                  aria-busy={loading}
                   className={`
                     w-full py-4 rounded-xl font-bold text-lg
                     flex items-center justify-center gap-3
-                    transition-all duration-200
-                    ${loading 
-                      ? 'bg-slate-300 cursor-not-allowed' 
+                    transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2
+                    ${loading || lockoutUntil
+                      ? 'bg-slate-300 cursor-not-allowed text-slate-500'
                       : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white shadow-lg shadow-amber-500/30 hover:shadow-xl hover:-translate-y-0.5'
                     }
                   `}
@@ -455,33 +522,56 @@ export function Login() {
                       <Loader2 className="w-5 h-5 animate-spin" />
                       جاري التحقق...
                     </>
+                  ) : lockoutUntil ? (
+                    <>
+                      <Timer className="w-5 h-5" />
+                      محظور مؤقتاً
+                    </>
                   ) : (
                     <>
                       <LogIn className="w-5 h-5" />
-                      تسجيل الدخول
+                      تسجيل الدخول الآمن
                     </>
                   )}
                 </button>
+
+                {/* خيارات دخول بديلة — موثوقة وسريعة */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Link to="/forgot-password" className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-200 text-sm font-semibold text-slate-700 hover:text-amber-700 transition-colors">
+                    <Smartphone className="w-4 h-4" /> دخول بديل: استعادة عبر البريد
+                  </Link>
+                  {biometricEnabled ? (
+                    <button type="button" onClick={() => setErrorMessage('التحقق البيومتري متاح لأجهزة الدعم — فعّلها من إعدادات جهازك ثم أعد المحاولة')} className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 text-sm font-semibold text-slate-700 hover:text-emerald-700 transition-colors">
+                      <Fingerprint className="w-4 h-4" /> التحقق البيومتري
+                    </button>
+                  ) : (
+                    <Link to="/register" className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 text-sm font-semibold text-slate-700 hover:text-blue-700 transition-colors">
+                      <User className="w-4 h-4" /> إنشاء حساب جديد
+                    </Link>
+                  )}
+                </div>
+                <p className="text-xs text-center text-slate-500">بدائل الدخول نفسها آمنة — كل المحاولات تُسجَّل وتُفحص (Audit + RateLimit)</p>
               </form>
             )}
-            
+
             {/* Divider */}
             <div className="flex items-center gap-4 my-8">
               <div className="flex-1 h-px bg-slate-200" />
               <span className="text-sm text-slate-400">أو</span>
               <div className="flex-1 h-px bg-slate-200" />
             </div>
-            
-            {/* Register Link */}
+
+            {/* Register Link — خيار بديل واضح */}
             <div className="text-center">
-              <p className="text-slate-600 mb-3">لا تملك حساباً؟</p>
+              <p className="text-slate-600 mb-3">لا تملك حساباً؟ اختر بوابتك وسجّل</p>
               <Link
                 to="/register"
-                className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-slate-200 hover:border-amber-400 text-slate-700 hover:text-amber-700 font-semibold transition-all"
+                className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-slate-200 hover:border-amber-400 text-slate-700 hover:text-amber-700 font-semibold transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
               >
                 <User className="w-5 h-5" />
-                إنشاء حساب جديد
+                إنشاء حساب جديد — 4 بوابات
               </Link>
+              <p className="text-xs text-slate-500 mt-2">وزارة / صاحب عمل / نقابة / عامل — كل بوابة لها مسارها بعد الدخول</p>
             </div>
             
             {/* Security Badges */}

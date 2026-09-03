@@ -1,3 +1,4 @@
+import type { PaginationMeta } from '../types/api';
 /**
  * crossPortalService.ts — Cross-Portal Integration & Orchestration Service
  * Yemen National Labor Platform
@@ -17,10 +18,10 @@
  * - Master data governance
  */
 
-import { get, post, put, del, postFormData } from './api';
-import { disputeService } from './disputeService';
-import { inspectionService } from './inspectionService';
-import { contractService } from './contractService';
+import { get, post, put } from './api';
+
+
+
 
 // ============================================================
 // UNIFIED REGISTRIES (single source of truth across all portals)
@@ -110,7 +111,7 @@ export interface CrossPortalWorkflow {
 export interface ServiceResponse<T> {
   success: boolean;
   data: T;
-  meta?: any;
+  meta?: PaginationMeta;
   errors?: any;
 }
 
@@ -433,7 +434,6 @@ export const crossPortalService = {
     auditTrail: any[];
   }>> {
     return get<any>(`/cross-portal/cases/${disputeId}/comprehensive`);
-  },
-};
+  } };
 
 export default crossPortalService;

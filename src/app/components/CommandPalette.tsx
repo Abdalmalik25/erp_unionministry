@@ -25,10 +25,12 @@ export function CommandPalette({ isOpen, onClose, commands }: CommandPaletteProp
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [recentCommands, setRecentCommands] = useState<string[]>([]);
     const inputRef = useRef<HTMLInputElement>(null);
-    // تحميل الأوامر الأخيرة
+    // تحميل الأوامر الأخيرة — يتحمل الفشل بمرونة (storage unavailable / JSON error)
     useEffect(() => {
-        const recent = JSON.parse(localStorage.getItem('recentCommands') || '[]');
-        setRecentCommands(recent);
+        try {
+            const recent = JSON.parse(localStorage.getItem('recentCommands') || '[]');
+            if (Array.isArray(recent)) setRecentCommands(recent.slice(0, 5));
+        } catch { /* ignore — private mode */ }
     }, []);
     // التركيز على البحث عند الفتح
     useEffect(() => {
@@ -70,11 +72,10 @@ export function CommandPalette({ isOpen, onClose, commands }: CommandPaletteProp
     };
     // تنفيذ الأمر
     const executeCommand = (command: CommandItem) => {
-        command.action();
-        // حفظ في الأوامر الأخيرة
+        try { command.action(); } catch { /* command failure isolated */ }
         const recent = [command.id, ...recentCommands.filter((id) => id !== command.id)].slice(0, 5);
         setRecentCommands(recent);
-        localStorage.setItem('recentCommands', JSON.stringify(recent));
+        try { localStorage.setItem('recentCommands', JSON.stringify(recent)); } catch { /* ignore */ }
         onClose();
     };
     if (!isOpen)
@@ -88,8 +89,8 @@ export function CommandPalette({ isOpen, onClose, commands }: CommandPaletteProp
         acc[category].push(cmd);
         return acc;
     }, {} as Record<string, CommandItem[]>);
-    return (<div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center pt-20 px-4" onClick={onClose} dir="rtl">
-      <div className="bg-card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[600px] flex flex-col animate-scaleIn" onClick={(e) => e.stopPropagation()}>
+    return (<div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center pt-20 px-4" onClick={onClose} dir="rtl" role="presentation">
+      <div className="bg-card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[600px] flex flex-col animate-scaleIn" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="لوحة الأوامر">
         {/* Search Input */}
         <div className="p-4 border-b border-border">
           <div className="relative">

@@ -203,6 +203,9 @@ dependencies:
   sonner:
     specifier: 2.0.3
     version: 2.0.3(react-dom@18.3.1)(react@18.3.1)
+  sql.js:
+    specifier: ^1.14.2
+    version: 1.14.2
   tailwind-merge:
     specifier: 3.2.0
     version: 3.2.0
@@ -7435,6 +7438,10 @@ packages:
   /split2@4.2.0:
     resolution: {integrity: sha512-UcjcJOWknrNkF6PLX83qcHM6KHgVKNkV62Y8a5uYDVv9ydGQVwAHMKqHdJje1VTWpljG0WYpCDhrCdAOYH4TWg==}
     engines: {node: '>= 10.x'}
+    dev: false
+
+  /sql.js@1.14.2:
+    resolution: {integrity: sha512-3ZGPovObMFrdw79zrUHbfdE/DLIsy8jdNdssmMSQuRAymedU6q84asPt0kgiqrdMYlPegDItiIMfmIXzZnYFcw==}
     dev: false
 
   /ssf@0.11.2:

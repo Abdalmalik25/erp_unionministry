@@ -3,10 +3,10 @@
 import { pool } from '../middleware/shared.js';
 
 const sessionCache = new Map(); // sid -> { active, exp }
-const SESSION_CACHE_TTL = 30_000;
+const SESSION_CACHE_TTL = 10_000; // 10 ثوانٍ — أقصر من أجل إبطال أسرع
 
 export async function isSessionActive(sid) {
-  if (!sid) return true; // توكن بلا جلسة (توكنات خدمية قديمة) — سلوك قائم محفوظ
+  if (!sid) return false; // توكن بلا جلسة = مرفوض (fail-closed)
   const hit = sessionCache.get(sid);
   if (hit && hit.exp > Date.now()) return hit.active;
   try {
@@ -18,7 +18,7 @@ export async function isSessionActive(sid) {
       for (const [k, v] of sessionCache) if (v.exp <= now) sessionCache.delete(k);
     }
     return active;
-  } catch { return true; } // فشل الفحص لا يوقف الخدمة
+  } catch { return false; } // فشل الفحص = رفض (fail-closed — أمان فوق التوفرية)
 }
 
 /** إبطال كاش جلسة بعد إلغائها — يسرّع سريان الإبطال خلال الثواني */

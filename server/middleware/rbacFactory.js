@@ -21,11 +21,11 @@ export function guard(resource, action='read'){
     if(!req.user) return res.status(401).json({ error:'غير مصرح', code:'UNAUTHORIZED' });
     if(req.user.role==='super_admin') return next();
     const policy = RESOURCE_POLICY[resource];
-    if(!policy) return next(); // resource غير مصنف → يمر (يُسجل للمراجعة)
+    if(!policy) return res.status(403).json({ error:'موارد غير مصرح بها', code:'RESOURCE_NOT_AUTHORIZED' }); // fail-closed
     const perm = policy[action];
     if(!perm) return res.status(403).json({ error:'صلاحية غير معرفة', code:'UNKNOWN_PERMISSION' });
     if(!hasPermission(req.user.role, perm)){
-      return res.status(403).json({ error:'ليس لديك صلاحية', code:'FORBIDDEN', required: perm, role: req.user.role });
+      return res.status(403).json({ error:'ليس لديك صلاحية', code:'FORBIDDEN' });
     }
     // ABAC jurisdiction: مفتش لا يرى محافظة أخرى
     if(policy.scope==='jurisdiction' && req.user.governorate){

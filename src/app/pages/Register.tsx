@@ -1,12 +1,13 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { User, Mail, Lock, Building2, Users, HardHat, Landmark, ArrowLeft, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Lock, Building2, ArrowLeft, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
 import { AUDIENCES, Audience } from '../utils/portals';
-import { BRAND } from '../branding';
-import { EmptyState } from '../components/ui/EmptyState';
+
+
 
 export function Register() {
   const navigate = useNavigate();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [step, setStep] = useState(1);
   const [audience, setAudience] = useState<Audience>('ministry');
   const [formData, setFormData] = useState({
@@ -15,8 +16,7 @@ export function Register() {
     password: '',
     confirmPassword: '',
     nationalId: '',
-    organizationName: '',
-  });
+    organizationName: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -37,9 +37,7 @@ export function Register() {
         body: JSON.stringify({
           ...formData,
           audience,
-          userType: audience === 'employer' ? 'organization' : 'ministry',
-        }),
-      });
+          userType: audience === 'employer' ? 'organization' : 'ministry' }) });
       const data = await res.json().catch(() => null);
       if (res.ok) {
         setSuccess(true);

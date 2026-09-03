@@ -32,7 +32,7 @@ router.post('/api/v1/data-quality/scan', async (req,res)=>{
   }
 });
 
-router.get('/api/v1/data-quality/findings', async (req,res)=>{
+router.get('/api/v1/data-quality/findings', requirePermission('read:data_quality'), async (req,res)=>{
   try {
     const r=await pool.query(`SELECT * FROM data_quality_findings ORDER BY created_at DESC LIMIT 50`);
     res.json({ data: r.rows });

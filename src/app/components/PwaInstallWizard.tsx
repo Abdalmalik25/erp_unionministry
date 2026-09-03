@@ -8,7 +8,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Shield, CheckCircle, AlertTriangle, X, ChevronRight, ChevronLeft,
   Smartphone, Monitor, Download, Trash2, RefreshCw, Bell, Wifi,
-  Database, Settings, Eye, EyeOff, Info, Zap, ShieldCheck, RotateCcw
+  Database, Settings, Eye, Zap, ShieldCheck, RotateCcw
 } from 'lucide-react';
 import {
   detectPlatform, getPlatformName, isInstalled, getDisplayMode,
@@ -38,8 +38,9 @@ export function PwaInstallWizard({ onComplete, onCancel, initialStep = 'welcome'
   const [cacheInfo, setCacheInfo] = useState<CacheInfo | null>(null);
   const [settings, setSettings] = useState<PwaSettings | null>(null);
   const [progress, setProgress] = useState<InstallProgress | null>(null);
-  const [installResult, setInstallResult] = useState<'success' | 'dismissed' | null>(null);
+  const [_installResult, setInstallResult] = useState<'success' | 'dismissed' | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  void _installResult;
   const [installAnalytics] = useState(getInstallAnalytics);
 
   // Initialize

@@ -1,13 +1,24 @@
 // server/middleware/shared.js — Shared utilities for all route modules
 import pg from 'pg';
+import { localPool, initLocalDb, startAutoSync, stopAutoSync } from '../lib/localDb.js';
 
 // Lazy pool — created on first access so DATABASE_URL is loaded by the time it's needed
 let _pool = null;
-function getPool() {
+let _neonOnline = true;
+let _fallbackActive = false;
+let _lastHealthCheck = 0;
+const HEALTH_CHECK_INTERVAL_MS = 30000;
+
+async function getPool() {
   if (!_pool) {
     const connStr = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL;
     if (!connStr) {
-      throw new Error('[DB] DATABASE_URL / NEON_DATABASE_URL is not configured — refusing to use embedded fallback (SECURITY)');
+      // No Neon configured — use local only (offline-first mode)
+      console.log('[DB] No DATABASE_URL configured — using offline-first local SQLite');
+      await initLocalDb();
+      _pool = localPool;
+      _fallbackActive = true;
+      return _pool;
     }
     const useSSL = process.env.DB_SSL !== 'false';
     _pool = new pg.Pool({
@@ -24,8 +35,37 @@ function getPool() {
     });
     _pool.on('error', (err) => console.error('[DB] Pool error:', err.message));
     _pool.on('connect', () => console.log('[DB] Connection established'));
+
+    // Start auto-sync with Neon
+    await initLocalDb();
+    startAutoSync(_pool);
   }
   return _pool;
+}
+
+// Health-check wrapper: tests Neon, falls back to local if unreachable
+async function getHealthyPool() {
+  const now = Date.now();
+  if (_fallbackActive && (now - _lastHealthCheck) < HEALTH_CHECK_INTERVAL_MS) {
+    return localPool; // Recently confirmed offline, use local
+  }
+
+  try {
+    const p = await getPool();
+    if (p === localPool) return p; // No Neon configured
+    await p.query('SELECT 1');
+    _neonOnline = true;
+    _fallbackActive = false;
+    _lastHealthCheck = now;
+    return p;
+  } catch (e) {
+    _neonOnline = false;
+    _fallbackActive = true;
+    _lastHealthCheck = now;
+    console.warn('[DB] Neon unreachable, falling back to local SQLite:', e.message);
+    await initLocalDb();
+    return localPool;
+  }
 }
 
 // Connection pool observability — exposes pool stats for health/metrics endpoints
@@ -41,8 +81,24 @@ function getPoolStats() {
 
 const pool = new Proxy({}, {
   get(target, prop) {
-    const p = getPool();
+    // For synchronous access, return the raw pool (may be Neon or local)
+    // Routes that need fail-safe behavior should use getHealthyPool() instead
+    const p = _pool || localPool;
     return p[prop].bind(p);
+  }
+});
+
+const healthyPool = new Proxy({}, {
+  get(target, prop) {
+    // Async health-check wrapper — falls back to local SQLite on Neon failure
+    if (prop === 'query' || prop === 'connect') {
+      return async (...args) => {
+        const p = await getHealthyPool();
+        return p[prop](...args);
+      };
+    }
+    const p = _pool || localPool;
+    return p[prop]?.bind(p);
   }
 });
 
@@ -50,7 +106,9 @@ function paginate(req) {
   const page = Math.max(1, parseInt(req.query.page) || 1);
   const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
   const offset = (page - 1) * limit;
-  const includeDeleted = req.query.include_deleted === 'true';
+  // include_deleted مسموح فقط للمدير — يمنع المستخدمين العاديين من رؤية السجلات المحذوفة
+  const isAdmin = req.user && ['super_admin', 'ministry_admin'].includes(req.user.role);
+  const includeDeleted = isAdmin && req.query.include_deleted === 'true';
   return { limit, page, offset, includeDeleted };
 }
 
@@ -60,7 +118,8 @@ function paginateCursor(req, defaultSortColumn = 'created_at') {
   const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
   const cursor = req.query.cursor || null;
   const direction = req.query.direction === 'asc' ? 'ASC' : 'DESC';
-  const includeDeleted = req.query.include_deleted === 'true';
+  const isAdmin = req.user && ['super_admin', 'ministry_admin'].includes(req.user.role);
+  const includeDeleted = isAdmin && req.query.include_deleted === 'true';
   return { limit, cursor, direction, includeDeleted, sortColumn: defaultSortColumn };
 }
 
@@ -171,8 +230,13 @@ function validateTableName(table) {
   return ALLOWED_TABLES.has(table);
 }
 
+function getNeonStatus() {
+  return { online: _neonOnline, fallback: _fallbackActive };
+}
+
 export {
-  pool, paginate, paginateCursor, countQuery, softDelete, softDeleteFilter, auditLog,
+  pool, healthyPool, paginate, paginateCursor, countQuery, softDelete, softDeleteFilter, auditLog,
   getPoolStats, SOFT_DELETE_TABLES,
   TABLE_COLUMNS, validateColumns, ALLOWED_TABLES, safeSetClause, validateTableName,
+  localPool, initLocalDb, startAutoSync, stopAutoSync, getNeonStatus,
 };

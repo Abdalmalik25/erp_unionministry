@@ -1,3 +1,4 @@
+import type { PaginationMeta } from '../types/api';
 /**
  * contractService.ts — Production-Grade Employment Contract Management Service
  * Yemen National Labor Platform — Labor Law 5/1995
@@ -248,7 +249,7 @@ export interface CreateContractRequest {
 export interface ContractServiceResponse<T> {
   success: boolean;
   data: T;
-  meta?: any;
+  meta?: PaginationMeta;
 }
 
 // ============================================================
@@ -261,7 +262,7 @@ export const contractService = {
   /**
    * List contracts with advanced filtering
    */
-  async listContracts(filters: ContractFilters = {}): Promise<ContractServiceResponse<{ contracts: Contract[]; meta: any }>> {
+  async listContracts(filters: ContractFilters = {}): Promise<ContractServiceResponse<{ contracts: Contract[]; meta: PaginationMeta }>> {
     const params = new URLSearchParams();
     
     if (filters.status?.length) params.set('status', filters.status.join(','));
@@ -483,7 +484,7 @@ export const contractService = {
   /**
    * Get employer's contracts
    */
-  async getEmployerContracts(employerEntityId: string, filters?: ContractFilters): Promise<ContractServiceResponse<{ contracts: Contract[]; meta: any }>> {
+  async getEmployerContracts(employerEntityId: string, filters?: ContractFilters): Promise<ContractServiceResponse<{ contracts: Contract[]; meta: PaginationMeta }>> {
     return this.listContracts({ ...filters, employerId: employerEntityId });
   },
 

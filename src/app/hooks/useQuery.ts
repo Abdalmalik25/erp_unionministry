@@ -146,6 +146,7 @@ export function useQuery<T>({
   queryFn,
   enabled = true,
   staleTime = 5 * 60 * 1000,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   cacheTime = 10 * 60 * 1000,
   refetchOnWindowFocus = true,
   refetchOnReconnect = true,

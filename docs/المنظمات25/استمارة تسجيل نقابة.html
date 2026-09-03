@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام تسجيل النقابات المهنية - وزارة الشؤون الاجتماعية والعمل</title>
+    <style>
+        :root {
+            --primary: #1a237e;
+            --secondary: #283593;
+            --accent: #303f9f;
+            --light: #f5f5f5;
+            --dark: #121212;
+            --success: #2e7d32;
+            --warning: #f57c00;
+            --error: #d32f2f;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            border-radius: 10px 10px 0 0;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+        
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 12px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .form-container {
+            background: white;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .progress-bar {
+            display: flex;
+            margin-bottom: 30px;
+            background: var(--light);
+            border-radius: 50px;
+            overflow: hidden;
+        }
+        
+        .progress-step {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            font-weight: bold;
+            position: relative;
+        }
+        
+        .progress-step.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .progress-step.completed {
+            background: var(--success);
+            color: white;
+        }
+        
+        .form-section {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .form-section.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        h2 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--light);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--secondary);
+        }
+        
+        .required::after {
+            content: " *";
+            color: var(--error);
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--accent);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(48, 63, 159, 0.2);
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        
+        .founders-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        .founders-table th, .founders-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        
+        .founders-table th {
+            background: var(--light);
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--secondary);
+        }
+        
+        .btn-secondary {
+            background: var(--light);
+            color: var(--dark);
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #1b5e20;
+        }
+        
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        
+        .file-upload {
+            border: 2px dashed #ddd;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: border 0.3s;
+        }
+        
+        .file-upload:hover {
+            border-color: var(--accent);
+        }
+        
+        .file-list {
+            margin-top: 10px;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            background: var(--light);
+            margin-bottom: 5px;
+            border-radius: 3px;
+        }
+        
+        .summary-card {
+            background: var(--light);
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .summary-card h3 {
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+        
+        .print-only {
+            display: none;
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .no-print {
+                display: none;
+            }
+            
+            .print-only {
+                display: block;
+            }
+            
+            .form-container {
+                box-shadow: none;
+                padding: 0;
+            }
+            
+            header {
+                border-radius: 0;
+            }
+            
+            .summary-card {
+                border: 1px solid #ddd;
+            }
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-container">
+                <div class="logo">وزارة الشؤون الاجتماعية والعمل</div>
+                <div>
+                    <h1>نظام تسجيل النقابات المهنية</h1>
+                    <div class="subtitle">نموذج إلكتروني معياري شامل لتسجيل النقابات</div>
+                </div>
+            </div>
+        </header>
+        
+        <div class="form-container">
+            <div class="progress-bar no-print">
+                <div class="progress-step active" id="step1">1. البيانات الأساسية</div>
+                <div class="progress-step" id="step2">2. الهيكل التنظيمي</div>
+                <div class="progress-step" id="step3">3. النظام الأساسي</div>
+                <div class="progress-step" id="step4">4. المستندات المطلوبة</div>
+                <div class="progress-step" id="step5">5. المراجعة والطباعة</div>
+            </div>
+            
+            <form id="unionForm">
+                <!-- القسم 1: البيانات الأساسية -->
+                <div class="form-section active" id="section1">
+                    <h2>البيانات الأساسية للنقابة</h2>
+                    
+                    <div class="form-group">
+                        <label for="unionName" class="required">اسم النقابة باللغة العربية</label>
+                        <input type="text" id="unionName" name="unionName" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="unionNameEn">اسم النقابة باللغة الإنجليزية (إن وجد)</label>
+                        <input type="text" id="unionNameEn" name="unionNameEn">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="unionType" class="required">نوع النقابة</label>
+                            <select id="unionType" name="unionType" required>
+                                <option value="">اختر نوع النقابة</option>
+                                <option value="مهنية">نقابة مهنية</option>
+                                <option value="حرفية">نقابة حرفية</option>
+                                <option value="تخصصية">نقابة تخصصية</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="professionalField" class="required">المجال المهني الرئيسي</label>
+                            <input type="text" id="professionalField" name="professionalField" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="headquarters" class="required">المقر الرئيسي (العنوان بالتفصيل)</label>
+                        <textarea id="headquarters" name="headquarters" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="phone" class="required">رقم الهاتف</label>
+                            <input type="tel" id="phone" name="phone" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="email" class="required">البريد الإلكتروني الرسمي</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="website">الموقع الإلكتروني (إن وجد)</label>
+                        <input type="url" id="website" name="website">
+                    </div>
+                    
+                    <div class="navigation-buttons">
+                        <div></div>
+                        <button type="button" class="btn btn-primary" onclick="showSection(2)">التالي</button>
+                    </div>
+                </div>
+                
+                <!-- القسم 2: الهيكل التنظيمي -->
+                <div class="form-section" id="section2">
+                    <h2>الهيكل التنظيمي والإداري</h2>
+                    
+                    <h3>الهيئة الإدارية المؤسسة</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="president" class="required">الرئيس</label>
+                            <input type="text" id="president" name="president" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="vicePresident" class="required">نائب الرئيس</label>
+                            <input type="text" id="vicePresident" name="vicePresident" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="secretary" class="required">الأمين العام</label>
+                            <input type="text" id="secretary" name="secretary" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="treasurer" class="required">أمين الصندوق</label>
+                            <input type="text" id="treasurer" name="treasurer" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="boardMembers" class="required">أعضاء مجلس الإدارة (مفصولة بفواصل)</label>
+                        <textarea id="boardMembers" name="boardMembers" rows="3" required placeholder="اسم العضو الأول, اسم العضو الثاني, ..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="foundersCount" class="required">عدد المؤسسين</label>
+                        <input type="number" id="foundersCount" name="foundersCount" min="1" required>
+                    </div>
+                    
+                    <div class="navigation-buttons">
+                        <button type="button" class="btn btn-secondary" onclick="showSection(1)">السابق</button>
+                        <button type="button" class="btn btn-primary" onclick="showSection(3)">التالي</button>
+                    </div>
+                </div>
+                
+                <!-- القسم 3: النظام الأساسي -->
+                <div class="form-section" id="section3">
+                    <h2>النظام الأساسي والأهداف</h2>
+                    
+                    <div class="form-group">
+                        <label for="mission" class="required">رسالة النقابة</label>
+                        <textarea id="mission" name="mission" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="vision" class="required">رؤية النقابة</label>
+                        <textarea id="vision" name="vision" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="objectives" class="required">الأهداف الاستراتيجية (هدف في كل سطر)</label>
+                        <textarea id="objectives" name="objectives" rows="5" required placeholder="الهدف الأول&#10;الهدف الثاني&#10;الهدف الثالث"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="membershipConditions" class="required">شروط العضوية</label>
+                        <textarea id="membershipConditions" name="membershipConditions" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="financialResources" class="required">موارد النقابة المالية</label>
+                        <textarea id="financialResources" name="financialResources" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="navigation-buttons">
+                        <button type="button" class="btn btn-secondary" onclick="showSection(2)">السابق</button>
+                        <button type="button" class="btn btn-primary" onclick="showSection(4)">التالي</button>
+                    </div>
+                </div>
+                
+                <!-- القسم 4: المستندات المطلوبة -->
+                <div class="form-section" id="section4">
+                    <h2>المستندات المطلوبة</h2>
+                    
+                    <div class="form-group">
+                        <label class="required">رفع المستندات المطلوبة</label>
+                        
+                        <div class="file-upload" onclick="document.getElementById('bylawsFile').click()">
+                            <p>انقر لرفع النظام الأساسي (PDF أو Word)</p>
+                            <input type="file" id="bylawsFile" accept=".pdf,.doc,.docx" style="display: none;">
+                        </div>
+                        
+                        <div class="file-upload" onclick="document.getElementById('foundationFile').click()">
+                            <p>انقر لرفع محضر الاجتماع التأسيسي (PDF أو Word)</p>
+                            <input type="file" id="foundationFile" accept=".pdf,.doc,.docx" style="display: none;">
+                        </div>
+                        
+                        <div class="file-upload" onclick="document.getElementById('idsFile').click()">
+                            <p>انقر لرفع صور هويات المؤسسين (PDF أو صورة)</p>
+                            <input type="file" id="idsFile" accept=".pdf,.jpg,.jpeg,.png" style="display: none;">
+                        </div>
+                        
+                        <div class="file-upload" onclick="document.getElementById('professionalFile').click()">
+                            <p>انقر لرفع السجلات المهنية للمؤسسين (PDF أو Word)</p>
+                            <input type="file" id="professionalFile" accept=".pdf,.doc,.docx" style="display: none;">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="additionalNotes">ملاحظات إضافية</label>
+                        <textarea id="additionalNotes" name="additionalNotes" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="navigation-buttons">
+                        <button type="button" class="btn btn-secondary" onclick="showSection(3)">السابق</button>
+                        <button type="button" class="btn btn-primary" onclick="showSection(5)">التالي</button>
+                    </div>
+                </div>
+                
+                <!-- القسم 5: المراجعة والطباعة -->
+                <div class="form-section" id="section5">
+                    <h2>مراجعة البيانات وطباعة الاستمارة</h2>
+                    
+                    <div class="summary-card">
+                        <h3>البيانات الأساسية</h3>
+                        <p><strong>اسم النقابة:</strong> <span id="summaryName">-</span></p>
+                        <p><strong>نوع النقابة:</strong> <span id="summaryType">-</span></p>
+                        <p><strong>المجال المهني:</strong> <span id="summaryField">-</span></p>
+                        <p><strong>المقر الرئيسي:</strong> <span id="summaryAddress">-</span></p>
+                    </div>
+                    
+                    <div class="summary-card">
+                        <h3>الهيكل الإداري</h3>
+                        <p><strong>الرئيس:</strong> <span id="summaryPresident">-</span></p>
+                        <p><strong>نائب الرئيس:</strong> <span id="summaryVicePresident">-</span></p>
+                        <p><strong>الأمين العام:</strong> <span id="summarySecretary">-</span></p>
+                        <p><strong>أمين الصندوق:</strong> <span id="summaryTreasurer">-</span></p>
+                    </div>
+                    
+                    <div class="summary-card">
+                        <h3>المستندات المرفوعة</h3>
+                        <p><strong>النظام الأساسي:</strong> <span id="summaryBylaws">لم يتم الرفع</span></p>
+                        <p><strong>محضر التأسيس:</strong> <span id="summaryFoundation">لم يتم الرفع</span></p>
+                        <p><strong>هويات المؤسسين:</strong> <span id="summaryIDs">لم يتم الرفع</span></p>
+                        <p><strong>السجلات المهنية:</strong> <span id="summaryProfessional">لم يتم الرفع</span></p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="declaration">
+                            <input type="checkbox" id="declaration" name="declaration" required>
+                            أقر بأن جميع البيانات المذكورة أعلاه صحيحة وكاملة، وأتعهد بالالتزام بالقوانين واللوائح المحلية والعمل ضمن الأطر القانونية والأخلاقية.
+                        </label>
+                    </div>
+                    
+                    <div class="navigation-buttons">
+                        <button type="button" class="btn btn-secondary" onclick="showSection(4)">السابق</button>
+                        <button type="button" class="btn btn-success" onclick="printForm()">طباعة الاستمارة</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <footer class="no-print">
+            <p>جميع الحقوق محفوظة © وزارة الشؤون الاجتماعية والعمل 2023</p>
+            <p>هذا النموذج مصمم وفق المعايير المؤسسية والاحترافية لتسجيل النقابات المهنية</p>
+        </footer>
+    </div>
+
+    <script>
+        // متغيرات التتبع
+        let currentSection = 1;
+        
+        // عرض القسم المحدد وإخفاء الآخرين
+        function showSection(sectionNumber) {
+            // التحقق من صحة البيانات قبل الانتقال
+            if (sectionNumber > currentSection && !validateSection(currentSection)) {
+                alert('يرجى تعبئة جميع الحقول الإلزامية في هذا القسم قبل المتابعة.');
+                return;
+            }
+            
+            // إخفاء القسم الحالي
+            document.getElementById(`section${currentSection}`).classList.remove('active');
+            document.getElementById(`step${currentSection}`).classList.remove('active');
+            
+            // إظهار القسم الجديد
+            document.getElementById(`section${sectionNumber}`).classList.add('active');
+            document.getElementById(`step${sectionNumber}`).classList.add('active');
+            
+            // تحديث الخطوات المكتملة
+            for (let i = 1; i < sectionNumber; i++) {
+                document.getElementById(`step${i}`).classList.add('completed');
+            }
+            
+            // تحديث القسم الحالي
+            currentSection = sectionNumber;
+            
+            // إذا كان القسم 5، قم بتحديث الملخص
+            if (sectionNumber === 5) {
+                updateSummary();
+            }
+        }
+        
+        // التحقق من صحة قسم معين
+        function validateSection(sectionNumber) {
+            const section = document.getElementById(`section${sectionNumber}`);
+            const requiredInputs = section.querySelectorAll('[required]');
+            
+            for (let input of requiredInputs) {
+                if (!input.value.trim()) {
+                    input.focus();
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
+        // تحديث بيانات الملخص
+        function updateSummary() {
+            document.getElementById('summaryName').textContent = document.getElementById('unionName').value || '-';
+            document.getElementById('summaryType').textContent = document.getElementById('unionType').value || '-';
+            document.getElementById('summaryField').textContent = document.getElementById('professionalField').value || '-';
+            document.getElementById('summaryAddress').textContent = document.getElementById('headquarters').value || '-';
+            
+            document.getElementById('summaryPresident').textContent = document.getElementById('president').value || '-';
+            document.getElementById('summaryVicePresident').textContent = document.getElementById('vicePresident').value || '-';
+            document.getElementById('summarySecretary').textContent = document.getElementById('secretary').value || '-';
+            document.getElementById('summaryTreasurer').textContent = document.getElementById('treasurer').value || '-';
+            
+            // تحديث حالة الملفات (تبسيطية - في تطبيق حقيقي ستحتاج إلى معالجة الملفات الفعلية)
+            document.getElementById('summaryBylaws').textContent = document.getElementById('bylawsFile').files.length > 0 ? 'تم الرفع' : 'لم يتم الرفع';
+            document.getElementById('summaryFoundation').textContent = document.getElementById('foundationFile').files.length > 0 ? 'تم الرفع' : 'لم يتم الرفع';
+            document.getElementById('summaryIDs').textContent = document.getElementById('idsFile').files.length > 0 ? 'تم الرفع' : 'لم يتم الرفع';
+            document.getElementById('summaryProfessional').textContent = document.getElementById('professionalFile').files.length > 0 ? 'تم الرفع' : 'لم يتم الرفع';
+        }
+        
+        // طباعة النموذج
+        function printForm() {
+            if (!document.getElementById('declaration').checked) {
+                alert('يرجى الموافقة على الإقرار قبل الطباعة.');
+                return;
+            }
+            
+            window.print();
+        }
+        
+        // معالجة رفع الملفات (عرض اسم الملف)
+        document.querySelectorAll('input[type="file"]').forEach(input => {
+            input.addEventListener('change', function() {
+                const fileName = this.files[0] ? this.files[0].name : 'لم يتم اختيار ملف';
+                alert(`تم اختيار الملف: ${fileName}`);
+            });
+        });
+    </script>
+</body>
+</html>

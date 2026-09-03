@@ -445,51 +445,63 @@ function computeDueDate(riskLevel) {
 // ===================== Inspection Analytics =====================
 
 export async function computeInspectionAnalytics(opts = {}) {
-  try {
-    const [counts, byCompliance, byEntity, byMonth] = await Promise.all([
-      pool.query(`
-        SELECT
-          COUNT(*)::int as total,
-          COUNT(CASE WHEN deleted_at IS NULL THEN 1 END)::int as active,
-          AVG(overall_score)::numeric(10,2) as avg_score
-        FROM inspections
-      `).then(r => r.rows[0]).catch(() => ({ total: 0, active: 0, avg_score: null })),
+  const cacheKey = `analytics:${opts.governorate || 'all'}:${opts.sector || 'all'}`;
+  return cached(cacheKey, async () => {
+    const govFilter = opts.governorate ? `AND e.governorate = '${String(opts.governorate).replace(/'/g, "''")}'` : '';
+    const secFilter = opts.sector ? `AND e.sector = '${String(opts.sector).replace(/'/g, "''")}'` : '';
+    try {
+      const [counts, byCompliance, byEntity, byMonth] = await Promise.all([
+        pool.query(`
+          SELECT
+            COUNT(*)::int as total,
+            COUNT(CASE WHEN i.deleted_at IS NULL THEN 1 END)::int as active,
+            AVG(i.overall_score)::numeric(10,2) as avg_score
+          FROM inspections i
+          LEFT JOIN organizational_entities e ON (i.enterprise_id::text = e.id::text OR i.entity_id::text = e.id::text)
+          WHERE 1=1 ${govFilter} ${secFilter}
+        `).then(r => r.rows[0]).catch(() => ({ total: 0, active: 0, avg_score: null })),
 
-      pool.query(`
-        SELECT compliance_status, COUNT(*)::int as n
-        FROM inspections WHERE deleted_at IS NULL
-        GROUP BY compliance_status
-      `).then(r => r.rows).catch(() => []),
+        pool.query(`
+          SELECT i.compliance_status, COUNT(*)::int as n
+          FROM inspections i
+          LEFT JOIN organizational_entities e ON (i.enterprise_id::text = e.id::text OR i.entity_id::text = e.id::text)
+          WHERE i.deleted_at IS NULL ${govFilter} ${secFilter}
+          GROUP BY i.compliance_status
+        `).then(r => r.rows).catch(() => []),
 
-      pool.query(`
-        SELECT e.name_ar, COUNT(i.id)::int as inspection_count, AVG(i.overall_score)::numeric(10,2) as avg
-        FROM inspections i
-        JOIN organizational_entities e ON (i.enterprise_id::text = e.id::text OR i.entity_id::text = e.id::text)
-        WHERE i.deleted_at IS NULL
-        GROUP BY e.name_ar
-        ORDER BY inspection_count DESC
-        LIMIT 10
-      `).then(r => r.rows).catch(() => []),
+        pool.query(`
+          SELECT e.name_ar, COUNT(i.id)::int as inspection_count, AVG(i.overall_score)::numeric(10,2) as avg
+          FROM inspections i
+          JOIN organizational_entities e ON (i.enterprise_id::text = e.id::text OR i.entity_id::text = e.id::text)
+          WHERE i.deleted_at IS NULL ${govFilter} ${secFilter}
+          GROUP BY e.name_ar
+          ORDER BY inspection_count DESC
+          LIMIT 10
+        `).then(r => r.rows).catch(() => []),
 
-      pool.query(`
-        SELECT TO_CHAR(inspection_date, 'YYYY-MM') as month, COUNT(*)::int as n
-        FROM inspections
-        WHERE deleted_at IS NULL AND inspection_date > NOW() - INTERVAL '12 months'
-        GROUP BY 1 ORDER BY 1
-      `).then(r => r.rows).catch(() => []),
-    ]);
+        pool.query(`
+          SELECT TO_CHAR(i.inspection_date, 'YYYY-MM') as month, COUNT(*)::int as n
+          FROM inspections i
+          LEFT JOIN organizational_entities e ON (i.enterprise_id::text = e.id::text OR i.entity_id::text = e.id::text)
+          WHERE i.deleted_at IS NULL AND i.inspection_date > NOW() - INTERVAL '12 months' ${govFilter} ${secFilter}
+          GROUP BY 1 ORDER BY 1
+        `).then(r => r.rows).catch(() => []),
+      ]);
 
-    return {
-      counts,
-      by_compliance: byCompliance,
-      by_entity: byEntity,
-      by_month: byMonth,
-      data_source: 'inspections + organizational_entities',
-    };
-  } catch (e) {
-    console.error('[inspectionEngine.analytics] failed:', e.message);
-    return { counts: { total: 0, active: 0 }, by_compliance: [], by_entity: [], by_month: [] };
-  }
+      return {
+        counts,
+        by_compliance: byCompliance,
+        by_entity: byEntity,
+        by_month: byMonth,
+        data_source: 'inspections + organizational_entities',
+        governorate: opts.governorate || null,
+        sector: opts.sector || null,
+      };
+    } catch (e) {
+      console.error('[inspectionEngine.analytics] failed:', e.message);
+      return { counts: { total: 0, active: 0 }, by_compliance: [], by_entity: [], by_month: [] };
+    }
+  });
 }
 
 // ===================== Inspection Checklist (per entity) =====================

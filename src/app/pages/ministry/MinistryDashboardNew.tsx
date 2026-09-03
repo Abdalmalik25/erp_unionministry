@@ -6,8 +6,10 @@
  */
 
 import { lazy, Suspense, useState, useMemo, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router';
+import { toast } from 'sonner';
 import { UniversalDataView } from '../../components/universal/UniversalDataView';
-import { SmartToolbar, type ToolbarAction, type ToolbarTab, type ToolbarFilter } from '../../components/universal/SmartToolbar';
+import { SmartToolbar, type ToolbarAction, type ToolbarTab } from '../../components/universal/SmartToolbar';
 
 // Lazy load heavy components - wrap named export as default
 const PerformanceDashboard = lazy(() =>
@@ -55,10 +57,7 @@ interface Contract {
   salary: number;
 }
 
-// Real-time data fetched from API (no hardcoded mock data)
-const emptyWorkers: Worker[] = [];
-const emptyEstablishments: Establishment[] = [];
-const emptyContracts: Contract[] = [];
+// Real-time data fetched from API — empty states handled via API responses
 
 // Worker fields config
 const workerFields = [
@@ -97,10 +96,12 @@ const contractFields = [
 ];
 
 export default function MinistryDashboardNew() {
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState<'overview' | 'workers' | 'establishments' | 'contracts' | 'performance'>('overview');
   const [isLoading, setIsLoading] = useState(false);
   const [lastUpdated] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState('');
+  void searchQuery;
 
   // Real-time data from API
   const [workers, setWorkers] = useState<Worker[]>([]);
@@ -213,14 +214,13 @@ export default function MinistryDashboardNew() {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  const actions: ToolbarAction[] = [
-    { id: 'export', label: 'تصدير', icon: '📥', variant: 'secondary', onClick: () => console.log('Export') },
+  const actions: ToolbarAction[] = useMemo(() => [
+    { id: 'export', label: 'تصدير', icon: '📥', variant: 'secondary', onClick: () => toast.info('استخدم أزرار التصدير داخل كل جدول للحصول على ملف Excel') },
     { id: 'refresh', label: 'تحديث', icon: '🔄', variant: 'ghost', onClick: handleRefresh },
-  ];
+  ], [handleRefresh]);
 
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
-    console.log('Search:', query);
   }, []);
 
   return (
@@ -275,7 +275,7 @@ export default function MinistryDashboardNew() {
                 pageSize={5}
                 enableAdvancedSearch={false}
                 enableAnalytics={false}
-                onRowClick={(row) => console.log('Worker clicked:', row)}
+                onRowClick={(row) => navigate(`/ministry/worker-profiles?id=${String((row as Record<string,string>).id ?? '')}`)}
                 emptyState={{
                   icon: '👷',
                   title: 'لا يوجد عمال',
@@ -293,7 +293,7 @@ export default function MinistryDashboardNew() {
                 pageSize={4}
                 enableAdvancedSearch={false}
                 enableAnalytics={false}
-                onRowClick={(row) => console.log('Establishment clicked:', row)}
+                onRowClick={(row) => navigate(`/ministry/commercial?id=${String((row as Record<string,string>).id ?? '')}`)}
                 emptyState={{
                   icon: '🏢',
                   title: 'لا توجد منشآت',
@@ -318,15 +318,15 @@ export default function MinistryDashboardNew() {
             primaryAction={{
               label: 'تسجيل عامل جديد',
               icon: '➕',
-              onClick: () => console.log('Add worker'),
+              onClick: () => navigate('/ministry/worker-profiles'),
             }}
-            onRowClick={(row) => console.log('Worker clicked:', row)}
-            onExport={(format, data) => console.log(`Export ${format}:`, data)}
+            onRowClick={(row) => navigate(`/ministry/worker-profiles?id=${String((row as Record<string,string>).id ?? '')}`)}
+            onExport={() => toast.info('تم تجهيز التصدير — استخدم أدوات التصدير المتقدمة في صفحة سجل العمال')}
             emptyState={{
               icon: '👷',
               title: 'لا يوجد عمال',
               description: 'ابدأ بتسجيل عمال جدد في النظام',
-              action: { label: 'تسجيل عامل', onClick: () => console.log('Add worker') },
+              action: { label: 'تسجيل عامل', onClick: () => navigate('/ministry/worker-profiles') },
             }}
           />
         )}
@@ -345,9 +345,9 @@ export default function MinistryDashboardNew() {
             primaryAction={{
               label: 'إضافة منشأة',
               icon: '🏢',
-              onClick: () => console.log('Add establishment'),
+              onClick: () => navigate('/ministry/commercial'),
             }}
-            onRowClick={(row) => console.log('Establishment clicked:', row)}
+            onRowClick={(row) => navigate(`/ministry/commercial?id=${String((row as Record<string,string>).id ?? '')}`)}
             emptyState={{
               icon: '🏢',
               title: 'لا توجد منشآت',
@@ -370,9 +370,9 @@ export default function MinistryDashboardNew() {
             primaryAction={{
               label: 'إنشاء عقد جديد',
               icon: '📄',
-              onClick: () => console.log('Create contract'),
+              onClick: () => navigate('/ministry/contracts'),
             }}
-            onRowClick={(row) => console.log('Contract clicked:', row)}
+            onRowClick={(row) => navigate(`/ministry/contracts?id=${String((row as Record<string,string>).id ?? '')}`)}
             emptyState={{
               icon: '📄',
               title: 'لا توجد عقود',

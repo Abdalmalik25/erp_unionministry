@@ -1,10 +1,11 @@
+import type { PaginationMeta } from '../types/api';
 /**
  * unionService.ts — Production-Grade Union/Organization Portal Service
  * Yemen National Labor Platform
  * Union governance, elections, members, board, financial management
  */
 
-import { get, post, put, del, getFile, uploadFile, postFormData } from './api';
+import { get, post, put, del } from './api';
 
 export type UnionType = 'general' | 'professional' | 'craft' | 'industry' | 'employer_federation';
 export type MemberStatus = 'active' | 'inactive' | 'suspended' | 'expelled' | 'pending' | 'retired';
@@ -97,7 +98,7 @@ export interface UnionElection {
 export interface ServiceResponse<T> {
   success: boolean;
   data: T;
-  meta?: any;
+  meta?: PaginationMeta;
 }
 
 // ============================================================
@@ -115,7 +116,7 @@ export const unionService = {
     search?: string;
     page?: number;
     limit?: number;
-  }): Promise<ServiceResponse<{ unions: Union[]; meta: any }>> {
+  }): Promise<ServiceResponse<{ unions: Union[]; meta: PaginationMeta }>> {
     const params = new URLSearchParams();
     if (filters?.type?.length) params.set('type', filters.type.join(','));
     if (filters?.governorate) params.set('governorate', filters.governorate);
@@ -156,7 +157,7 @@ export const unionService = {
     search?: string;
     page?: number;
     limit?: number;
-  }): Promise<ServiceResponse<{ members: UnionMember[]; meta: any }>> {
+  }): Promise<ServiceResponse<{ members: UnionMember[]; meta: PaginationMeta }>> {
     const params = new URLSearchParams();
     if (filters?.status?.length) params.set('status', filters.status.join(','));
     if (filters?.professionId) params.set('professionId', filters.professionId);
@@ -190,7 +191,7 @@ export const unionService = {
   /**
    * List elections
    */
-  async listElections(unionId?: string): Promise<ServiceResponse<{ elections: UnionElection[]; meta: any }>> {
+  async listElections(unionId?: string): Promise<ServiceResponse<{ elections: UnionElection[]; meta: PaginationMeta }>> {
     const path = unionId ? `/unions/${unionId}/elections` : '/unions/elections';
     return get<any>(path);
   },
@@ -245,7 +246,6 @@ export const unionService = {
     recentActivities: any[];
   }>> {
     return get<any>(`/unions/${unionId}/dashboard`);
-  },
-};
+  } };
 
 export default unionService;
