@@ -81,10 +81,17 @@ function getPoolStats() {
 
 const pool = new Proxy({}, {
   get(target, prop) {
-    // For synchronous access, return the raw pool (may be Neon or local)
-    // Routes that need fail-safe behavior should use getHealthyPool() instead
+    // Use async health-check for query/connect to ensure Neon pool is initialized
+    // before falling back to local. Prevents no-op pool from silently returning
+    // empty results on cold starts (e.g. Vercel serverless).
+    if (prop === 'query' || prop === 'connect') {
+      return async (...args) => {
+        const p = await getHealthyPool();
+        return p[prop](...args);
+      };
+    }
     const p = _pool || localPool;
-    return p[prop].bind(p);
+    return p[prop]?.bind(p);
   }
 });
 
