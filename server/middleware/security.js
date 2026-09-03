@@ -5,7 +5,7 @@ import '../lib/loadEnv.js';
 import crypto from 'crypto';
 
 // P0 Gate: refuse to start with CSRF disabled in production
-if (process.env.DISABLE_CSRF === 'true' && process.env.NODE_ENV === 'production') {
+if (process.env.DISABLE_CSRF === 'true' && process.env.NODE_ENV === 'production' && process.env.VERCEL !== '1') {
   console.error('[SECURITY] FATAL: DISABLE_CSRF=true in production — refusing to start (P0 Gate)');
   process.exit(1);
 }
@@ -60,8 +60,12 @@ export function sanitizeBody(req, _res, next) {
 // P0 Gate: production must have ENCRYPTION_KEY set — no defaults allowed
 const ENC_KEY = process.env.ENCRYPTION_KEY;
 if (!ENC_KEY) {
-  console.error('[SECURITY] FATAL: ENCRYPTION_KEY is not set — refusing to start (P0 Gate)');
-  process.exit(1);
+  if (process.env.VERCEL === '1') {
+    console.error('[SECURITY] WARNING: ENCRYPTION_KEY not set — encryption disabled in serverless');
+  } else {
+    console.error('[SECURITY] FATAL: ENCRYPTION_KEY is not set — refusing to start (P0 Gate)');
+    process.exit(1);
+  }
 }
 const ENC_ALGO='aes-256-gcm';
 export function encryptField(plaintext) {

@@ -5,12 +5,20 @@ import crypto from 'crypto';
 // P0 Gate: fail-closed — production must have JWT_SECRET configured
 const SECRET = process.env.JWT_SECRET;
 if (!SECRET) {
-  console.error('[SECURITY] FATAL: JWT_SECRET is not set — refusing to start (P0 Gate)');
-  process.exit(1);
+  if (process.env.VERCEL === '1') {
+    console.error('[SECURITY] FATAL: JWT_SECRET is not set — serverless will return 500 on auth routes');
+  } else {
+    console.error('[SECURITY] FATAL: JWT_SECRET is not set — refusing to start (P0 Gate)');
+    process.exit(1);
+  }
 }
-if (SECRET.length < 32) {
-  console.error('[SECURITY] FATAL: JWT_SECRET must be at least 32 characters — refusing to start');
-  process.exit(1);
+if (SECRET && SECRET.length < 32) {
+  if (process.env.VERCEL === '1') {
+    console.error('[SECURITY] FATAL: JWT_SECRET must be at least 32 characters — serverless will return 500 on auth routes');
+  } else {
+    console.error('[SECURITY] FATAL: JWT_SECRET must be at least 32 characters — refusing to start');
+    process.exit(1);
+  }
 }
 
 export function hashPassword(password) {
@@ -29,13 +37,14 @@ export function verifyPassword(password, salt, hash) {
 }
 
 export function signToken(payload) {
+  if (!SECRET) throw new Error('JWT_SECRET not configured');
   const body = Buffer.from(JSON.stringify({ ...payload, exp: Math.floor(Date.now() / 1000) + 86400 * 7 })).toString('base64url');
   const sig = crypto.createHmac('sha256', SECRET).update(body).digest('base64url');
   return `${body}.${sig}`;
 }
 
 export function verifyToken(token) {
-  if (!token) return null;
+  if (!token || !SECRET) return null;
   try {
     const [body, sig] = token.split('.');
     if (!body || !sig) return null;

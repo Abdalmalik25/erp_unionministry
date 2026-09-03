@@ -1,6 +1,7 @@
 // server/routes/dataQuality.js — Data Quality Center + pgvector search
 import express from 'express';
 import { pool } from '../middleware/shared.js';
+import { requirePermission } from '../middleware/rbac.js';
 const router=express.Router();
 
 // Scan — detects duplicates, orphans, invalid codes

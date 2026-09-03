@@ -135,8 +135,10 @@ export function performanceMonitorMiddleware(req, res, next) {
       if (PERF_METRICS.errors.recent.length > 50) PERF_METRICS.errors.recent.pop();
     }
 
-    // Add observability header
-    res.setHeader('X-Response-Time', `${durMs.toFixed(2)}ms`);
+    // Add observability header (only if headers not yet sent)
+    if (!res.headersSent) {
+      try { res.setHeader('X-Response-Time', `${durMs.toFixed(2)}ms`); } catch {}
+    }
 
     // Push to last24h rolling window (sample at most 1 per minute)
     const nowMin = Math.floor(Date.now() / 60000);

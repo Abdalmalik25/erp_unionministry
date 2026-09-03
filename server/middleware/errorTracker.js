@@ -162,8 +162,9 @@ process.on('unhandledRejection', (reason) => {
 process.on('uncaughtException', (err) => {
   err.name = 'UncaughtException';
   trackError(err, { source: 'process.uncaughtException' });
-  // In production we still let the process exit (handled by external supervisor)
-  if (process.env.NODE_ENV === 'production') {
+  // In production (non-serverless) let process exit for supervisor restart
+  // In Vercel serverless — don't exit, let the function fail gracefully
+  if (process.env.NODE_ENV === 'production' && process.env.VERCEL !== '1') {
     console.error('[FATAL] Uncaught exception — exiting for supervisor restart');
     process.exit(1);
   }

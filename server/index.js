@@ -6,10 +6,8 @@
 import './lib/loadEnv.js';
 import express from 'express';
 import cors from 'cors';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
+import { join, resolve } from 'path';
+import { existsSync, readFileSync } from 'fs';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -65,8 +63,12 @@ import { codeAuditMiddleware } from './middleware/codeAudit.js';
 import { initHSM } from './lib/nuclearCrypto.js';
 const nukCryptoSecret = process.env.ENCRYPTION_KEY || process.env.JWT_SECRET;
 if (nukCryptoSecret) {
-  initHSM(nukCryptoSecret);
-  console.log('[NUCLEAR-SHIELD] Cryptography module initialized');
+  try {
+    initHSM(nukCryptoSecret);
+    console.log('[NUCLEAR-SHIELD] Cryptography module initialized');
+  } catch (e) {
+    console.warn('[NUCLEAR-SHIELD] HSM init failed:', e.message);
+  }
 }
 
 app.use(sanitizeQuery);
@@ -857,8 +859,7 @@ app.get('/api/health/detailed', async (_req, res) => {
 });
 
 // ===================== Version (تتبع مؤسسي للإصدار) =====================
-import { existsSync, readFileSync } from 'fs';
-const pkgPath = join(__dirname, '..', 'package.json');
+const pkgPath = join(process.cwd(), 'package.json');
 const APP_VERSION = (() => {
   try { return JSON.parse(readFileSync(pkgPath, 'utf8')).version || '0.0.0'; }
   catch { return '0.0.0'; }
@@ -872,7 +873,7 @@ app.get('/api/version', (_req, res) => {
 
 // ===================== Production Static Serving — الواجهة الرسمية من نفس الخادم =====================
 // عند توفر نسخة الإنتاج (dist/) تُخدم مباشرة مع دعم توجيه SPA الكامل
-const DIST_DIR = join(__dirname, '..', 'dist');
+const DIST_DIR = join(process.cwd(), 'dist');
 if (existsSync(join(DIST_DIR, 'index.html'))) {
   app.use(express.static(DIST_DIR, {
     maxAge: '1y',            // أصول بصمات (hash) — تخزين طويل الأمد

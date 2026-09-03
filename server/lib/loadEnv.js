@@ -1,14 +1,13 @@
 // server/lib/loadEnv.js — محمّل متغيرات البيئة الموحد
 // يستورد كسطر أول في كل وحدة تقرأ process.env على مستوى الملف،
-// لأن رفع الاستيرادات في ESM ينفذ الوحدات المعتمدة قبل كود النقطة الرئيسية.
+// لأن رفع الاستيرادات في ESM ي executes الوحدات المعتمدة قبل كود النقطة الرئيسية.
 let loaded = false;
 if (!loaded) {
   loaded = true;
   const { readFileSync } = await import('node:fs');
-  const { fileURLToPath } = await import('node:url');
-  const { dirname, join } = await import('node:path');
-  // loadEnv في server/lib → الجذر على مستويين للأعلى
-  const envPath = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '.env');
+  const { join } = await import('node:path');
+  // Use process.cwd() which works in both standalone and Vercel serverless
+  const envPath = join(process.cwd(), '.env');
   try {
     const envContent = readFileSync(envPath, 'utf8');
     envContent.split('\n').forEach(line => {

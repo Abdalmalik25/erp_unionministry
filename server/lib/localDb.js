@@ -2,22 +2,37 @@
 // Falls back to local SQLite when Neon is unreachable.
 // Syncs with Neon when connection is restored.
 
-import initSqlJs from 'sql.js';
+let initSqlJs = null;
+try {
+  const mod = await import('sql.js');
+  initSqlJs = mod.default;
+} catch {
+  // sql.js WASM not available (e.g. Vercel serverless) — offline mode disabled
+}
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 
-const LOCAL_DB_PATH = process.env.LOCAL_DB_PATH || join(__dirname, '..', '..', 'data', 'local.db');
+const LOCAL_DB_PATH = process.env.LOCAL_DB_PATH || join(process.cwd(), 'data', 'local.db');
 const SYNC_INTERVAL_MS = parseInt(process.env.SYNC_INTERVAL_MS || '30000', 10);
+const IS_VERCEL = process.env.VERCEL === '1';
 
 let _db = null;
 let _syncTimer = null;
 let _isOnline = false;
 let _lastSyncAt = null;
+let _wasmAvailable = !!initSqlJs;
 
 // ─── Initialization ────────────────────────────────────────────────────────
 
 async function initLocalDb() {
   if (_db) return _db;
+
+  // Vercel serverless: sql.js WASM file is not bundled — skip offline DB
+  if (!_wasmAvailable || IS_VERCEL) {
+    console.log('[LocalDB] WASM not available (Vercel serverless) — offline mode disabled');
+    _db = createNoopPool();
+    return _db;
+  }
 
   const SQL = await initSqlJs();
 
@@ -75,6 +90,19 @@ function translateQuery(sql, params = []) {
 }
 
 // ─── Pool-compatible Interface ─────────────────────────────────────────────
+
+// No-op pool for Vercel serverless (sql.js WASM unavailable)
+function createNoopPool() {
+  const err = () => { throw new Error('Offline SQLite unavailable in Vercel serverless — use Neon PostgreSQL'); };
+  return {
+    query: async () => err(),
+    connect: async () => err(),
+    end: async () => {},
+    totalCount: 0,
+    idleCount: 0,
+    waitingCount: 0,
+  };
+}
 
 function createLocalPool() {
   return {
