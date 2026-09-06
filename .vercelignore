@@ -1,5 +1,11 @@
 # pnpm store leaked into repo (335MB) - never upload to Vercel
 %LOCALAPPDATA%/
+# pnpm store as a literal directory name (env var not expanded in .vercelignore)
+pnpm-store/
+
+# Local SQLite dev database (220MB) at ROOT level only — production uses Neon
+# Use /data/ to only match root-level data/ folder, not src/app/data/
+/data/
 
 # Build outputs & dependencies
 node_modules/
