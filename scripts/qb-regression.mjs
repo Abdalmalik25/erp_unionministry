@@ -1,0 +1,16 @@
+import { QueryBuilder, RawValue } from '../server/middleware/requestDb.js';
+const run = (label, qb) => { const { sql, params } = qb._compile(); console.log(label); console.log('  ' + sql); console.log('  ' + JSON.stringify(params)); };
+run('select+whereIn+order+limit', new QueryBuilder('contracts').select('*').whereIn('status', ['active', 'draft']).orderBy('created_at', 'desc').limit(20).offset(0));
+run('search ilike+count', new QueryBuilder('contracts').whereILike('title', 'الرب').orWhereILike('description', 'x').count());
+run('nested where', new QueryBuilder('contracts').where('a', 'x').where(function () { this.where('b', 1).orWhere('c', 2); }));
+run('insert returning', new QueryBuilder('contracts').insert({ title: 't', status: 'active' }).returning('*'));
+run('update raw version', new QueryBuilder('contracts').update({ title: new RawValue('LOWER(title)') }).where('id', 5).returning(['id', 'title']));
+run('delete', new QueryBuilder('contracts').where('id', 7).delete());
+run('groupBy count order', new QueryBuilder('inspections').select('status').count('id as count').groupBy('status').orderBy('count', 'desc'));
+run('where 3-arg op', new QueryBuilder('x').where('created_at', '>=', new Date('2026-01-01')));
+run('union insert array', new QueryBuilder('logs').insert([{ a: 1 }, { a: 2 }]).returning('id'));
+run('composite where nested+search', new QueryBuilder('inspections').select('*').where('status', 'active').where(function () { this.whereILike('notes', 'x').orWhereILike('result', 'y'); }).orderBy('createdAt', 'desc'));
+run('first()', new QueryBuilder('inspections').where('id', 1).first());
+run('count w/o select (bare .count)', new QueryBuilder('inspections').count('id as total'));
+run('count after select() — inspections 500', new QueryBuilder('inspections').select('*').clone().count().first());
+run('update returning full', new QueryBuilder('inspections').update({ status: 'archived' }).where('id', 9).returning(['id', 'status']));

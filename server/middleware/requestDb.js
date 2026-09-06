@@ -18,6 +18,14 @@ class RawValue {
 
 const wrapIdent = (id) => `"${String(id).replace(/"/g, '""')}"`;
 
+// Map camelCase column references (e.g. 'createdAt') to snake_case DB columns (created_at).
+// Leaves already-snake, numeric, aliased, and wildcard identifiers untouched.
+function snakeCol(id) {
+  const s = String(id);
+  if (s === '*' || s === '') return s;
+  return s.replace(/([a-z0-9])([A-Z])/g, (_, a, b) => `${a}_${b.toLowerCase()}`);
+}
+
 function rawQuery(sql, params = []) {
   return pool.query(sql, params).then((r) => r.rows);
 }
@@ -46,7 +54,7 @@ class QueryBuilder {
   where(...args) {
     if (typeof args[0] === 'function') {
       const sub = new QueryBuilder(this._table);
-      args[0].call(sub);
+      args[0].call(sub, sub);
       this._wheres.push({ type: 'nested', builder: sub });
       return this;
     }
@@ -199,14 +207,14 @@ class QueryBuilder {
         continue;
       }
       if (w.type === 'basic') {
-        clauses.push({ conj, text: `${wrapIdent(w.col)} ${w.op} ${this._buildValue(ctx, w.val)}` });
+        clauses.push({ conj, text: `${wrapIdent(snakeCol(w.col))} ${w.op} ${this._buildValue(ctx, w.val)}` });
       } else if (w.type === 'raw') {
-        clauses.push({ conj, text: `${wrapIdent(w.col)} = ${this._pushParam(ctx, w.raw)}` });
+        clauses.push({ conj, text: `${wrapIdent(snakeCol(w.col))} = ${this._pushParam(ctx, w.raw)}` });
       } else if (w.type === 'in') {
         const ph = w.vals.map((v) => this._buildValue(ctx, v));
-        clauses.push({ conj, text: `${wrapIdent(w.col)} IN (${ph.join(', ')})` });
+        clauses.push({ conj, text: `${wrapIdent(snakeCol(w.col))} IN (${ph.join(', ')})` });
       } else if (w.type === 'ilike') {
-        clauses.push({ conj, text: `${wrapIdent(w.col)} ILIKE ${this._buildValue(ctx, w.val)}` });
+        clauses.push({ conj, text: `${wrapIdent(snakeCol(w.col))} ILIKE ${this._buildValue(ctx, w.val)}` });
       }
     }
     if (!clauses.length) return '';
@@ -220,7 +228,7 @@ class QueryBuilder {
     if (this._method === 'insert') {
       const rows = Array.isArray(this._data) ? this._data : [this._data];
       const keys = Object.keys(rows[0] || {});
-      const cols = keys.map(wrapIdent).join(', ');
+      const cols = keys.map((k) => wrapIdent(snakeCol(k))).join(', ');
       const valuesSql = rows.map((row) => {
         const ph = keys.map((k) => this._buildValue(ctx, row[k]));
         return `(${ph.join(', ')})`;
@@ -229,7 +237,7 @@ class QueryBuilder {
       if (this._returningPart()) sql += ` RETURNING ${this._returningPart()}`;
     } else if (this._method === 'update') {
       const keys = Object.keys(this._data || {});
-      const sets = keys.map((k) => `${wrapIdent(k)} = ${this._buildValue(ctx, this._data[k])}`);
+      const sets = keys.map((k) => `${wrapIdent(snakeCol(k))} = ${this._buildValue(ctx, this._data[k])}`);
       sql = `UPDATE ${wrapIdent(this._table)} SET ${sets.join(', ')}`;
       const where = this._compileWhere(ctx);
       if (where) sql += ` WHERE ${where}`;
@@ -241,18 +249,20 @@ class QueryBuilder {
     } else {
       let countSql = '';
       if (this._countClause) {
-        countSql = `COUNT(${this._countClause.expr}) AS ${wrapIdent(this._countClause.alias)}`;
+        countSql = `COUNT(${snakeCol(this._countClause.expr)}) AS ${wrapIdent(this._countClause.alias)}`;
       }
       let cols;
-      if (this._cols.length && countSql) cols = `${this._cols.join(', ')}, ${countSql}`;
-      else if (this._cols.length) cols = this._cols.join(', ');
+      // Count ignores plain selected columns unless grouped (matches knex semantics)
+      if (countSql && !this._groupBy.length) cols = countSql;
+      else if (this._cols.length && countSql) cols = `${this._cols.map(snakeCol).join(', ')}, ${countSql}`;
+      else if (this._cols.length) cols = this._cols.map(snakeCol).join(', ');
       else if (countSql) cols = countSql;
       else cols = '*';
       sql = `SELECT ${cols} FROM ${wrapIdent(this._table)}`;
       const where = this._compileWhere(ctx);
       if (where) sql += ` WHERE ${where}`;
-      if (this._groupBy.length) sql += ` GROUP BY ${this._groupBy.map(wrapIdent).join(', ')}`;
-      if (this._orderBy.length) sql += ` ORDER BY ${this._orderBy.map((o) => `${wrapIdent(o.col)} ${o.dir.toUpperCase()}`).join(', ')}`;
+      if (this._groupBy.length) sql += ` GROUP BY ${this._groupBy.map((c) => wrapIdent(snakeCol(c))).join(', ')}`;
+      if (this._orderBy.length) sql += ` ORDER BY ${this._orderBy.map((o) => `${wrapIdent(snakeCol(o.col))} ${o.dir.toUpperCase()}`).join(', ')}`;
       if (this._limit !== null) sql += ` LIMIT ${this._limit}`;
       if (this._offset !== null) sql += ` OFFSET ${this._offset}`;
     }
@@ -262,7 +272,7 @@ class QueryBuilder {
   _returningPart() {
     if (!this._returning) return null;
     if (this._returning === '*') return '*';
-    return this._returning.map ? this._returning.map(wrapIdent).join(', ') : wrapIdent(String(this._returning));
+    return this._returning.map ? this._returning.map((c) => wrapIdent(snakeCol(c))).join(', ') : wrapIdent(snakeCol(String(this._returning)));
   }
 
   async _execute() {

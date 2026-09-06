@@ -373,7 +373,7 @@ app.use(workerPortalRouter);
 app.use(administrationRouter);
 app.use(regulatoryRouter);
 app.use(workflowRouter);
-app.use(contractsRouter);
+app.use('/api/contracts', contractsRouter);
 app.use(integrationRouter);
 app.use(serviceCatalogRouter);
 app.use(paymentsRouter);
