@@ -25,16 +25,16 @@
   --ease-smooth: cubic-bezier(0.76, 0, 0.24, 1);
   /* سلس جداً */
 
-  /* الظلال الرسمية */
-  --shadow-sm: 0 1px 3px rgba(10, 37, 64, 0.06);
-  --shadow-base: 0 4px 12px rgba(10, 37, 64, 0.08);
-  --shadow-lg: 0 12px 30px rgba(10, 37, 64, 0.12);
-  --shadow-xl: 0 24px 50px rgba(10, 37, 64, 0.16);
-  --shadow-gold: 0 4px 20px rgba(201, 168, 76, 0.3);
+  /* الظلال الرسمية — متوافقة مع الوضع الداكن (light-dark) */
+  --shadow-sm: light-dark(0 1px 3px rgba(10, 37, 64, 0.06), 0 1px 3px rgba(0, 0, 0, 0.4));
+  --shadow-base: light-dark(0 4px 12px rgba(10, 37, 64, 0.08), 0 4px 12px rgba(0, 0, 0, 0.45));
+  --shadow-lg: light-dark(0 12px 30px rgba(10, 37, 64, 0.12), 0 12px 30px rgba(0, 0, 0, 0.5));
+  --shadow-xl: light-dark(0 24px 50px rgba(10, 37, 64, 0.16), 0 24px 50px rgba(0, 0, 0, 0.55));
+  --shadow-gold: light-dark(0 4px 20px rgba(201, 168, 76, 0.3), 0 4px 20px rgba(201, 168, 76, 0.25));
 
-  /* تأثير الزجاج الرسمي */
-  --glass-bg: rgba(255, 255, 255, 0.75);
-  --glass-border: rgba(255, 255, 255, 0.25);
+  /* تأثير الزجاج الرسمي — متوافق مع الوضع الداكن */
+  --glass-bg: light-dark(rgba(255, 255, 255, 0.72), rgba(13, 24, 48, 0.8));
+  --glass-border: light-dark(rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.06));
   --glass-blur: 24px;
 
   /* دعم RTL */
