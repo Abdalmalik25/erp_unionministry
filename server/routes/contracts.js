@@ -103,6 +103,7 @@ router.get('/:id',
   async (req, res, next) => {
     try {
       const { id } = req.params;
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return next();
 
       const contract = await req.db('contracts').where('id', id).first();
       if (!contract) {

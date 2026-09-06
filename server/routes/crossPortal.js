@@ -115,7 +115,7 @@ router.post('/lookup',
           entityType = 'worker';
           break;
         case 'commercial_record':
-          entity = await req.db('commercial_establishments').where('commercial_record', value).first();
+          entity = await req.db('commercial_establishments').where('commercial_register_number', value).first();
           entityType = 'employer';
           break;
         case 'union_license':
@@ -829,7 +829,7 @@ router.get('/cases/:disputeId/comprehensive',
       const auditTrail = await req.db('cross_portal_audit_log')
         .where('entity_type', 'dispute')
         .where('entity_id', disputeId)
-        .orderBy('occurred_at', 'desc')
+        .orderBy('created_at', 'desc')
         .limit(50);
 
       res.json({

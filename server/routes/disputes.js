@@ -160,6 +160,7 @@ router.get('/:id',
   async (req, res, next) => {
     try {
       const { id } = req.params;
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return next();
 
       const dispute = await req.db('labor_disputes')
         .select('*')
@@ -1006,7 +1007,7 @@ router.get('/statistics',
     try {
       const { governorate, dateFrom, dateTo } = req.query;
 
-      let query = req.db('labor_disputes').select('status', 'category');
+      let query = req.db('labor_disputes').select('status', 'dispute_type');
 
       if (governorate) query = query.where('governorate', governorate);
       if (dateFrom) query = query.where('created_at', '>=', dateFrom);
@@ -1025,7 +1026,8 @@ router.get('/statistics',
 
       for (const d of disputes) {
         stats.byStatus[d.status] = (stats.byStatus[d.status] || 0) + 1;
-        stats.byCategory[d.category] = (stats.byCategory[d.category] || 0) + 1;
+        const cat = d.dispute_type || d.category;
+        stats.byCategory[cat] = (stats.byCategory[cat] || 0) + 1;
         if (['submitted', 'acknowledged', 'under_review', 'mediation_scheduled', 'mediation_in_progress', 'arbitration_scheduled', 'arbitration_in_progress'].includes(d.status)) {
           stats.pendingCount++;
         }

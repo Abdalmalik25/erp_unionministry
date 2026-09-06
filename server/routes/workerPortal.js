@@ -74,8 +74,8 @@ router.get('/api/worker-portal/:personId/passport', withCache, async (req, res) 
     // 7. سجلات التدريب
     const training = await pool.query(
       `SELECT * FROM training_records
-       WHERE worker_person_id = $1 AND deleted_at IS NULL
-       ORDER BY training_date DESC LIMIT 10`,
+       WHERE employee_id = $1 AND deleted_at IS NULL
+       ORDER BY start_date DESC LIMIT 10`,
       [personId]
     );
 
@@ -85,7 +85,7 @@ router.get('/api/worker-portal/:personId/passport', withCache, async (req, res) 
        FROM cases c
        LEFT JOIN workflow_instances wi ON c.workflow_instance_id = wi.id
        LEFT JOIN workflow_definitions wo ON wi.workflow_key = wo.workflow_key
-       WHERE c.linked_entity_id = $1::text AND c.deleted_at IS NULL
+       WHERE c.linked_entity_id = $1::uuid AND c.deleted_at IS NULL
        ORDER BY c.created_at DESC LIMIT 5`,
       [personId]
     );
@@ -101,7 +101,7 @@ router.get('/api/worker-portal/:personId/passport', withCache, async (req, res) 
     // 10. وثائق مرفوعة
     const documents = await pool.query(
       `SELECT * FROM documents
-       WHERE entity_id = $1::text AND entity_type = 'worker'
+       WHERE entity_id = $1::uuid
        ORDER BY created_at DESC LIMIT 20`,
       [personId]
     );
@@ -164,9 +164,9 @@ router.post('/api/worker-portal/service-request', requirePermission('write:servi
     const deadline = new Date(Date.now() + 7 * 24 * 3600 * 1000); // 7 أيام افتراضي
 
     const r = await pool.query(
-      `INSERT INTO service_requests
-         (request_number, service_code, applicant_type, applicant_id, payload, documents,
-          status, deadline, created_by)
+      `INSERT INTO service_instances
+         (instance_number, service_code, applicant_type, applicant_id, payload, documents,
+          status, sla_deadline, created_by)
        VALUES ($1, $2, 'person', $3, $4, $5, 'submitted', $6, $3)
        RETURNING *`,
       [ref, service_code, person_id, JSON.stringify(payload || {}), JSON.stringify(documents || []), deadline]
@@ -186,8 +186,8 @@ router.get('/api/worker-portal/:personId/requests', withCache, async (req, res) 
   try {
     const { personId } = req.params;
     const r = await pool.query(
-      `SELECT sr.*, sc.name_ar as service_name, sc.category
-       FROM service_requests sr
+      `SELECT sr.*, sc.title_ar as service_name, sc.category
+       FROM service_instances sr
        LEFT JOIN service_catalog sc ON sr.service_code = sc.service_code
        WHERE sr.applicant_id = $1
        ORDER BY sr.created_at DESC LIMIT 30`,
@@ -214,11 +214,11 @@ router.post('/api/worker-portal/report', requirePermission('write:violations'), 
 
     // حساب SLA
     const sla = await pool.query(
-      `SELECT max_response_hours FROM sla_policies WHERE applies_to = $1 AND is_active = true LIMIT 1`,
+      `SELECT duration_days FROM sla_policies WHERE applies_to = $1 AND is_active = true LIMIT 1`,
       [case_type]
     );
-    const slaHours = sla.rows[0]?.max_response_hours || 72;
-    const slaDeadline = new Date(Date.now() + slaHours * 3600 * 1000);
+    const slaDays = sla.rows[0]?.duration_days || 3;
+    const slaDeadline = new Date(Date.now() + slaDays * 24 * 3600 * 1000);
 
     const r = await pool.query(
       `INSERT INTO cases
@@ -230,12 +230,12 @@ router.post('/api/worker-portal/report', requirePermission('write:violations'), 
     );
 
     // إضافة المستندات إن وجدت
-    if (documents && Array.isArray(documents)) {
+    if (documents && Array.isArray(documents) && r.rows[0]?.id) {
       for (const doc of documents) {
         await pool.query(
-          `INSERT INTO case_documents (case_id, document_name, file_url, file_hash, mime_type, file_size, uploaded_by)
-           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-          [r.rows[0].id, doc.name, doc.url, doc.hash, doc.mime, doc.size, person_id]
+          `INSERT INTO case_documents (case_id, file_url, file_hash, uploaded_by)
+           VALUES ($1, $2, $3, $4)`,
+          [r.rows[0].id, doc.url || null, doc.hash || null, person_id]
         );
       }
     }
@@ -259,11 +259,10 @@ router.post('/api/worker-portal/document/upload', requirePermission('write:docum
 
     const r = await pool.query(
       `INSERT INTO documents
-         (document_name, entity_type, entity_id, file_url, file_hash, file_size, mime_type,
-          document_type, classification, uploaded_by)
-       VALUES ($1, 'worker', $2, $3, $4, $5, $6, $7, $8, $2)
+         (document_name, entity_id, file_url, file_size, file_type, document_type, notes, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $2)
        RETURNING *`,
-      [document_name, person_id, file_url, file_hash, file_size, mime_type, document_type || 'other', classification]
+      [document_name, person_id, file_url, file_size || 0, mime_type || 'application/octet-stream', document_type || 'other', classification]
     );
 
     res.status(201).json({ data: r.rows[0] });
@@ -296,7 +295,7 @@ router.get('/api/worker-portal/:personId/dashboard', withCache, async (req, res)
       // الشكاوى المفتوحة
       pool.query(
         `SELECT COUNT(*)::int as count FROM cases
-         WHERE linked_entity_id = $1::text AND status NOT IN ('closed', 'resolved') AND deleted_at IS NULL`,
+         WHERE linked_entity_id = $1::uuid AND status NOT IN ('closed', 'resolved') AND deleted_at IS NULL`,
         [personId]
       ),
       // شهادات الخبرة
@@ -308,7 +307,7 @@ router.get('/api/worker-portal/:personId/dashboard', withCache, async (req, res)
       // دورات التدريب
       pool.query(
         `SELECT COUNT(*)::int as count FROM training_records
-         WHERE worker_person_id = $1 AND deleted_at IS NULL`,
+         WHERE employee_id = $1 AND deleted_at IS NULL`,
         [personId]
       ),
       // إصابات العمل
@@ -384,12 +383,13 @@ router.get('/api/worker-portal/:personId/timeline', withCache, async (req, res) 
 
     // التدريب
     const t = await pool.query(
-      `SELECT certificate_number, training_name, training_date FROM training_records
-       WHERE worker_person_id = $1 AND deleted_at IS NULL`,
+      `SELECT certification_number, training_name, start_date
+       FROM training_records
+       WHERE employee_id = $1 AND deleted_at IS NULL`,
       [personId]
     );
     t.rows.forEach(tr => {
-      events.push({ at: tr.training_date, type: 'training', action: `تدريب: ${tr.training_name}`, icon: 'graduation-cap', hash: tr.certificate_number });
+      events.push({ at: tr.start_date, type: 'training', action: `تدريب: ${tr.training_name}`, icon: 'graduation-cap', hash: tr.certification_number });
     });
 
     // ترتيب زمني
@@ -451,7 +451,7 @@ router.get('/api/worker-portal/:personId/alerts', withCache, async (req, res) =>
     // شكاوى في انتظار الرد
     const cs = await pool.query(
       `SELECT case_number, subject, sla_status FROM cases
-       WHERE linked_entity_id = $1::text AND status NOT IN ('closed', 'resolved') AND deleted_at IS NULL
+       WHERE linked_entity_id = $1::uuid AND status NOT IN ('closed', 'resolved') AND deleted_at IS NULL
          AND sla_status IN ('overdue', 'at_risk')`,
       [personId]
     );
