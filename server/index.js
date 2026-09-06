@@ -12,6 +12,23 @@ import { existsSync, readFileSync } from 'fs';
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+// ===================== Startup Environment Validation =====================
+{
+  const critical = ['JWT_SECRET'];
+  const missing = critical.filter(k => !process.env[k]);
+  if (missing.length) {
+    console.error(`[STARTUP] CRITICAL env vars missing: ${missing.join(', ')}`);
+    if (process.env.NODE_ENV === 'production') process.exit(1);
+  }
+  if (process.env.DATABASE_URL) {
+    console.log('[STARTUP] DATABASE_URL present ✓');
+  } else {
+    console.warn('[STARTUP] DATABASE_URL missing — using SQLite fallback');
+  }
+  if (process.env.VERCEL) console.log('[STARTUP] Running on Vercel serverless');
+  console.log(`[STARTUP] NODE_ENV=${process.env.NODE_ENV || 'development'} PORT=${PORT}`);
+}
+
 // ===================== Server-Side Cache (TTL-based) =====================
 // Reduces DB load for frequently-read dashboard data that changes infrequently
 const dashboardCache = new Map();
@@ -137,12 +154,7 @@ app.use((_req, res, next) => {
 });
 
 app.use((_req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  // CSP is handled by securityHeadersMiddleware — no duplicate here
+  // Security headers are set by securityHeadersMiddleware — no duplicate needed
   next();
 });
 
@@ -783,19 +795,10 @@ function invalidatePlatformCache() {
   invalidateCache('dashboard');
 }
 
-function gracefulShutdown(signal) {
-  console.log(`\n[Server] ${signal} — shutting down gracefully...`);
-  clearInterval(schedulerInterval);
-  clearInterval(analyticsRefreshInterval);
-  // إغلاق تجمع قاعدة البيانات بأمان مع مهلة قصوى
-  const forceTimer = setTimeout(() => process.exit(0), 8000);
-  import('./middleware/shared.js').then(({ pool }) => pool.end())
-    .catch(() => {})
-    .finally(() => { clearTimeout(forceTimer); process.exit(0); });
-}
+// NOTE: Graceful shutdown is handled by the robust version inside
+// `if (process.env.VERCEL !== '1')` block near the bottom of this file.
+// The uncaughtException/unhandledRejection handlers are registered by errorTracker.js.
 
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('uncaughtException', (err) => {
   console.error('[Server] UNCAUGHT EXCEPTION:', err.message);
 });
@@ -918,6 +921,17 @@ if (process.env.VERCEL !== '1') {
     console.log(`🛡️  Nuclear Shield: ACTIVE`);
     console.log(`🔄 Offline-First: ${process.env.DATABASE_URL ? 'ENABLED (Neon + SQLite)' : 'LOCAL ONLY'}`);
     console.log(`⏱️  Started at: ${new Date().toISOString()}\n`);
+
+    // DB connectivity check at startup
+    if (process.env.DATABASE_URL) {
+      import('./middleware/shared.js').then(({ pool }) => {
+        pool.query('SELECT 1').then(() => {
+          console.log('[STARTUP] Database connectivity ✓');
+        }).catch(err => {
+          console.error('[STARTUP] Database connectivity FAILED:', err.message);
+        });
+      }).catch(() => {});
+    }
   });
 
   // Graceful shutdown with connection draining

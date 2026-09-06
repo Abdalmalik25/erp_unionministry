@@ -97,17 +97,20 @@ class QueryBuilder {
   }
 
   orderBy(col, dir = 'asc') {
-    this._orderBy.push({ col, dir });
+    const d = String(dir).trim().toUpperCase();
+    this._orderBy.push({ col, dir: d === 'DESC' ? 'DESC' : 'ASC' });
     return this;
   }
 
   limit(n) {
-    this._limit = Number(n);
+    const v = Math.max(0, Math.min(Number(n) || 0, 10000));
+    this._limit = v;
     return this;
   }
 
   offset(n) {
-    this._offset = Number(n);
+    const v = Math.max(0, Math.floor(Number(n) || 0));
+    this._offset = v;
     return this;
   }
 
@@ -298,6 +301,11 @@ function createRequestDb() {
   const db = (table) => new QueryBuilder(table);
   db.raw = (sql, params = []) => new RawValue(sql, params);
   return db;
+}
+
+// Escape LIKE wildcards in user input to prevent pattern injection
+export function escapeLike(s) {
+  return String(s).replace(/[%_\\]/g, '\\$&');
 }
 
 export function requestDbMiddleware(req, _res, next) {

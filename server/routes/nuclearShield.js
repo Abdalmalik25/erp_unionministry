@@ -19,7 +19,7 @@ function requireShieldAuth(req, res, next) {
 }
 function requireShieldAdmin(req, res, next) {
   if (!req.user || !['super_admin', 'ministry_admin'].includes(req.user.role)) {
-    return res.status(403).json({ error: 'غير مصرح — مطلوب صلاحية 관리자', code: 'UNAUTHORIZED' });
+    return res.status(403).json({ error: 'غير مصرح — مطلوب صلاحية إدارية', code: 'UNAUTHORIZED' });
   }
   next();
 }

@@ -36,15 +36,14 @@
 
 import { Router } from 'express';
 import { getAuthUser } from '../middleware/auth.js';
-import { requirePermission, auditContext } from '../middleware/rbac.js';
-import { requireJurisdiction } from '../middleware/rbac.js';
+import { requirePermission, auditContext, requireJurisdiction } from '../middleware/rbac.js';
 import { validateBody, validateQuery } from '../middleware/validation.js';
-import { hasPermission } from '../middleware/rbac.js';
 import { structuredLogger } from '../middleware/observability.js';
 import { uploadMiddleware } from '../middleware/upload.js';
 import { eventBus } from '../utils/eventBus.js';
 import { webhookManager } from '../utils/webhookManager.js';
 import { invalidateCache } from '../middleware/cache.js';
+import { escapeLike } from '../middleware/requestDb.js';
 
 const router = Router();
 
@@ -118,10 +117,11 @@ router.get('/',
         query = query.where('created_at', '<=', dateTo);
       }
       if (search) {
+        const s = `%${escapeLike(search)}%`;
         query = query.where(function() {
-          this.whereILike('title', `%${search}%`)
-            .orWhereILike('case_number', `%${search}%`)
-            .orWhereILike('description', `%${search}%`);
+          this.whereILike('title', s)
+            .orWhereILike('case_number', s)
+            .orWhereILike('description', s);
         });
       }
 

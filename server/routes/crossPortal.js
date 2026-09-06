@@ -11,6 +11,7 @@ import { requirePermission, auditContext } from '../middleware/rbac.js';
 import { structuredLogger } from '../middleware/observability.js';
 import { eventBus } from '../utils/eventBus.js';
 import { invalidateCache } from '../middleware/cache.js';
+import { escapeLike } from '../middleware/requestDb.js';
 
 const router = Router();
 
@@ -34,7 +35,7 @@ router.get('/registry/:type/search',
 
       if (q) {
         query = query.where(function() {
-          this.whereILike('data_snapshot', `%${q}%`);
+          this.whereILike('data_snapshot', `%${escapeLike(q)}%`);
         });
       }
 
@@ -614,7 +615,7 @@ router.post('/notifications/send',
           title,
           message,
           action_url: actionUrl,
-          metadata: metadata ? JSON.stringify(metadata) : '{}',
+          metadata: metadata || {},
           expires_at: expiresAt,
           created_at: new Date()
         })

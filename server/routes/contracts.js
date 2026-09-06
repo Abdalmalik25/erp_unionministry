@@ -38,6 +38,7 @@ import { structuredLogger } from '../middleware/observability.js';
 import { uploadMiddleware } from '../middleware/upload.js';
 import { eventBus } from '../utils/eventBus.js';
 import { invalidateCache } from '../middleware/cache.js';
+import { escapeLike } from '../middleware/requestDb.js';
 
 const router = Router();
 
@@ -70,10 +71,11 @@ router.get('/',
       if (dateFrom) query = query.where('start_date', '>=', dateFrom);
       if (dateTo) query = query.where('start_date', '<=', dateTo);
       if (search) {
+        const s = `%${escapeLike(search)}%`;
         query = query.where(function() {
-          this.whereILike('worker_name', `%${search}%`)
-            .orWhereILike('employer_name', `%${search}%`)
-            .orWhereILike('contract_number', `%${search}%`);
+          this.whereILike('worker_name', s)
+            .orWhereILike('employer_name', s)
+            .orWhereILike('contract_number', s);
         });
       }
 

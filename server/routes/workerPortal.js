@@ -3,9 +3,13 @@
 import { pool } from '../middleware/shared.js';
 import { cacheMiddleware } from '../middleware/cache.js';
 import { requirePermission } from '../middleware/rbac.js';
+import { getAuthUser } from '../middleware/auth.js';
 import express from 'express';
 
 const router = express.Router();
+
+// Authentication required for ALL worker portal routes (protects PII)
+router.use(getAuthUser);
 
 // Apply caching to GET endpoints only — 30s TTL for worker data
 const withCache = cacheMiddleware(30 * 1000);
