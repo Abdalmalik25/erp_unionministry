@@ -62,7 +62,7 @@ const injectCsp = () => ({
  * نستبعدها من الـ modulepreload لئلّا يُفرَّغ تحميلها عند أول زيارة — يُجلب الأول مرة عند
  * أول طلب تصدير فعلي فقط (يقلل الحجم المُنقَّان في مسار العرض الحرج).
  */
-const HEAVY_DEFERRED_CHUNKS = /(vendor-pdf|xlsx|html2canvas|recharts|jspdf)/
+const HEAVY_DEFERRED_CHUNKS = /(vendor-pdf|xlsx|html2canvas|vendor-charts|recharts|jspdf)/
 
 const notHeavyDeferred = (
   filename: string,
@@ -77,16 +77,20 @@ const notHeavyDeferred = (
 
 const getManualChunks = (id: string) => {
   if (id.includes('node_modules')) {
-    if (id.includes('react') || id.includes('react-dom')) return 'vendor-react'
-    if (id.includes('lucide-react') || id.includes('@radix-ui')) return 'vendor-ui'
-    if (id.includes('recharts')) return 'vendor-charts-defer'
-    if (id.includes('jspdf')) return 'vendor-pdf-defer'
-    if (id.includes('@supabase')) return 'vendor-supabase'
-    if (id.includes('date-fns')) return 'vendor-utils'
+    // ملاحظة حرجة: match دقيق على أسماء الحِزم لا على السلسلة الفرعية "react" —
+    // لو استُعمل includes('react') فستلتهم recharts/react-router/lucide-react/motion
+    // كلها داخل chunk واحد عملاق (vendor-react كان يصل 715KB).
+    if (/\bnode_modules\/(react|react-dom|react-is|scheduler|react-router|react-router-dom|react-transition-group|react-is)\//.test(id)) return 'vendor-react'
+    if (id.includes('node_modules/recharts/')) return 'vendor-charts-defer'
+    if (id.includes('node_modules/lucide-react/')) return 'vendor-ui'
+    if (id.includes('node_modules/@radix-ui') || id.includes('node_modules/@emotion') || id.includes('node_modules/class-variance-authority') || id.includes('node_modules/tailwind-merge')) return 'vendor-ui'
+    if (id.includes('node_modules/jspdf')) return 'vendor-pdf-defer'
+    if (id.includes('node_modules/@supabase')) return 'vendor-supabase'
+    if (id.includes('node_modules/date-fns')) return 'vendor-utils'
   }
   // Code-split page-level routes for 10x faster initial load
-  if (id.includes('src/pages/')) {
-    const page = id.replace('src/pages/', '').replace('.tsx', '').replace('.ts', '')
+  if (id.includes('src/app/pages/')) {
+    const page = id.replace('src/app/pages/', '').replace('.tsx', '').replace('.ts', '')
     if (page.includes('reports')) return 'page-reports'
     if (page.includes('export')) return 'page-export'
     if (page.includes('dashboard')) return 'page-dashboard'

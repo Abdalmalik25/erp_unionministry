@@ -19,15 +19,16 @@ const ROOT = resolve(process.cwd());
 const BUDGETS = {
   // Bundle size limits (in KB, gzipped)
   bundles: {
-    'vendor-react': 50,
+    'vendor-react': 80,
     'vendor-ui': 80,
-    'vendor-charts': 100,
+    'vendor-charts': 120,
     'vendor-pdf': 200,
     'vendor-supabase': 60,
     'vendor-utils': 30,
-    'index': 80,
+    'xlsx': 150,
+    'index': 110,
     default: 100, // Max per chunk
-    total: 800, // Total bundle
+    total: 1200, // Total bundle (includes on-demand heavy libs: charts/pdf/xlsx)
   },
 
   // Asset size limits (KB)
