@@ -270,6 +270,29 @@ app.use(locationTracker());
 import { enforceConcurrentSessions } from './middleware/rateLimit.js';
 app.use(enforceConcurrentSessions({ max: parseInt(process.env.MAX_CONCURRENT_SESSIONS || '3', 10) }));
 
+// ===================== Enhanced Security (Geo-blocking, Account Lockout, Anomaly Detection) =====================
+import { 
+  geoBlockingMiddleware, 
+  accountLockoutMiddleware, 
+  handleLoginResult,
+  sessionSecurityMiddleware,
+  manageIP,
+  getSecurityDashboard,
+} from './middleware/enhancedSecurity.js';
+
+// Apply geo-blocking to all API routes (after auth is established)
+app.use('/api', geoBlockingMiddleware);
+
+// Apply account lockout check to login endpoints
+app.use('/api/auth/login', accountLockoutMiddleware);
+app.use('/api/auth/mfa', accountLockoutMiddleware);
+
+// Handle login result for lockout management
+app.use('/api/auth/login', handleLoginResult);
+
+// Session security binding
+app.use('/api', sessionSecurityMiddleware);
+
 // ===================== Cross-Portal Data Sharing Policy =====================
 // Filters API responses per portal pair (Ministry ↔ Organization ↔ Employer ↔ Worker)
 import { withCrossPortalFilter, ROLE_PORTAL } from './middleware/crossPortal.js';
@@ -876,6 +899,39 @@ app.get('/api/version', (_req, res) => {
     version: APP_VERSION,
     uptimeSeconds: Math.floor(process.uptime()),
   });
+});
+
+// ===================== Security Management API =====================
+// IP/Country allowlist/blocklist management
+app.post('/api/security/manage', async (req, res) => {
+  try {
+    await manageIP(req, res);
+  } catch (e) {
+    res.status(500).json({ error: 'فشل إدارة الأمان', code: 'SECURITY_MANAGE_ERROR' });
+  }
+});
+
+// Security monitoring dashboard
+app.get('/api/security/dashboard', async (req, res) => {
+  try {
+    await getSecurityDashboard(req, res);
+  } catch (e) {
+    res.status(500).json({ error: 'فشل جلب لوحة المراقبة', code: 'SECURITY_DASHBOARD_ERROR' });
+  }
+});
+
+// Manual lockout clear (admin only)
+app.post('/api/security/clear-lockout', async (req, res) => {
+  if (!req.user || !['super_admin', 'ministry_admin'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'غير مصرح' });
+  }
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'البريد الإلكتروني مطلوب' });
+  
+  const { clearLockout } = await import('./middleware/enhancedSecurity.js');
+  clearLockout(email.toLowerCase().trim());
+  await auditLog('LOCKOUT_CLEARED', 'security', req.user.id, { email });
+  res.json({ success: true, message: `تم إلغاء قفل ${email}` });
 });
 
 // ===================== Production Static Serving — الواجهة الرسمية من نفس الخادم =====================
