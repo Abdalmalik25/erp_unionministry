@@ -276,6 +276,10 @@ initSessionLog().catch(() => {});
 
 app.use(auditContext);
 
+// Minimal knex-compatible req.db adapter for Phase 6 routers (contracts, disputes, inspections, crossPortal)
+import requestDbMiddleware from './middleware/requestDb.js';
+app.use(requestDbMiddleware);
+
 // مانع صلاحيات بسيط للطرق المحمية
 export function requireRole(...roles) {
   return (req, res, next) => {
