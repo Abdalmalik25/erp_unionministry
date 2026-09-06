@@ -17,6 +17,7 @@ import type { Audience } from '../utils/portals';
 import { BRAND } from '../branding';
 import { checkRateLimit } from '../utils/security';
 import { isFeatureEnabled } from '../utils/featureFlags';
+import { useForm, useValidation, useMessages, useA11y, useActions, useNav } from '../hooks/useI18n';
 
 // ===== Types =====
 interface OfficialIdentity {
@@ -141,22 +142,26 @@ function PremiumInput({
 
 function AudienceSelector({ 
   selected, 
-  onSelect 
+  onSelect,
+  formT,
+  navT
 }: { 
   selected: Audience; 
   onSelect: (audience: Audience) => void;
+  formT: (key: string, options?: Record<string, unknown>) => string;
+  navT: (key: string, options?: Record<string, unknown>) => string;
 }) {
   const audiences = [
-    { id: 'ministry' as Audience, icon: Landmark, label: 'وزارة العمل', subLabel: 'Ministry Portal' },
-    { id: 'employer' as Audience, icon: Building2, label: 'صاحب عمل', subLabel: 'Employer Portal' },
-    { id: 'union' as Audience, icon: Users, label: 'نقابة', subLabel: 'Union Portal' },
-    { id: 'worker' as Audience, icon: HardHat, label: 'عامل', subLabel: 'Worker Portal' },
+    { id: 'ministry' as Audience, icon: Landmark, label: formT('ministry'), subLabel: navT('ministry') },
+    { id: 'employer' as Audience, icon: Building2, label: formT('employer'), subLabel: navT('employer') },
+    { id: 'union' as Audience, icon: Users, label: formT('union'), subLabel: navT('union') },
+    { id: 'worker' as Audience, icon: HardHat, label: formT('worker'), subLabel: navT('worker') },
   ];
   
   return (
     <div className="space-y-3">
       <label className="block text-sm font-semibold text-slate-700">
-        اختر نوع الحساب
+        {formT('selectAccountType')}
       </label>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {audiences.map((aud) => (
@@ -198,20 +203,20 @@ function AudienceSelector({
   );
 }
 
-function SecurityBadge() {
+function SecurityBadge({ formT }: { formT: (key: string, options?: Record<string, unknown>) => string }) {
   return (
     <div className="flex items-center justify-center gap-6 py-4 px-6 bg-slate-50 rounded-xl border border-slate-200">
       <div className="flex items-center gap-2 text-sm text-slate-600">
         <Shield className="w-4 h-4 text-emerald-500" />
-        <span>تشفير 256-bit</span>
+        <span>{formT('encryption')}</span>
       </div>
       <div className="flex items-center gap-2 text-sm text-slate-600">
         <Fingerprint className="w-4 h-4 text-blue-500" />
-        <span>مصادقة ثنائية</span>
+        <span>{formT('twoFactor')}</span>
       </div>
       <div className="flex items-center gap-2 text-sm text-slate-600">
         <Lock className="w-4 h-4 text-amber-500" />
-        <span>حماية متقدمة</span>
+        <span>{formT('advancedProtection')}</span>
       </div>
     </div>
   );
@@ -243,6 +248,14 @@ export function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { signIn, user, loading: authLoading } = useAuth();
+
+  // i18n hooks
+  const { t: formT } = useForm();
+  const { t: valT } = useValidation();
+  const { t: msgT } = useMessages();
+  const { t: a11yT } = useA11y();
+  const { t: actT } = useActions();
+  const { t: navT } = useNav();
 
   const [identity, setIdentity] = useState<OfficialIdentity>(IDENTITY_FALLBACK);
   const [audience, setAudience] = useState<Audience>('ministry');
@@ -289,21 +302,21 @@ export function Login() {
   const validateForm = (): boolean => {
     const errs: typeof fieldErrors = {};
     const u = username.trim();
-    if (!u) errs.username = 'اسم المستخدم مطلوب';
-    else if (u.includes('@') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(u)) errs.username = 'صيغة البريد غير صحيحة';
-    else if (!u.includes('@') && u.length < 3) errs.username = 'اسم المستخدم قصير جداً';
-    if (!password) errs.password = 'كلمة المرور مطلوبة';
-    else if (password.length < 6) errs.password = 'كلمة المرور قصيرة جداً (6 أحرف على الأقل)';
+    if (!u) errs.username = valT('required');
+    else if (u.includes('@') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(u)) errs.username = valT('email');
+    else if (!u.includes('@') && u.length < 3) errs.username = valT('minLength', { min: 3 });
+    if (!password) errs.password = valT('required');
+    else if (password.length < 6) errs.password = valT('passwordWeak');
     setFieldErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (loading) return; // منع الإرسال المزدوج
+    if (loading) return;
 
     if (!validateForm()) {
-      setErrorMessage('يرجى تصحيح الحقول المشار إليها');
+      setErrorMessage(formT('validationError'));
       return;
     }
 
@@ -313,7 +326,7 @@ export function Login() {
     if (!rl.allowed) {
       const secs = Math.ceil(rl.resetIn / 1000);
       setLockoutUntil(Date.now() + rl.resetIn);
-      setErrorMessage(`تم تعليق المحاولات مؤقتاً لأسباب أمنية — حاول بعد ${secs} ثانية`);
+      setErrorMessage(msgT('rateLimited', { seconds: secs }));
       return;
     }
 
@@ -322,7 +335,6 @@ export function Login() {
     setFieldErrors({});
 
     try {
-      // تذكر اختيار “تذكرني” للجلسات القادمة (قرار العميل فقط — لا يؤثر على أمان JWT)
       try { localStorage.setItem('unionsphere_remember', String(rememberMe)); } catch { /* storage unavailable */ }
       const userType = audience === 'ministry' ? 'ministry' : 'organization';
       const userData = await signIn(username, password, userType);
@@ -333,7 +345,7 @@ export function Login() {
         else navigate(getLandingPath(userData as { role?: string; userType?: string }), { replace: true });
       }, 600);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'حدث خطأ أثناء تسجيل الدخول';
+      const msg = err instanceof Error ? err.message : msgT('serverError');
       setErrorMessage(msg);
       // تحديث عدّاد القفل بعد الفشل
       const after = checkRateLimit(`login_${username.trim().toLowerCase()}`);
@@ -368,8 +380,8 @@ export function Login() {
                   <ShieldCheck className="w-5 h-5 text-emerald-600" />
                 </div>
                 <div>
-                  <div className="font-semibold text-slate-900">آمن وموثوق</div>
-                  <div className="text-sm text-slate-500">بياناتك محمية بأعلى معايير الأمان</div>
+                  <div className="font-semibold text-slate-900">{formT('secure')}</div>
+                  <div className="text-sm text-slate-500">{formT('secureDesc')}</div>
                 </div>
               </div>
               
@@ -378,8 +390,8 @@ export function Login() {
                   <Zap className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <div className="font-semibold text-slate-900">سريع ومتكامل</div>
-                  <div className="text-sm text-slate-500">إتمام المعاملات في دقائق معدودة</div>
+                  <div className="font-semibold text-slate-900">{formT('fast')}</div>
+                  <div className="text-sm text-slate-500">{formT('fastDesc')}</div>
                 </div>
               </div>
               
@@ -388,8 +400,8 @@ export function Login() {
                   <Globe className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <div className="font-semibold text-slate-900">متاح للجميع</div>
-                  <div className="text-sm text-slate-500">خدمة جميع المناطق والمحافظات</div>
+                  <div className="font-semibold text-slate-900">{formT('available')}</div>
+                  <div className="text-sm text-slate-500">{formT('availableDesc')}</div>
                 </div>
               </div>
             </div>
@@ -406,12 +418,12 @@ export function Login() {
             {/* Header */}
             <div className="text-center mb-8">
               <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2">
-                {authSuccess ? 'مرحباً بك!' : 'تسجيل الدخول'}
+                {authSuccess ? msgT('success') : actT('login')}
               </h2>
               <p className="text-slate-600">
                 {authSuccess 
-                  ? 'جاري توجيهك إلى لوحة التحكم...' 
-                  : 'أدخل بيانات الدخول للوصول إلى حسابك'
+                  ? msgT('loading') 
+                  : formT('loginDesc')
                 }
               </p>
             </div>
@@ -422,50 +434,45 @@ export function Login() {
                 <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-emerald-100 flex items-center justify-center animate-bounce">
                   <CheckCircle2 className="w-10 h-10 text-emerald-500" />
                 </div>
-                <p className="text-emerald-600 font-semibold">تم تسجيل الدخول بنجاح</p>
+                <p className="text-emerald-600 font-semibold">{msgT('success')}</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6" noValidate>
                 <div aria-live="polite" aria-atomic="true" className="sr-only">
-                  {authSuccess ? 'تم تسجيل الدخول بنجاح، جاري التوجيه إلى لوحة التحكم' : 'نموذج تسجيل الدخول'}
+                  {authSuccess ? msgT('success') : formT('loginForm')}
                 </div>
-                {/* Audience Selector */}
-                <AudienceSelector 
-                  selected={audience} 
-                  onSelect={setAudience} 
-                />
                 
                 {/* Username */}
                 <PremiumInput
                   icon={User}
-                  label={audience === 'worker' ? 'رقم الهوية / البريد' : audience === 'ministry' ? 'البريد الرسمي' : 'البريد المسجل'}
+                  label={audience === 'worker' ? formT('nationalIdOrEmail') : audience === 'ministry' ? formT('officialEmail') : formT('registeredEmail')}
                   value={username}
                   onChange={v => { setUsername(v); if (fieldErrors.username) setFieldErrors(s => ({ ...s, username: undefined })); }}
-                  placeholder={audience === 'worker' ? 'مثال: 123456789 أو worker@labor.ye' : audience === 'ministry' ? 'name@yemen.gov.ye' : 'example@business.ye'}
+                  placeholder={audience === 'worker' ? formT('workerPlaceholder') : audience === 'ministry' ? formT('ministryPlaceholder') : formT('employerPlaceholder')}
                   autoComplete="username"
                   disabled={loading || !!lockoutUntil}
                   error={fieldErrors.username}
-                  description={audience === 'worker' ? 'أدخل رقم هويتك أو بريدك المسجل' : 'أدخل البريد الرسمي المرتبط بمنشأتك'}
+                  description={audience === 'worker' ? formT('workerDesc') : formT('entityEmailDesc')}
                 />
                 {audience !== 'ministry' && !fieldErrors.username && (
-                  <p className="text-xs text-slate-500 flex items-center gap-1 -mt-3"><Info className="w-3.5 h-3.5" /> تلميح: {audience === 'worker' ? 'يمكن للعامل الدخول برقم الهوية الوطنية' : audience === 'employer' ? 'بريد المنشأة المسجل لدى الوزارة' : 'بريد النقابة المسجل'}</p>
+                  <p className="text-xs text-slate-500 flex items-center gap-1 -mt-3"><Info className="w-3.5 h-3.5" /> {audience === 'worker' ? formT('workerHint') : audience === 'employer' ? formT('employerHint') : formT('unionHint')}</p>
                 )}
 
                 {/* Password */}
                 <PremiumInput
                   icon={Lock}
-                  label="كلمة المرور"
+                  label={formT('password')}
                   type="password"
                   value={password}
                   onChange={v => { setPassword(v); if (fieldErrors.password) setFieldErrors(s => ({ ...s, password: undefined })); }}
-                  placeholder="أدخل كلمة المرور"
+                  placeholder={formT('passwordPlaceholder')}
                   showPasswordToggle
                   showPassword={showPassword}
                   onTogglePassword={() => setShowPassword(!showPassword)}
                   autoComplete="current-password"
                   disabled={loading || !!lockoutUntil}
                   error={fieldErrors.password}
-                  description="أدخل كلمة المرور الخاصة بحسابك"
+                  description={formT('passwordDesc')}
                 />
                 
                 {/* Remember Me & Forgot Password */}
@@ -477,13 +484,13 @@ export function Login() {
                       onChange={(e) => setRememberMe(e.target.checked)}
                       className="w-4 h-4 rounded border-slate-300 text-amber-500 focus:ring-amber-500"
                     />
-                    <span className="text-sm text-slate-600">تذكرني</span>
+                    <span className="text-sm text-slate-600">{formT('rememberMe')}</span>
                   </label>
                   <Link 
                     to="/forgot-password" 
                     className="text-sm text-amber-600 hover:text-amber-700 font-semibold"
                   >
-                    نسيت كلمة المرور؟
+                    {formT('forgotPassword')}
                   </Link>
                 </div>
                 
@@ -494,11 +501,11 @@ export function Login() {
                     <p className="text-sm text-amber-800">محاولات كثيرة — متاح مجدداً بعد {Math.ceil((lockoutUntil - Date.now())/1000)} ثانية</p>
                   </div>
                 )}
-                {/* Error Message */}
+{/* Error Message */}
                 {errorMessage && (
                   <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3" role="alert" aria-live="assertive">
                     <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                    <div className="flex-1"><p className="text-sm text-red-700">{errorMessage}</p><p className="text-xs text-red-600/80 mt-1">إذا نسيت كلمة المرور استخدم “نسيت كلمة المرور؟” — لا تحاول تخمين كلمات متكررة</p></div>
+                    <div className="flex-1"><p className="text-sm text-red-700">{errorMessage}</p><p className="text-xs text-red-600/80 mt-1">{formT('errorHint')}</p></div>
                   </div>
                 )}
                 
@@ -520,17 +527,17 @@ export function Login() {
                   {loading ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      جاري التحقق...
+                      {msgT('loading')}
                     </>
                   ) : lockoutUntil ? (
                     <>
                       <Timer className="w-5 h-5" />
-                      محظور مؤقتاً
+                      {actT('blocked')}
                     </>
                   ) : (
                     <>
                       <LogIn className="w-5 h-5" />
-                      تسجيل الدخول الآمن
+                      {actT('login')}
                     </>
                   )}
                 </button>
@@ -538,19 +545,19 @@ export function Login() {
                 {/* خيارات دخول بديلة — موثوقة وسريعة */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Link to="/forgot-password" className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-200 text-sm font-semibold text-slate-700 hover:text-amber-700 transition-colors">
-                    <Smartphone className="w-4 h-4" /> دخول بديل: استعادة عبر البريد
+                    <Smartphone className="w-4 h-4" /> {formT('altEmailRecovery')}
                   </Link>
                   {biometricEnabled ? (
-                    <button type="button" onClick={() => setErrorMessage('التحقق البيومتري متاح لأجهزة الدعم — فعّلها من إعدادات جهازك ثم أعد المحاولة')} className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 text-sm font-semibold text-slate-700 hover:text-emerald-700 transition-colors">
-                      <Fingerprint className="w-4 h-4" /> التحقق البيومتري
+                    <button type="button" onClick={() => setErrorMessage(formT('biometricHint'))} className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 text-sm font-semibold text-slate-700 hover:text-emerald-700 transition-colors">
+                      <Fingerprint className="w-4 h-4" /> {formT('biometric')}
                     </button>
                   ) : (
                     <Link to="/register" className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 text-sm font-semibold text-slate-700 hover:text-blue-700 transition-colors">
-                      <User className="w-4 h-4" /> إنشاء حساب جديد
+                      <User className="w-4 h-4" /> {formT('createAccount')}
                     </Link>
                   )}
                 </div>
-                <p className="text-xs text-center text-slate-500">بدائل الدخول نفسها آمنة — كل المحاولات تُسجَّل وتُفحص (Audit + RateLimit)</p>
+                <p className="text-xs text-center text-slate-500">{formT('altSecure')}</p>
               </form>
             )}
 
@@ -576,7 +583,7 @@ export function Login() {
             
             {/* Security Badges */}
             <div className="mt-8">
-              <SecurityBadge />
+              <SecurityBadge formT={formT} />
             </div>
           </GlassCard>
           
