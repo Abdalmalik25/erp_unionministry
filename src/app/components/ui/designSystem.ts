@@ -4,6 +4,8 @@
  * لضمان ترابط جميع المكوّنات والشاشات
  */
 
+import i18n from '../../i18n/config';
+
 // ============================================================
 // الثوابت الأساسية
 // ============================================================
@@ -112,16 +114,16 @@ export const STATUS_STYLES: Record<string, { bg: string; text: string; border: s
 
 export type ActionType = 'view' | 'edit' | 'delete' | 'export' | 'approve' | 'reject' | 'archive';
 
-/** العناوين الوصفية القياسية لكل إجراء (للقارئات الصوتية والأدلة) */
+/** مفاتيح الترجمة القياسية لكل إجراء (تستخدم مع useActions().t) */
 export const ACTION_LABELS: Record<ActionType, string> = {
-  view: 'عرض التفاصيل',
-  edit: 'تعديل السجل',
-  delete: 'حذف السجل',
-  export: 'تصدير البيانات',
-  approve: 'اعتماد السجل',
-  reject: 'رفض السجل',
-  archive: 'أرشفة السجل',
-};
+  view: 'actions.view',
+  edit: 'actions.edit',
+  delete: 'actions.delete',
+  export: 'actions.export',
+  approve: 'actions.approve',
+  reject: 'actions.reject',
+  archive: 'actions.archive',
+} as const;
 
 export const ACTION_BUTTON_STYLES: Record<ActionType, { color: string; hover: string; active: string }> = {
   view:    { color: 'text-info-dark dark:text-info-light',      hover: 'hover:bg-info/10',    active: 'active:bg-info/15' },
@@ -165,42 +167,34 @@ export function getStatusClasses(status: string): { bg: string; text: string; bo
   return STATUS_STYLES[status] || STATUS_STYLES.inactive;
 }
 
-/** تحويل الحالة الإنجليزية إلى عربي */
+/**
+ * تحويل الحالة الإنجليزية إلى ترجمة مبنية على i18n
+ * يستخدم i18n instance مباشرة للتوافق مع الوضع الحالي
+ */
 export function translateStatus(status: string): string {
-  const map: Record<string, string> = {
-    active: 'نشط',
-    inactive: 'متوقف',
-    suspended: 'معلق',
-    dissolved: 'منحل',
-    under_review: 'قيد المراجعة',
-    approved: 'معتمد',
-    rejected: 'مرفوض',
-    draft: 'مسودة',
-    submitted: 'مقدّم',
-    archived: 'مؤرشف',
-    planned: 'مخطط',
-    ongoing: 'جارٍ',
-    completed: 'منتهٍ',
-    cancelled: 'ملغى',
-    open: 'مفتوح',
-    resolved: 'محلول',
-    closed: 'مغلق',
-    appealed: 'مستأنف',
-    low: 'منخفض',
-    medium: 'متوسط',
-    high: 'عالٍ',
-    critical: 'حرج',
-    pending: 'قيد الانتظار',
-    active_member: 'عضو نشط',
-    expiring: 'قريب الانتهاء',
-    expired: 'منتهي',
-    processing: 'قيد الإنجاز',
-    valid: 'صالحة',
-    conditional: 'شرطية',
-    revoked: 'ملغاة',
-    compliant: 'ملتزم',
-    non_compliant: 'غير ملتزم',
-    not_assessed: 'غير مُقيّمة',
-  };
-  return map[status] || status;
+  try {
+    const translated = i18n.t(`status.${status}`);
+    // إذا رجعت نفس المفتاح (لم توجد ترجمة)، ارجع المفتاح نفسه
+    return translated !== `status.${status}` ? translated : status;
+  } catch {
+    return status;
+  }
+}
+
+// ============================================================
+// دوال مساعدة للعمل مع مفاتيح الترجمة
+// ============================================================
+
+/** الحصول على مفتاح ترجمة الإجراء للعرض */
+export function getActionLabel(action: ActionType): string {
+  return ACTION_LABELS[action];
+}
+
+/** تحويل مفتاح إجراء إلى نص قابل للعرض (يستخدم مع useActions().t) */
+export function resolveActionLabel(key: string): string {
+  try {
+    return i18n.t(key);
+  } catch {
+    return key;
+  }
 }

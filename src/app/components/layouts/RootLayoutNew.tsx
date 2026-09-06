@@ -5,6 +5,7 @@ import {
   Briefcase, FileSearch,
   Bell, User, LogOut, Menu, ChevronLeft, ChevronDown, Settings,
   Download, Settings2, BrainCircuit, BookOpen, ShieldAlert, IdCard, Lock,
+  LucideIcon
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePermissions } from '../../hooks/usePermissions';
@@ -25,7 +26,13 @@ import { BrandLogo } from '../ui/BrandLogo';
 import { AiLaborIntelligenceModal } from '../enterprise/AiLaborIntelligenceModal';
 import { AppDownloadModal } from '../enterprise/AppDownloadModal';
 import { UserGuideModal } from '../guide/UserGuideModal';
+import { usePortal, useA11y, useNav } from '../../hooks/useI18n';
+
 export function RootLayout() {
+  const { t: portalT } = usePortal();
+  const { t: a11yT } = useA11y();
+  const { t: navT } = useNav();
+
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
     try {
       return localStorage.getItem('unionsphere_sidebar_open') !== 'false';
@@ -122,29 +129,29 @@ export function RootLayout() {
     setOpenGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }));
   };
 
-  const organizationMenuItems = [
-    { icon: LayoutDashboard, label: 'لوحة القيادة للنقابة', path: '/organization', perm: 'view.dashboard' },
-    { icon: Users, label: 'سجل الأعضاء والنقابيين', path: '/organization/members', perm: 'members.view' },
-    { icon: Activity, label: 'الأنشطة والفعاليات النقابية', path: '/organization/activities', perm: 'activities.view' },
-    { icon: FileText, label: 'اللوائح والوثائق النقابية', path: '/organization/documents', perm: 'documents.view' },
-    { icon: Briefcase, label: 'طلبات الخدمات الحكومية', path: '/organization/services', perm: 'services.view' },
+  const organizationMenuItems: Array<{ icon: LucideIcon; labelKey?: string; label?: string; path: string; perm: string }> = [
+    { icon: LayoutDashboard, labelKey: 'portal.organization.dashboard', path: '/organization', perm: 'view.dashboard' },
+    { icon: Users, labelKey: 'portal.organization.members', path: '/organization/members', perm: 'members.view' },
+    { icon: Activity, labelKey: 'portal.organization.activities', path: '/organization/activities', perm: 'activities.view' },
+    { icon: FileText, labelKey: 'portal.organization.documents', path: '/organization/documents', perm: 'documents.view' },
+    { icon: Briefcase, labelKey: 'portal.organization.services', path: '/organization/services', perm: 'services.view' },
   ];
 
   // بوابة أصحاب العمل — Employer Portal
-  const employerMenuItems = [
-    { icon: LayoutDashboard, label: 'مركز إدارة المنشأة', path: '/employer', perm: 'dashboard:view' },
-    { icon: Users, label: 'سجل العاملين بالمنشأة', path: '/employer/members', perm: 'members.view' },
-    { icon: Activity, label: 'الأنشطة التشغيلية', path: '/employer/activities', perm: 'activities.view' },
-    { icon: FileText, label: 'العقود واللوائح الداخلية', path: '/employer/documents', perm: 'documents.view' },
-    { icon: Briefcase, label: 'طلبات الخدمات الحكومية', path: '/employer/services', perm: 'services.view' },
-    { icon: User, label: 'ملف المنشأة', path: '/employer/profile', perm: 'profile:view' },
+  const employerMenuItems: Array<{ icon: LucideIcon; labelKey?: string; label?: string; path: string; perm: string }> = [
+    { icon: LayoutDashboard, labelKey: 'portal.employer.dashboard', path: '/employer', perm: 'dashboard:view' },
+    { icon: Users, labelKey: 'portal.employer.members', path: '/employer/members', perm: 'members.view' },
+    { icon: Activity, labelKey: 'portal.employer.activities', path: '/employer/activities', perm: 'activities.view' },
+    { icon: FileText, labelKey: 'portal.employer.documents', path: '/employer/documents', perm: 'documents.view' },
+    { icon: Briefcase, labelKey: 'portal.employer.services', path: '/employer/services', perm: 'services.view' },
+    { icon: User, labelKey: 'portal.employer.profile', path: '/employer/profile', perm: 'profile:view' },
   ];
 
   // بوابة العاملين — جواز العمل الرقمي
-  const workerMenuItems = [
-    { icon: IdCard, label: 'جوازي المهني الرقمي', path: '/worker', perm: 'dashboard:view' },
-    { icon: Briefcase, label: 'طلبات وخدماتي الحكومية', path: '/worker/services', perm: 'services.request' },
-    { icon: User, label: 'ملفي الشخصي', path: '/worker/profile', perm: 'profile:view' },
+  const workerMenuItems: Array<{ icon: LucideIcon; labelKey?: string; label?: string; path: string; perm: string }> = [
+    { icon: IdCard, labelKey: 'portal.worker.passport', path: '/worker', perm: 'dashboard:view' },
+    { icon: Briefcase, labelKey: 'portal.worker.services', path: '/worker/services', perm: 'services.request' },
+    { icon: User, labelKey: 'portal.worker.profile', path: '/worker/profile', perm: 'profile:view' },
   ];
 
   // البوابة الفعالة حسب المسار ونوع المستخدم
@@ -159,23 +166,23 @@ export function RootLayout() {
     switch (activePortal) {
       case 'employer':
         return {
-          title: 'بوابة أصحاب العمل والمنشآت',
-          subtitle: 'إدارة العاملين والامتثال والخدمات الحكومية لمنشأتك',
+          title: portalT('portal.employer.title'),
+          subtitle: portalT('portal.employer.subtitle'),
         };
       case 'worker':
         return {
-          title: 'جواز العمل الرقمي — بوابة العاملين',
-          subtitle: 'هويتك المهنية • عقودك • أجرك • تدريبك • شكاواك في مكان واحد',
+          title: portalT('portal.worker.title'),
+          subtitle: portalT('portal.worker.subtitle'),
         };
       case 'organization':
         return {
-          title: 'بوابة النقابات والمنظمات العمالية',
-          subtitle: 'إدارة الأعضاء والانتخابات والأنشطة والمعاملات النقابية',
+          title: portalT('portal.organization.title'),
+          subtitle: portalT('portal.organization.subtitle'),
         };
       default:
         return {
-          title: 'الجمهورية اليمنية — وزارة الشؤون الاجتماعية والعمل',
-          subtitle: 'قطاع العمل | المنظومة الوطنية الشاملة لإدارة المنشآت والنقابات',
+          title: portalT('portal.ministry.title'),
+          subtitle: portalT('portal.ministry.subtitle'),
         };
     }
   })();
@@ -224,9 +231,9 @@ export function RootLayout() {
           )}
           <button
             onClick={handleToggleSidebar}
-            aria-label={sidebarOpen ? 'طي القائمة الجانبية' : 'توسيع وتثبيت القائمة الجانبية'}
+            aria-label={sidebarOpen ? a11yT('menuClose') : a11yT('menuOpen')}
             className={`p-2 text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent rounded-lg transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring ${!sidebarOpen ? 'hidden' : ''}`}
-            title={sidebarOpen ? 'طي القائمة' : 'تثبيت وتوسيع القائمة'}
+            title={sidebarOpen ? a11yT('menuClose') : a11yT('menuOpen')}
           >
             <Menu size={18} />
           </button>
@@ -280,6 +287,10 @@ export function RootLayout() {
                       {visibleItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = location.pathname === item.path;
+                        const itemWithLabelKey = item as { labelKey?: string; label: string };
+                        const label = itemWithLabelKey.labelKey
+                          ? portalT(itemWithLabelKey.labelKey)
+                          : itemWithLabelKey.label;
                         return (
                           <Link
                             key={item.path}
@@ -289,10 +300,10 @@ export function RootLayout() {
                                 ? 'bg-sidebar-accent text-sidebar-accent-foreground font-semibold border-r-4 border-gold'
                                 : 'text-sidebar-foreground/65 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground'
                             }`}
-                            title={!sidebarOpen ? item.label : undefined}
+                            title={!sidebarOpen ? label : undefined}
                           >
                             <Icon size={15} className={`shrink-0 ${isActive ? 'text-sidebar-accent-foreground' : 'text-sidebar-foreground/60'}`} />
-                            {sidebarOpen && <span className="text-xs truncate">{item.label}</span>}
+                            {sidebarOpen && <span className="text-xs truncate">{label}</span>}
                           </Link>
                         );
                       })}
@@ -305,6 +316,7 @@ export function RootLayout() {
             portalFlatMenu.filter(it => !it.perm || can(it.perm)).map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
+              const label = item.labelKey ? portalT(item.labelKey) : item.label;
               return (
                 <Link
                   key={item.path}
@@ -317,7 +329,7 @@ export function RootLayout() {
                   }`}
                 >
                   <Icon size={18} className="shrink-0" aria-hidden />
-                  {sidebarOpen && <span className="text-xs font-semibold">{item.label}</span>}
+                  {sidebarOpen && <span className="text-xs font-semibold">{label}</span>}
                 </Link>
               );
             })
@@ -341,8 +353,9 @@ export function RootLayout() {
           )}
           <button
             onClick={handleToggleSidebar}
+            aria-label={sidebarOpen ? a11yT('menuClose') : a11yT('menuOpen')}
             className="p-1.5 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent rounded-lg transition-colors cursor-pointer mx-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-            title={sidebarOpen ? 'طي القائمة' : 'توسيع وتثبيت القائمة'}
+            title={sidebarOpen ? a11yT('menuClose') : a11yT('menuOpen')}
           >
             {sidebarOpen ? <ChevronLeft size={16} /> : <Menu size={18} />}
           </button>
@@ -352,7 +365,7 @@ export function RootLayout() {
       {/* Main Framework & Content Area (إطار العمل الموحد مع شريط التمرير) */}
       <div className="flex-1 flex flex-col min-h-screen min-w-0 overflow-x-hidden">
         {/* Top Header Bar */}
-        <header className="sticky top-0 bg-card/95 dark:bg-card/95 backdrop-blur-md border-b border-border px-6 py-3.5 shadow-sm z-20">
+<header className="sticky top-0 bg-card/95 dark:bg-card/95 backdrop-blur-md border-b border-border px-6 py-3.5 shadow-sm z-20">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
               <h2 className="text-base sm:text-lg font-bold text-heading tracking-tight truncate">
@@ -371,102 +384,102 @@ export function RootLayout() {
                   aria-expanded={toolsMenuOpen}
                   aria-haspopup="menu"
                   className="flex items-center gap-2 px-3.5 py-2 bg-muted hover:bg-accent text-foreground rounded-xl text-xs font-bold transition-colors border border-border shadow-sm cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  title="الأدوات المساعدة والإعدادات والحوكمة"
+                  aria-label={a11yT('toolsMenu')}
                 >
                   <Settings2 size={16} className="text-gold-dark dark:text-gold-light shrink-0" aria-hidden />
                   <span className="hidden sm:inline">الأدوات المساعدة</span>
                   <ChevronDown size={14} className={`transition-transform duration-200 text-muted-foreground ${toolsMenuOpen ? 'rotate-180' : ''}`} aria-hidden />
                 </button>
 
-                {toolsMenuOpen && (
-                  <div className="absolute left-0 mt-2 w-72 bg-popover text-popover-foreground rounded-2xl shadow-xl border border-border p-2 z-50 animate-in fade-in-50 duration-150" role="menu">
-                    <div className="px-3 py-2 border-b border-border mb-1">
-                      <p className="text-xs font-bold text-heading">الأدوات والخدمات المساعدة</p>
-                      <p className="text-[11px] text-muted-foreground">الإعدادات، الصلاحيات، التطبيق، الرقابة</p>
-                    </div>
-
-                    <Link
-                      to={isMinistry ? '/ministry/profile' : '/organization/profile'}
-                      onClick={() => setToolsMenuOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-xs font-medium transition-colors"
-                    >
-                      <Settings size={16} className="text-primary-bright shrink-0" aria-hidden />
-                      <div className="text-right flex-1">
-                        <p className="font-semibold text-foreground">الإعدادات العامة والملف</p>
-                        <p className="text-[10px] text-muted-foreground">تخصيص الحساب وبيانات الاعتماد</p>
+{toolsMenuOpen && (
+                    <div className="absolute left-0 mt-2 w-72 bg-popover text-popover-foreground rounded-2xl shadow-xl border border-border p-2 z-50 animate-in fade-in-50 duration-150" role="menu">
+                      <div className="px-3 py-2 border-b border-border mb-1">
+                        <p className="text-xs font-bold text-heading">{portalT('tools.toolsMenu')}</p>
+                        <p className="text-[11px] text-muted-foreground">{portalT('tools.toolsDesc')}</p>
                       </div>
-                    </Link>
 
-                    {isMinistry && can('system.users.manage') && (
                       <Link
-                        to="/ministry/users"
+                        to={isMinistry ? '/ministry/profile' : '/organization/profile'}
                         onClick={() => setToolsMenuOpen(false)}
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-xs font-medium transition-colors"
                       >
-                        <Users size={16} className="text-success-dark dark:text-success-light shrink-0" aria-hidden />
+                        <Settings size={16} className="text-primary-bright shrink-0" aria-hidden />
                         <div className="text-right flex-1">
-                          <p className="font-semibold text-foreground">إدارة المستخدمين والصلاحيات</p>
-                          <p className="text-[10px] text-muted-foreground">مصفوفة التحكم والأدوار المؤسسية</p>
+                          <p className="font-semibold text-foreground">{portalT('tools.settings.title')}</p>
+                          <p className="text-[10px] text-muted-foreground">{portalT('tools.settings.desc')}</p>
                         </div>
                       </Link>
-                    )}
 
-                    <button
-                      onClick={() => { setToolsMenuOpen(false); setDownloadModalOpen(true); }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-xs font-medium transition-colors text-right cursor-pointer"
-                    >
-                      <Download size={16} className="text-primary-bright shrink-0" aria-hidden />
-                      <div className="text-right flex-1">
-                        <p className="font-semibold text-foreground">تنزيل وتثبيت التطبيق</p>
-                        <p className="text-[10px] text-muted-foreground">تثبيت التطبيق على الويندوز والموبايل</p>
-                      </div>
-                    </button>
+{isMinistry && can('system.users.manage') && (
+                        <Link
+                          to="/ministry/users"
+                          onClick={() => setToolsMenuOpen(false)}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-xs font-medium transition-colors"
+                        >
+                          <Users size={16} className="text-success-dark dark:text-success-light shrink-0" aria-hidden />
+                          <div className="text-right flex-1">
+                            <p className="font-semibold text-foreground">{portalT('tools.users.title')}</p>
+                            <p className="text-[10px] text-muted-foreground">{portalT('tools.users.desc')}</p>
+                          </div>
+                        </Link>
+                      )}
 
-                    <button
-                      onClick={() => { setToolsMenuOpen(false); setAiModalOpen(true); }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-xs font-medium transition-colors text-right cursor-pointer"
-                    >
-                      <BrainCircuit size={16} className="text-primary-bright shrink-0" aria-hidden />
-                      <div className="text-right flex-1">
-                        <p className="font-semibold text-foreground">ذكاء واستشراف سوق العمل AI</p>
-                        <p className="text-[10px] text-muted-foreground">تحليلات التوطين ومؤشرات العمالة</p>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => { setToolsMenuOpen(false); setGuideOpen(true); }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-xs font-medium transition-colors text-right cursor-pointer"
-                    >
-                      <BookOpen size={16} className="text-gold-dark dark:text-gold-light shrink-0" aria-hidden />
-                      <div className="text-right flex-1">
-                        <p className="font-semibold text-foreground">دليل المستخدم الرسمي</p>
-                        <p className="text-[10px] text-muted-foreground">دورة العمل الكاملة حسب دورك الوظيفي</p>
-                      </div>
-                    </button>
-
-                    {isMinistry && can('system.audit.view') && (
-                      <Link
-                        to="/ministry/audit"
-                        onClick={() => setToolsMenuOpen(false)}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-xs font-medium transition-colors"
+                      <button
+                        onClick={() => { setToolsMenuOpen(false); setDownloadModalOpen(true); }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-xs font-medium transition-colors text-right cursor-pointer"
                       >
-                        <FileSearch size={16} className="text-warning-dark dark:text-warning-light shrink-0" aria-hidden />
+                        <Download size={16} className="text-primary-bright shrink-0" aria-hidden />
                         <div className="text-right flex-1">
-                          <p className="font-semibold text-foreground">سجل الرقابة والتدقيق الأمني</p>
-                          <p className="text-[10px] text-muted-foreground">تتبع العمليات والمحاضر الرقابية</p>
+                          <p className="font-semibold text-foreground">{portalT('tools.app.title')}</p>
+                          <p className="text-[10px] text-muted-foreground">{portalT('tools.app.desc')}</p>
                         </div>
-                      </Link>
-                    )}
+                      </button>
 
-                    <div className="my-1 border-t border-border" />
+                      <button
+                        onClick={() => { setToolsMenuOpen(false); setAiModalOpen(true); }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-xs font-medium transition-colors text-right cursor-pointer"
+                      >
+                        <BrainCircuit size={16} className="text-primary-bright shrink-0" aria-hidden />
+                        <div className="text-right flex-1">
+                          <p className="font-semibold text-foreground">{portalT('tools.ai.title')}</p>
+                          <p className="text-[10px] text-muted-foreground">{portalT('tools.ai.desc')}</p>
+                        </div>
+                      </button>
 
-                    <button
-                      onClick={() => { setToolsMenuOpen(false); handleLogout(); }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-error/10 text-error text-xs font-semibold transition-colors text-right cursor-pointer"
-                    >
-                      <LogOut size={16} className="shrink-0" aria-hidden />
-                      <span>تسجيل الخروج الآمن</span>
-                    </button>
+                      <button
+                        onClick={() => { setToolsMenuOpen(false); setGuideOpen(true); }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-xs font-medium transition-colors text-right cursor-pointer"
+                      >
+                        <BookOpen size={16} className="text-gold-dark dark:text-gold-light shrink-0" aria-hidden />
+                        <div className="text-right flex-1">
+                          <p className="font-semibold text-foreground">{portalT('tools.guide.title')}</p>
+                          <p className="text-[10px] text-muted-foreground">{portalT('tools.guide.desc')}</p>
+                        </div>
+                      </button>
+
+                      {isMinistry && can('system.audit.view') && (
+                        <Link
+                          to="/ministry/audit"
+                          onClick={() => setToolsMenuOpen(false)}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-xs font-medium transition-colors"
+                        >
+                          <FileSearch size={16} className="text-warning-dark dark:text-warning-light shrink-0" aria-hidden />
+                          <div className="text-right flex-1">
+                            <p className="font-semibold text-foreground">{portalT('tools.audit.title')}</p>
+                            <p className="text-[10px] text-muted-foreground">{portalT('tools.audit.desc')}</p>
+                          </div>
+                        </Link>
+                      )}
+
+                      <div className="my-1 border-t border-border" />
+
+                      <button
+                        onClick={() => { setToolsMenuOpen(false); handleLogout(); }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-error/10 text-error text-xs font-semibold transition-colors text-right cursor-pointer"
+                      >
+                        <LogOut size={16} className="shrink-0" aria-hidden />
+                        <span>{navT('logout')}</span>
+                      </button>
                   </div>
                 )}
               </div>
@@ -478,11 +491,11 @@ export function RootLayout() {
               <div className="relative">
                 <button
                   onClick={() => setNotificationsOpen(!notificationsOpen)}
-                  aria-label="التنبيهات والإشعارات"
+                  aria-label={a11yT('notifications')}
                   aria-expanded={notificationsOpen}
                   aria-haspopup="true"
                   className="relative p-2 hover:bg-accent rounded-xl transition-colors cursor-pointer text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  title="التنبيهات والإشعارات"
+                  title={a11yT('notifications')}
                 >
                   <Bell size={18} className="text-muted-foreground" aria-hidden />
                   <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-success rounded-full animate-pulse" aria-hidden />

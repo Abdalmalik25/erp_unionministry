@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle, XCircle, AlertCircle, Info, X } from 'lucide-react';
+import { useA11y } from '../../hooks/useI18n';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -19,6 +20,7 @@ export function Toast({
   position = 'top-right' 
 }: ToastProps) {
   const [isVisible, setIsVisible] = useState(true);
+  const { t } = useA11y();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -66,7 +68,7 @@ export function Toast({
           setTimeout(onClose, 300);
         }}
         className="flex-shrink-0 p-1.5 hover:bg-black/5 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        aria-label="إغلاق"
+        aria-label={t('a11y.close')}
       >
         <X className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden />
       </button>

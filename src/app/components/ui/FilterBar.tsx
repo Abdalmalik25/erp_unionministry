@@ -6,6 +6,7 @@
 import { ReactNode } from 'react';
 import { Search } from 'lucide-react';
 import { cn } from './utils';
+import { useForm, useA11y } from '../../hooks/useI18n';
 
 // ============================================================
 // الأنواع
@@ -45,13 +46,21 @@ interface FilterBarProps {
 export function FilterBar({
   searchValue,
   onSearchChange,
-  searchPlaceholder = 'بحث...',
+  searchPlaceholder,
   filters = [],
   filterValues = {},
   onFilterChange,
   actions,
   className,
 }: FilterBarProps) {
+  const { t: formT } = useForm();
+  const { t: a11yT } = useForm(); // form namespace has the form field labels
+  const { t: a11yT2 } = useA11y(); // a11y namespace for accessibility labels
+
+  const defaultSearchPlaceholder = formT('search') || 'بحث...';
+  const defaultSelectPlaceholder = formT('selectOption') || 'اختر...';
+  const searchAriaLabel = a11yT2('search') || 'بحث';
+
   return (
     <div
       className={cn(
@@ -67,8 +76,8 @@ export function FilterBar({
             type="search"
             value={searchValue || ''}
             onChange={(e) => onSearchChange?.(e.target.value)}
-            placeholder={searchPlaceholder}
-            aria-label="بحث"
+            placeholder={searchPlaceholder || defaultSearchPlaceholder}
+            aria-label={searchAriaLabel}
             className="w-full pr-9 pl-3 py-2.5 min-h-[44px] text-sm bg-input-background text-foreground border border-border rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-bright focus-visible:border-transparent transition-colors"
           />
         </div>
@@ -84,7 +93,7 @@ export function FilterBar({
                   onChange={(e) => onFilterChange?.(filter.key, e.target.value)}
                   className="w-full px-3 py-2.5 min-h-[44px] text-sm border border-border rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-bright focus-visible:border-transparent bg-input-background text-foreground appearance-none pe-9 cursor-pointer"
                 >
-                  <option value="">{filter.label}</option>
+                  <option value="">{filter.placeholder || filter.label || defaultSelectPlaceholder}</option>
                   {filter.options?.map((opt) => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}

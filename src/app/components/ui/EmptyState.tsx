@@ -7,11 +7,16 @@
 import { ReactNode } from 'react';
 import { FolderOpen } from 'lucide-react';
 import { cn } from './utils';
+import { useEmptyState } from '../../hooks/useI18n';
 
 interface EmptyStateProps {
-  /** نص العنوان الرئيسي */
+  /** مفتاح الترجمة للعنوان (اختياري) — افتراضي: emptyState.noDataTitle */
+  titleKey?: string;
+  /** عنوان صريح (يتجاوز المفتاح) */
   title?: string;
-  /** نص توضيحي إضافي */
+  /** مفتاح الترجمة للوصف (اختياري) — افتراضي: emptyState.noDataDesc */
+  descriptionKey?: string;
+  /** وصف صريح (يتجاوز المفتاح) */
   description?: string;
   /** أيقونة مخصصة (اختياري) — يُفضَّل أن تكون سياقية للشاشة */
   icon?: ReactNode;
@@ -23,13 +28,17 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({
-  title = 'لا توجد بيانات',
+  titleKey = 'emptyState.noDataTitle',
+  title,
+  descriptionKey = 'emptyState.noDataDesc',
   description,
   icon,
   action,
   size = 'md',
   className,
 }: EmptyStateProps) {
+  const { t } = useEmptyState();
+
   const sizeClasses = {
     sm: {
       container: 'py-8',
@@ -52,6 +61,8 @@ export function EmptyState({
   };
 
   const s = sizeClasses[size];
+  const resolvedTitle = title || t(titleKey);
+  const resolvedDescription = description || (descriptionKey ? t(descriptionKey) : undefined);
 
   return (
     <div
@@ -63,11 +74,11 @@ export function EmptyState({
       )}
     >
       <div className={cn('mb-4 text-muted-foreground/70', s.icon)} aria-hidden>
-        {icon || <FolderOpen className="w-full h-full" />}
+        <FolderOpen className={cn('w-full h-full', s.icon.replace('w-', '').replace('h-', ''))} />
       </div>
-      <h3 className={cn('font-bold text-muted-foreground mb-1', s.title)}>{title}</h3>
-      {description && (
-        <p className={cn('text-muted-foreground mb-4 max-w-md', s.description)}>{description}</p>
+      <h3 className={cn('font-bold text-muted-foreground mb-1', s.title)}>{resolvedTitle}</h3>
+      {resolvedDescription && (
+        <p className={cn('text-muted-foreground mb-4 max-w-md', s.description)}>{resolvedDescription}</p>
       )}
       {action && <div className="mt-2">{action}</div>}
     </div>

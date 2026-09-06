@@ -1,5 +1,6 @@
 import { useMemo, useRef, useEffect, useState, useCallback, ReactNode } from 'react';
 import { cn } from './utils';
+import { useA11y } from '../../hooks/useI18n';
 
 interface VirtualizedTableProps<T> {
   items: T[];
@@ -30,6 +31,7 @@ export function VirtualizedTable<T>({
   stickyHeader,
   stickyHeaderHeight = 48,
 }: VirtualizedTableProps<T>) {
+  const { t: a11yT } = useA11y();
   const containerRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
   const [clientHeight, setClientHeight] = useState(0);
@@ -98,7 +100,7 @@ export function VirtualizedTable<T>({
             contain: 'strict',
           }}
           role="list"
-          aria-label="قائمة افتراضية"
+          aria-label={a11yT('virtualList')}
         >
           {items.slice(visibleRange.startIndex, visibleRange.endIndex + 1).map((item, i) => {
             const index = visibleRange.startIndex + i;
