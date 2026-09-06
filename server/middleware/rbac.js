@@ -109,11 +109,92 @@ export const ROLE_ALIASES = {
 };
 
 export function hasPermission(role, permission) {
-  const allowed = PERMISSIONS[permission];
+  // Normalize both action:resource and resource:action patterns to canonical key
+  const key = permissionAlias(permission);
+  const allowed = PERMISSIONS[key];
   if (!allowed) return false;
   // role can be either a raw string or a client key — normalize it
   const normalizedRole = ROLE_ALIASES[role] || role;
   return allowed.includes(normalizedRole);
+}
+
+// Alias map: route-level requirePermission('resource:action') → canonical RBAC key (action:resource)
+// This keeps route guards and the PERMISSIONS matrix consistent regardless of notation order.
+function permissionAlias(p) {
+  const direct = PERMISSIONS[p];
+  if (direct !== undefined) return p;
+
+  const [a, b] = String(p).split(':');
+  if (!a || !b) return p;
+  const flipped = `${b}:${a}`;
+  if (PERMISSIONS[flipped] !== undefined) return flipped;
+
+  // Explicit overrides where the two notations don't map 1:1
+  const overrides = {
+    'users:view': 'read:audit',
+    'laborDisputes:view': 'read:disputes',
+    'laborDisputes:create': 'write:labor_disputes',
+    'laborDisputes:edit': 'write:labor_disputes',
+    'laborDisputes:delete': 'write:labor_disputes',
+    'laborDisputes:resolve': 'write:labor_disputes',
+    'inspections:view': 'read:inspections',
+    'inspections:read': 'read:inspections',
+    'inspections:create': 'write:inspections',
+    'inspections:edit': 'write:inspections',
+    'inspections:delete': 'write:inspections',
+    'violations:create': 'write:violations',
+    'violations:edit': 'write:violations',
+    'violations:delete': 'write:violations',
+    'violations:view': 'read:violations',
+    'contracts:view': 'read:contracts',
+    'contracts:create': 'write:contracts',
+    'contracts:edit': 'write:contracts',
+    'contracts:delete': 'write:contracts',
+    'contracts:approve': 'write:contracts',
+    'compliance:create': 'write:compliance',
+    'compliance:edit': 'write:compliance',
+    'compliance:delete': 'write:compliance',
+    'compliance:read': 'read:compliance',
+    'risk:create': 'write:risk',
+    'risk:edit': 'write:risk',
+    'risk:delete': 'write:risk',
+    'entities:view': 'read:entities',
+    'entities:edit': 'write:entities',
+    'reports:view': 'read:reports',
+    'users:edit': 'admin:system',
+    'notifications:create': 'write:notifications',
+    'dispatches:create': 'write:dispatches',
+    'dispatches:edit': 'write:dispatches',
+    'evaluation:create': 'write:evaluations',
+    'evaluation:edit': 'write:evaluations',
+    'evaluation:delete': 'write:evaluations',
+    'expatriate:create': 'write:expatriate_licenses',
+    'expatriate:edit': 'write:expatriate_licenses',
+    'expatriate:delete': 'write:expatriate_licenses',
+    'fees:create': 'write:fees',
+    'fees:edit': 'write:fees',
+    'fees:delete': 'write:fees',
+    'legal:create': 'write:legal',
+    'legal:edit': 'write:legal',
+    'legal:delete': 'write:legal',
+    'licenses:create': 'write:licenses',
+    'licenses:edit': 'write:licenses',
+    'licenses:delete': 'write:licenses',
+    'occupations:create': 'write:professions',
+    'occupations:read': 'read:professions',
+    'reduction:create': 'write:reduction',
+    'reduction:edit': 'write:reduction',
+    'training:create': 'write:training',
+    'training:edit': 'write:training',
+    'training:delete': 'write:training',
+    'workers:read': 'read:members',
+    'workers:write': 'write:members',
+    'commercial:read': 'read:commercial',
+    'commercial:write': 'write:commercial',
+    'osh:read': 'read:osh',
+    'osh:write': 'write:osh',
+  };
+  return overrides[p] || p;
 }
 
 export function requirePermission(permission) {

@@ -2,6 +2,7 @@
 // Per-packet verification, context-aware access, anomaly scoring, Never Trust Always Verify
 
 import crypto from 'crypto';
+import { verifyToken } from './auth.js';
 
 // ===================== Micro-Segmentation Policy Engine =====================
 
@@ -59,9 +60,24 @@ function buildRequestContext(req) {
   const method = req.method;
   const path = req.path;
   const timestamp = Date.now();
-  const hasAuth = !!req.user;
-  const role = req.user?.role || 'anonymous';
-  const sessionId = req.user?.sid || null;
+
+  // Decode JWT from Authorization header so clearance reflects the real role
+  // (zero-trust runs before per-router auth middleware sets req.user)
+  let authPayload = req.user || null;
+  if (!authPayload) {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const payload = verifyToken(authHeader.slice(7));
+      if (payload) {
+        authPayload = { ...payload, sub: payload.sub, sid: payload.sid };
+        req.user = { id: payload.sub, sub: payload.sub, sid: payload.sid, role: payload.role, email: payload.email };
+      }
+    }
+  }
+
+  const hasAuth = !!authPayload;
+  const role = authPayload?.role || 'anonymous';
+  const sessionId = authPayload?.sid || null;
   const referer = req.headers['referer'] || '';
   const contentType = req.headers['content-type'] || '';
   const accept = req.headers['accept'] || '';
@@ -147,10 +163,21 @@ function calculateAnomalyScore(context) {
 const ROLE_CLEARANCE = {
   anonymous: 0,
   worker: 1,
+  hr_officer: 2,
   employer: 2,
+  employer_admin: 2,
   organization: 2,
   union: 2,
+  union_president: 2,
+  financial_officer: 2,
+  reports_viewer: 2,
   registry_officer: 3,
+  ministry_staff: 3,
+  legal_counsel: 3,
+  labor_inspector: 3,
+  compliance_officer: 3,
+  supervisory_director: 4,
+  deputy_minister: 4,
   ministry_admin: 4,
   super_admin: 5,
 };

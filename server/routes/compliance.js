@@ -21,7 +21,7 @@ router.get('/api/violations', async (req, res) => {
 
     const total = await pool.query(_qs, _qp);
     const r = await pool.query(
-      `SELECT v.id, v.entity_id, v.violation_number, v.violation_type, v.violation_name, v.severity, v.status, v.description, v.legal_basis, v.detected_date, v.detected_by, v.decision_date, v.decision, v.penalty, v.penalty_amount, v.resolved_date, v.resolved_by, v.resolution_notes, v.appeal_date, v.appeal_status, v.appeal_decision, v.evidence_urls, v.created_at, v.created_by, v.updated_at, v.deleted_at, e.name_ar as entity_name FROM violations v
+      `SELECT v.id, v.entity_id, v.violation_number, v.violation_type, v.severity, v.status, v.description, v.legal_basis, v.detected_date, v.detected_by, v.decision_date, v.decision, v.penalty, v.penalty_amount, v.resolved_date, v.resolved_by, v.resolution_notes, v.appeal_date, v.appeal_status, v.appeal_decision, v.evidence_urls, v.created_at, v.created_by, v.updated_at, v.deleted_at, e.name_ar as entity_name FROM violations v
        JOIN organizational_entities e ON v.entity_id = e.entity_id
        WHERE ${where} ORDER BY v.created_at DESC LIMIT $${idx++} OFFSET $${idx++}`,
       [...params, limit, offset]
@@ -37,7 +37,7 @@ router.post('/api/violations', requirePermission('violations:create'), async (re
     const d = req.body;
     if (!d.entity_id) return res.status(400).json({ error: 'entity_id مطلوب' });
     const cols = [
-      'entity_id','violation_number','violation_type','violation_name','severity','status',
+      'entity_id','violation_number','violation_type','severity','status',
       'detected_date','detected_by','description','legal_basis','penalty_amount','decision',
       'resolved_date','resolved_by','resolution_notes','evidence_urls'
     ];
@@ -65,7 +65,7 @@ router.put('/api/violations/:id', requirePermission('violations:edit'), async (r
     let idx = 1;
     const colMap = {
       entity_id:'entity_id', violation_number:'violation_number', violation_type:'violation_type',
-      violation_name:'violation_name', severity:'severity', status:'status',
+      severity:'severity', status:'status',
       detected_date:'detected_date', detected_by:'detected_by', description:'description',
       legal_basis:'legal_basis', penalty_amount:'penalty_amount', decision:'decision',
       resolved_date:'resolved_date', resolved_by:'resolved_by',

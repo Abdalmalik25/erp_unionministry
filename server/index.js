@@ -211,7 +211,7 @@ app.use(async (req, res, next) => {
     }
   }
   // Enforce auth for all /api except health, auth/login, public dictionaries
-  const publicPaths = ['/api/health','/api/auth/login','/api/auth/me','/api/isic4','/api/geography/governorates'];
+  const publicPaths = ['/api/health','/api/auth/login','/api/auth/me','/api/version','/api/isic4','/api/geography/governorates'];
   // مسارات البوابة العامة المقيدة بالطريقة — شاشة الدخول وطلبات فتح الحسابات
   const PUBLIC_GET = ['/api/system/branding', '/api/system/policy', '/api/establishments/lookup'];
   const PUBLIC_POST = ['/api/account-requests'];
