@@ -21,29 +21,6 @@ router.use(auditContext);
 // UNIFIED REGISTRY
 // ============================================================
 
-router.get('/registry/:type/:id',
-  requirePermission('entities:view'),
-  async (req, res, next) => {
-    try {
-      const { type, id } = req.params;
-
-      const entry = await req.db('unified_registry_entries')
-        .where('entry_type', type)
-        .where('entity_id', id)
-        .first();
-
-      if (!entry) {
-        return res.status(404).json({ error: 'Registry entry not found', code: 'NOT_FOUND' });
-      }
-
-      res.json(entry);
-        invalidateCache('dashboard');
-    } catch (err) {
-      next(err);
-    }
-  }
-);
-
 router.get('/registry/:type/search',
   requirePermission('entities:view'),
   async (req, res, next) => {
@@ -63,6 +40,30 @@ router.get('/registry/:type/search',
 
       const entries = await query.limit(50);
       res.json(entries);
+        invalidateCache('dashboard');
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get('/registry/:type/:id',
+  requirePermission('entities:view'),
+  async (req, res, next) => {
+    try {
+      const { type, id } = req.params;
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return next();
+
+      const entry = await req.db('unified_registry_entries')
+        .where('entry_type', type)
+        .where('entity_id', id)
+        .first();
+
+      if (!entry) {
+        return res.status(404).json({ error: 'Registry entry not found', code: 'NOT_FOUND' });
+      }
+
+      res.json(entry);
         invalidateCache('dashboard');
     } catch (err) {
       next(err);
