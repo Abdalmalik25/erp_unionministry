@@ -800,7 +800,6 @@ export async function soarMiddleware(req, res, next) {
 // ===================== EXPORTS =====================
 export { SOAR_PLAYBOOKS as playbooks };
 export { CaseManager as caseManager };
-export { ActionExecutor as actionExecutor };
 export { SOAROrchestrator as orchestrator };
 export { soarOrchestrator as defaultOrchestrator };
 export { soarMiddleware as middleware };
