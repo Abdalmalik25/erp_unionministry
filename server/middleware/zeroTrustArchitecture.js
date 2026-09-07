@@ -706,4 +706,3 @@ export { zeroTrustEngine as defaultEngine };
 export { zeroTrustMiddleware as middleware };
 export { MicroSegmentation as segmentation };
 export { microSegmentation as defaultSegmentation };
-export { PolicyDecisionPoint as pdp };
